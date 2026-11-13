@@ -40,7 +40,7 @@ export default function App() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('table')
     const num = q ? parseInt(q, 10) : NaN
-    if (Number.isInteger(num) && num >= 1 && num <= 99) { useCart.getState().setMode('table'); useCart.getState().setTable(String(num)) }
+    if (Number.isInteger(num) && num >= 1 && num <= 200) { useCart.getState().setMode('table'); useCart.getState().setTable(String(num)) }
   }, [])
   return (
     <I18nProvider>

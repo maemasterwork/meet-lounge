@@ -40,3 +40,14 @@ td svg.mini2{width:44px;height:40px}
 .swatch input{width:44px;height:32px;border:1px solid var(--ml-line);border-radius:8px;background:none;padding:2px}
 svg text{font-family:var(--ml-font-body)}
 
+.qrgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.qrcard{margin:0;border:1px solid var(--ml-line);border-radius:14px;padding:18px;display:grid;gap:8px;justify-items:center;text-align:center;background:#fff;color:#2b1f17;break-inside:avoid}
+.qrimg{width:100%;max-width:140px}.qrimg svg{width:100%;height:auto;display:block}
+.qrcard span{font-size:12px;color:#6e5748}
+@media print{
+  body.print-qr .app,body.print-qr .toasts{display:none!important}
+  body.print-qr .admin{position:static!important;overflow:visible!important;background:#fff!important}
+  body.print-qr .admin>*:not(.apane),body.print-qr .apane>*:not(.qrwrap),body.print-qr .qrwrap .qrhead{display:none!important}
+  body.print-qr .qrwrap{border:0!important;padding:0!important}
+  body.print-qr .qrgrid{grid-template-columns:repeat(3,1fr);gap:10mm}
+}

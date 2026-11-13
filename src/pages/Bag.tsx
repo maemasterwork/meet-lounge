@@ -26,6 +26,7 @@ export function BagPage() {
   const cart = useCart()
   const toast = useUi((s) => s.toast)
   const setMeTab = useUi((s) => s.setMeTab)
+  const shopTables = useShop().data?.settings.tableCount ?? 12
   const guest = useAuth((a) => a.configured && a.isGuest)
   const [phone, setPhone] = useState('')
   const [err, setErr] = useState('')
@@ -92,7 +93,7 @@ export function BagPage() {
           {cart.mode === 'table' && (
             <label className="field">{t('bag.tableLabel')}
               <select value={cart.table} onChange={(e) => cart.setTable(e.target.value)}>
-                {Array.from({ length: Math.max(12, Number(cart.table) || 0) }, (_, i) => <option key={i} value={String(i + 1)}>{n(i + 1)}</option>)}
+                {Array.from({ length: Math.max(shopTables, Number(cart.table) || 0) }, (_, i) => <option key={i} value={String(i + 1)}>{n(i + 1)}</option>)}
               </select>
             </label>)}
           {cart.mode === 'delivery' && (

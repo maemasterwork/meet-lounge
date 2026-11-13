@@ -1,0 +1,18 @@
+{
+  "name": "Meet Lounge | میت لانج",
+  "short_name": "Meet Lounge",
+  "description": "Order coffee in one screen. سفارش قهوه در یک صفحه.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FBF2E4",
+  "theme_color": "#FBF2E4",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -13,6 +13,7 @@ Easiest: open **SQL Editor** and paste, run, in this order, each file in full:
 3. `supabase/migrations/20261113000300_rls.sql`
 4. `supabase/migrations/20261113000400_realtime_storage.sql`
 4b. `supabase/migrations/20261113000500_admin.sql`
+4c. `supabase/migrations/20261113000600_push.sql`
 5. `supabase/seed.sql`
 
 (With the Supabase CLI instead: `supabase link --project-ref <ref>`, `supabase db push`, then run `seed.sql` in the SQL editor.)
@@ -54,8 +55,23 @@ Profile menu → Dashboard. Staff see Orders and Stats. The owner also gets Menu
 
 Pictures go to the `menu-images` bucket (JPG, PNG, WebP or AVIF, up to 2.5 MB; public to read, owner-only to write). Re-run migration `20261113000500_admin.sql` if you set up Phase 3 earlier: it adds the owner-only customer list.
 
+## Install, offline, table QR codes (Phase 5)
+- **Install:** in production the app registers a service worker and a manifest. Chrome/Android show "Install the app" in the settings popup; on iPhone use Share, then Add to Home Screen. It opens the last loaded screen offline; ordering needs a connection.
+- **Table QR codes:** Dashboard → Brand → Table QR sheet → Print. Each code opens the shop set to "at the table" for that table.
+- **3D models:** see `public/models/README.md`. Drop `latte.glb` there and list it in `index.json`; no code change. Items without a model keep their picture.
+
+## Push notifications (optional, needs a computer with Node)
+1. `npx web-push generate-vapid-keys`. Put the **public** key in `.env.local` / the GitHub secret `VITE_VAPID_PUBLIC_KEY`.
+2. `npm i -g supabase`, then `supabase login` and `supabase link --project-ref <ref>`.
+3. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com`
+4. `supabase functions deploy send-push`
+5. In the app: settings popup → notifications switch → allow. Then in the dashboard send an offer, or advance an order to Ready: the phone shows the message (offers in the customer's language; audience filters apply).
+
+The function checks the caller's role itself (offers: owner only; order updates: staff or owner) and uses the platform-provided service key inside the function only. If you skip these steps everything else works; the in-app offer bell remains.
+iPhone: web push works only after the app is added to the Home Screen (iOS 16.4+).
+
 ## Tests
-`npm run verify` runs: types, 34 front-end tests, 30 database tests on a real Postgres engine (RLS, server-side prices equal to the app's, one coin per order, refunds, status rules), the production build, and the secret scan.
+`npm run verify` runs: types, 41 front-end tests, 36 database and push-logic tests on a real Postgres engine (RLS, server-side prices equal to the app's, one coin per order, refunds, status rules), the production build, and the secret scan.
 
 ## Not covered here
-Web push notifications and table QR codes (Phase 5). Promoting staff is still done in SQL (`promote-owner.sql`, role `staff`). Realtime, email delivery and anonymous sign-in are Supabase services and were not exercised against a live project from this build environment; step 6 is how you confirm them on yours.
+Real delivery of push messages (needs your VAPID keys and the deployed function: step above) was only tested at the logic and service-worker level. Promoting staff is still done in SQL (`promote-owner.sql`, role `staff`). Realtime, email delivery and anonymous sign-in are Supabase services and were not exercised against a live project from this build environment; step 6 is how you confirm them on yours.

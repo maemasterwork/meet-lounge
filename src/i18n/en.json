@@ -364,5 +364,14 @@
   "a2.cancelled": "Cancelled",
   "a2.tabCustomers": "Customers",
   "a2.rewardsUsed": "Rewards used",
-  "a2.itemDisabledHint": "Hidden from ordering"
+  "a2.itemDisabledHint": "Hidden from ordering",
+  "pwa.install": "Install the app",
+  "push.on": "Notifications are on.",
+  "push.denied": "Notifications are blocked in your browser settings.",
+  "push.unavailable": "Notifications are not available here.",
+  "push.error": "Could not turn notifications on. Try again.",
+  "a2.qrHelp": "Print this sheet and put one code on each table. Guests scan it and order for that table.",
+  "a2.qrPrint": "Print",
+  "a2.qrTable": "Table {n}",
+  "a2.qrScan": "Scan to order"
 }

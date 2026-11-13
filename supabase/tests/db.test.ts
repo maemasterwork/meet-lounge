@@ -258,3 +258,23 @@ describe('dashboard (owner tools)', () => {
     await as(db, owner, 'update public.settings set reward_every=6')
   })
 })
+
+describe('push registration', () => {
+  const ep = (s: string) => `https://push.example.com/send/${s.padEnd(30, 'x')}`
+  it('registers through the function only and can hand a browser to a new user', async () => {
+    await expect(as(db, alice, 'insert into public.push_subscriptions (customer_id,endpoint,p256dh,auth) values ($1,$2,$3,$4)', [alice.id, ep('a'), 'k', 'a'])).rejects.toThrow(/permission denied/)
+    await as(db, alice, 'select public.register_push($1,$2,$3)', [ep('a'), 'k1', 'a1'])
+    await as(db, bob, 'select public.register_push($1,$2,$3)', [ep('a'), 'k2', 'a2'])           // same browser, now bob's
+    expect(await as(db, alice, 'select 1 from public.push_subscriptions')).toEqual([])
+    expect((await as(db, bob, 'select p256dh from public.push_subscriptions'))[0].p256dh).toBe('k2')
+  })
+  it('rejects non-https endpoints, guests only for themselves, and anyone reading other subscriptions', async () => {
+    await expect(as(db, alice, 'select public.register_push($1,$2,$3)', ['http://insecure.example.com/x/xxxxxxxxxxxx', 'k', 'a'])).rejects.toThrow(/bad-option/)
+    await expect(as(db, alice, 'select public.register_push($1,$2,$3)', [ep('b'), 'k', 'a']).then(() => as(db, bob, 'select 1 from public.push_subscriptions where endpoint=$1', [ep('b')]))).resolves.toEqual([])
+    await expect(as(db, 'anon', 'select public.register_push($1,$2,$3)', [ep('c'), 'k', 'a'])).rejects.toThrow(/permission denied/)
+  })
+  it('a customer can delete only their own subscription', async () => {
+    await as(db, alice, 'delete from public.push_subscriptions')
+    expect((await as(db, null, 'select count(*)::int n from public.push_subscriptions'))[0].n).toBeGreaterThan(0)   // bob's is untouched
+  })
+})

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, createElement } from 'react'
 import type { MenuItem } from '../types'
 import { art, sceneSVG } from './art'
 import { useMeetLounge } from '../lib/meetlounge'
@@ -35,6 +35,7 @@ export function ItemStage({ item, sel }: { item: MenuItem; sel: { size: string; 
     return () => { try { if (typeof cleanup === 'function') cleanup() } finally { el.textContent = '' } }
   }, [renderer, item, sel.size, sel.milk, sel.sugar]) // eslint-disable-line react-hooks/exhaustive-deps
   if (renderer) return <div ref={host} className="item-host" style={{ width: '100%', height: '100%' }} />
+  if (ml.assets.models[item.id]) return <ModelStage item={item} sel={sel} src={ml.assets.models[item.id]} />
   return <ItemArt item={item} opts={stageOpts(item, sel)} uid="main" />
 }
 
@@ -55,4 +56,34 @@ export function SceneArt({ kind, time }: { kind: 'hero' | 'mini'; time: TimeKey 
   if (ml.assets.hero)
     return <img src={ml.assets.hero} alt="" style={kind === 'mini' ? { position: 'absolute', left: 0, bottom: 0, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'left bottom' } : undefined} />
   return <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: sceneSVG(kind, t('brand.name'), t('brand.name')) }} />
+}
+
+/**
+ * Interactive 3D model (GLB) for one item, drag to orbit. The flat picture stays until the model has loaded,
+ * and stays for good if it fails (old browser, no WebGL, missing file), so the stage is never empty.
+ * The viewer library is a separate chunk, downloaded only when an item actually has a model.
+ */
+function ModelStage({ item, sel, src }: { item: MenuItem; sel: { size: string; milk: number; sugar: number }; src: string }) {
+  const { t } = useI18n()
+  const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading')
+  const el = useRef<HTMLElement | null>(null)
+  useEffect(() => { setState('loading'); import('@google/model-viewer').catch(() => setState('failed')) }, [src])
+  useEffect(() => {
+    const m = el.current
+    if (!m) return
+    const ok = () => setState('ready'), bad = () => setState('failed')
+    m.addEventListener('load', ok); m.addEventListener('error', bad)
+    return () => { m.removeEventListener('load', ok); m.removeEventListener('error', bad) }
+  }, [src])
+  const s = sizeOf(item, sel.size).scale
+  const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {state !== 'ready' && <div style={{ position: 'absolute', inset: 0, display: 'grid' }}><ItemArt item={item} opts={stageOpts(item, sel)} uid="main" /></div>}
+      {state !== 'failed' && createElement('model-viewer', {
+        ref: el, src, alt: t(`item.${item.id}.name`), 'camera-controls': '', 'touch-action': 'pan-y', 'shadow-intensity': '1', 'interaction-prompt': 'none',
+        ...(still ? {} : { 'auto-rotate': '', 'rotation-per-second': '20deg' }), scale: `${s} ${s} ${s}`,
+        style: { width: '100%', height: '100%', background: 'transparent', opacity: state === 'ready' ? 1 : 0, '--poster-color': 'transparent' },
+      })}
+    </div>)
 }

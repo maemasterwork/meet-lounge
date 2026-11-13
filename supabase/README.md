@@ -14,7 +14,7 @@
 | `orders` | read own; **no insert/update**; cancel own `new` order via `cancel_order()` | read all; move status forward via `advance_order()` | same as staff |
 | `order_items` | read own | read all | read all |
 | `coin_ledger` | read own; **no write** | read own | read all; adjust only through `adjust_coins()` |
-| `push_subscriptions` | read, add, delete own | same | same |
+| `push_subscriptions` | read and delete own; add only through `register_push()` | same | same |
 | Storage `menu-images` | public read | read | upload, replace, delete |
 
 Orders come into existence only through `create_order()`. It runs in Postgres, ignores any price from the browser,

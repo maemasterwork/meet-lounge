@@ -82,6 +82,9 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
   }
   const NEXT = (o: Order): OrderStatus => ({ new: 'prep', prep: 'ready', ready: o.mode === 'delivery' ? 'out' : 'done', out: 'done', done: 'done', cancelled: 'cancelled' } as const)[o.status]
 
+  /** Asks the Edge Function to send web push. Best effort: a failure never blocks the dashboard. */
+  const push = (body: { kind: 'offer'; offerId: number } | { kind: 'order'; orderId: string }) => { void sb.functions.invoke('send-push', { body }).catch(() => undefined) }
+
   const orderIdOf = async (n: number) => {
     const r = await sb.from('orders').select('id').eq('number', n).maybeSingle()
     if (r.error) mapError(r.error)
@@ -121,6 +124,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         const prev = cur ? patchAll(n, NEXT(cur)) : null
         try {
           const row: any = ok(await sb.rpc('advance_order', { p_order_id: await orderIdOf(n) }))
+          if (['ready', 'out', 'done'].includes(row.status)) push({ kind: 'order', orderId: row.id })
           const full = ok(await sb.from('orders').select(ORDER_SELECT).eq('id', row.id).single())
           emit()
           return toOrder(full, getUserId())
@@ -191,7 +195,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
       },
       async offers() { const read = readIds(); return ok(await sb.from('offers').select('*').order('id', { ascending: false })).map((r: any) => toOffer(r, read)) },
       async addOffer(o) {
-        ok(await sb.from('offers').insert({ title_fa: o.title.fa, title_en: o.title.en, body_fa: o.body.fa, body_en: o.body.en, item_id: o.itemId, discount_pct: o.pct, audience: o.audience, ends_at: o.endsAt ?? null, active: true }).select('id')); emit()
+        ok(await sb.from('offers').insert({ title_fa: o.title.fa, title_en: o.title.en, body_fa: o.body.fa, body_en: o.body.en, item_id: o.itemId, discount_pct: o.pct, audience: o.audience, ends_at: o.endsAt ?? null, active: true }).select('id')).forEach((r: any) => push({ kind: 'offer', offerId: r.id })); emit()
       },
       async setOfferActive(id, active) { ok(await sb.from('offers').update({ active }).eq('id', id).select('id')); emit() },
       async deleteOffer(id) { ok(await sb.from('offers').delete().eq('id', id).select('id')); emit() },

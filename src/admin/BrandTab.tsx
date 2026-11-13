@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { repos } from '../repos'
 import { useRepo } from '../lib/useRepo'
+import { QrSheet } from './QrSheet'
 import { IMAGE_ACCEPT, Msg, Switch, contrast, useAct } from './common'
 
 const ok = async (fn: () => Promise<void>) => { await fn(); return true }
@@ -58,5 +59,6 @@ export function BrandTab({ owner }: { owner: boolean }) {
             onClick={async () => { if (await act.run(() => ok(() => repos.admin.saveSettings({ deliveryFee: fee, tableCount: tables })))) clear('fee', 'tables') }}>{t('common.save')}</button>
         </div>
       </div>
+      <QrSheet tables={s.tableCount} />
     </div>)
 }

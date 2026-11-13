@@ -6,6 +6,8 @@ import { go, type View } from '../lib/route'
 import { useShop } from '../data/context'
 import { Coin, Icon, LogoMark } from './icons'
 import { repos } from '../repos'
+import { useInstall } from '../lib/pwa'
+import { disablePush, enablePush, pushSupported } from '../lib/push'
 
 const TOP: View[] = ['home', 'menu', 'shop', 'story', 'gallery']
 
@@ -100,6 +102,7 @@ export function Popovers() {
   const pop = useUi((s) => s.pop)
   const setPop = useUi((s) => s.setPop)
   const s = useUi()
+  const install = useInstall()
   const select = useUi((x) => x.select)
   useEffect(() => {
     if (!pop) return
@@ -126,8 +129,19 @@ export function Popovers() {
           </button>
           <div className="it">
             <Icon name="leaf" /><span style={{ flex: 1 }}>{t('settings.notify')}</span>
-            <button type="button" className="sw" aria-pressed={s.notifyOn} aria-label={t('settings.notify')} onClick={() => s.setNotify(!s.notifyOn)} />
+            <button type="button" className="sw" aria-pressed={s.notifyOn} aria-label={t('settings.notify')} onClick={async () => {
+              const on = !s.notifyOn
+              s.setNotify(on)
+              if (!on) { void disablePush(); return }
+              if (!pushSupported()) return
+              const r = await enablePush()
+              s.toast(t(r === 'ok' ? 'push.on' : r === 'denied' ? 'push.denied' : r === 'unavailable' ? 'push.unavailable' : 'push.error'))
+            }} />
           </div>
+          {install.canInstall && (
+            <button type="button" className="it" onClick={() => void install.install()}>
+              <Icon name="plus" /><span style={{ flex: 1 }}>{t('pwa.install')}</span>
+            </button>)}
           <button type="button" className="it" onClick={() => { setPop(null); go('admin') }}>
             <Icon name="dash" /><span style={{ flex: 1 }}>{t('settings.admin')}</span>
           </button>
