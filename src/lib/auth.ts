@@ -12,7 +12,6 @@ interface AuthState {
   role: Role
   signInPassword(email: string, password: string): Promise<string | null>
   signUpPassword(email: string, password: string): Promise<string | null>
-  sendMagicLink(email: string): Promise<string | null>
   signOut(): Promise<void>
 }
 
@@ -26,10 +25,6 @@ export const useAuth = create<AuthState>((_set, get) => ({
     // A guest who signs up keeps their coins: updateUser links the email to the same user id.
     const sb = supabase()
     const { error } = get().isGuest ? await sb.auth.updateUser({ email, password }) : await sb.auth.signUp({ email, password })
-    return error?.message ?? null
-  },
-  async sendMagicLink(email) {
-    const { error } = await supabase().auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split('#')[0] } })
     return error?.message ?? null
   },
   async signOut() { await supabase().auth.signOut() },

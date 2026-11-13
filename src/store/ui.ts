@@ -20,6 +20,8 @@ interface UiState {
   // session-only
   pop: Pop
   setPop: (p: Pop) => void
+  authOpen: boolean
+  setAuthOpen: (open: boolean) => void
   meTab: MeTab
   setMeTab: (t: MeTab) => void
   selectedId: string
@@ -45,6 +47,8 @@ export const useUi = create<UiState>()(
       toggleRegistered: (id) => set((s) => ({ registered: s.registered.includes(id) ? s.registered.filter((x) => x !== id) : [...s.registered, id] })),
       pop: null,
       setPop: (pop) => set({ pop }),
+      authOpen: false,
+      setAuthOpen: (authOpen) => set({ authOpen }),
       meTab: 'orders',
       setMeTab: (meTab) => set({ meTab }),
       selectedId: 'cheesecake',

@@ -8,6 +8,8 @@ import { Coin, Icon, LogoMark } from './icons'
 import { repos } from '../repos'
 import { useInstall } from '../lib/pwa'
 import { disablePush, enablePush, pushSupported } from '../lib/push'
+import { useAuth } from '../lib/auth'
+import { AuthPanel } from './AuthPanel'
 
 const TOP: View[] = ['home', 'menu', 'shop', 'story', 'gallery']
 
@@ -38,7 +40,7 @@ export function TopBar({ view }: { view: View }) {
           <span className="badge" hidden={!unread}>{n(unread)}</span>
         </button>
         <div className="pill2 ltr" id="coinPill">
-          <button type="button" onClick={() => toMe('coins')} aria-label={`${t('top.coins')}: ${data ? n(data.balance) : ''}`}>
+          <button type="button" style={{ direction:'ltr' }} onClick={() => toMe('coins')} aria-label={`${t('top.coins')}: ${data ? n(data.balance) : ''}`}>
             <Coin /><span>{data ? n(data.balance) : '–'}</span>
           </button>
           <button type="button" className="plus" onClick={() => toMe('coins')} aria-label={t('top.rewards')}><Icon name="plus" size={14} /></button>
@@ -99,6 +101,7 @@ export function Toasts() {
 export function Popovers() {
   const { t, lang } = useI18n()
   const { data } = useShop()
+  const auth = useAuth()
   const pop = useUi((s) => s.pop)
   const setPop = useUi((s) => s.setPop)
   const s = useUi()
@@ -122,7 +125,7 @@ export function Popovers() {
         <>
           <h4>{t('settings.title')}</h4>
           <button type="button" className="it" onClick={() => s.setTheme(dark ? 'light' : 'dark')}>
-            <Icon name="moon" /><span style={{ flex: 1 }}>{t(dark ? 'settings.themeLight' : 'settings.themeDark')}</span>
+            <Icon name={dark ? 'sun' : 'moon'} /><span style={{ flex: 1 }}>{t(dark ? 'settings.themeLight' : 'settings.themeDark')}</span>
           </button>
           <button type="button" className="it" onClick={() => s.setLang(lang === 'fa' ? 'en' : 'fa')}>
             <Icon name="globe" /><span style={{ flex: 1 }}>{t('settings.language')}: {lang === 'fa' ? 'English' : 'فارسی'}</span>
@@ -138,6 +141,11 @@ export function Popovers() {
               s.toast(t(r === 'ok' ? 'push.on' : r === 'denied' ? 'push.denied' : r === 'unavailable' ? 'push.unavailable' : 'push.error'))
             }} />
           </div>
+          {auth.configured && (
+            <button type="button" className="it" onClick={() => { setPop(null); s.setAuthOpen(true) }}>
+              <Icon name="user" /><span style={{ flex: 1 }}>{t(auth.email ? 'auth.customerAccount' : 'auth.customerSignIn')}</span>
+            </button>
+          )}
           {install.canInstall && (
             <button type="button" className="it" onClick={() => void install.install()}>
               <Icon name="plus" /><span style={{ flex: 1 }}>{t('pwa.install')}</span>
@@ -158,4 +166,13 @@ export function Popovers() {
       )}
     </div>
   )
+}
+
+export function AuthModalHost() {
+  const { t } = useI18n()
+  const auth = useAuth()
+  const open = useUi((s) => s.authOpen)
+  const setOpen = useUi((s) => s.setAuthOpen)
+  if (!open || !auth.configured) return null
+  return <AuthPanel mode="customer" note={auth.isGuest ? t('auth.guestNote') : undefined} onClose={() => setOpen(false)} />
 }

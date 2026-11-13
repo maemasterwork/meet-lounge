@@ -26,7 +26,7 @@ Do not run a file twice; the migrations are meant for a fresh project. `seed.sql
 
 **Authentication → URL Configuration**
 - Site URL: where the app lives, e.g. `https://YOUR-NAME.github.io/meet-lounge/` (or `http://localhost:5173/` while developing).
-- Add the same address under Redirect URLs. Magic links return here.
+- Add the same address under Redirect URLs for account-confirmation redirects, if email confirmation is enabled.
 
 ## 4. Put the keys in the app
 **Project Settings → API**: copy *Project URL* and the **anon / publishable** key.

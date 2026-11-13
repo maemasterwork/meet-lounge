@@ -5,7 +5,7 @@ import { useView } from './lib/route'
 import { useUi } from './store/ui'
 import { useCart } from './store/cart'
 import { timeKey } from './data/catalog'
-import { FootBar, Popovers, Toasts, TopBar } from './components/Shell'
+import { AuthModalHost, FootBar, Popovers, Toasts, TopBar } from './components/Shell'
 import { Home } from './pages/Home'
 import { MenuPage } from './pages/Menu'
 import { EventsPage, GalleryPage, ShopPage, StoryPage } from './pages/Simple'
@@ -46,6 +46,7 @@ export default function App() {
     <I18nProvider>
       <DataProvider>
         <Router />
+        <AuthModalHost />
         <Toasts />
       </DataProvider>
     </I18nProvider>

@@ -35,14 +35,12 @@ export default function Admin() {
   const act = async (fn: () => Promise<Order>) => { setBusy(true); try { await fn() } finally { setBusy(false) } }
   const list = orders.data ?? []
   if (!staff) return (
-    <section className="admin" aria-label={t('auth.title')}>
+    <section className="admin" aria-label={t('auth.staffSignIn')}>
       <div className="ahead">
-        <h2>{t('auth.title')}</h2>
+        <h2>{t('auth.staffSignIn')}</h2>
         <button type="button" className="btn ghost sm" style={{ marginInlineStart: 'auto' }} onClick={() => go('home')}>{t('admin.back')} <Icon name="x" size={16} /></button>
       </div>
-      <div style={{ maxWidth: 420, padding: 16 }}>
-        <AuthPanel note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} />
-      </div>
+      <AuthPanel mode="staff" note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} onClose={() => go('home')} />
     </section>)
   const fresh = list.filter((o) => o.status === 'new').length
   return (
