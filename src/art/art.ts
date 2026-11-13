@@ -1,0 +1,132 @@
+// Flat SVG illustrations for the menu items and the cafe scene, ported from the prototype.
+// This file builds SVG strings (it is the "flat placeholder" that photos or 3D can replace through ItemArt / MeetLounge),
+// so it is deliberately loose-typed. Everything that wraps it (ItemArt, Scene) is strictly typed.
+// @ts-nocheck
+import { esc } from '../lib/format'
+
+const isDrink = (it) => it.cat === 'hot' || it.cat === 'cold'
+
+const INK='var(--ml-draw)';
+const plate=()=>`<ellipse cx="130" cy="196" rx="104" ry="16" fill="var(--ml-plate)" stroke="${INK}" stroke-width="2.5"/><ellipse cx="130" cy="194" rx="72" ry="9" fill="var(--ml-plate-2)"/>`;
+const steam=(y)=>[104,130,156].map((x,i)=>`<path class="steam s${i}" d="M${x} ${y} q-9 -11 0 -21 q9 -10 0 -21" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round" opacity=".3"/>`).join('');
+const TINT=[null,'#D8BC93','#D0B087'];
+function cup(c,tint){
+  const hw=c.hw,rimY=c.rimY,h=c.h,x1=130-hw,x2=130+hw,bot=rimY+h,ry=Math.round(hw*.16);
+  const coffee=(tint&&c.milky&&TINT[tint])?TINT[tint]:c.coffee;
+  const hd=`M${x2-6} ${rimY+16} C${x2+34} ${rimY+10} ${x2+34} ${rimY+Math.round(h*.62)} ${x2-14} ${rimY+Math.round(h*.66)}`;
+  let s=plate();
+  s+=`<path d="${hd}" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${hd}" fill="none" stroke="var(--ml-cup)" stroke-width="7" stroke-linecap="round"/>`;
+  s+=`<path d="M${x1} ${rimY} H${x2} C${x2} ${rimY+h*.8} ${x2-hw*.4} ${bot} 130 ${bot} C${x1+hw*.4} ${bot} ${x1} ${rimY+h*.8} ${x1} ${rimY} Z" fill="var(--ml-cup)" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  s+=`<ellipse cx="130" cy="${rimY}" rx="${hw-4}" ry="${ry}" fill="${coffee}" stroke="${INK}" stroke-width="2.2"/>`;
+  let sy=rimY-14;
+  if(c.crema) s+=`<ellipse cx="130" cy="${rimY}" rx="${hw-14}" ry="${ry-2}" fill="${c.crema}"/>`;
+  if(c.heart){s+=`<path d="M130 ${rimY+4} C117 ${rimY-2} 121 ${rimY-9} 130 ${rimY-4} C139 ${rimY-9} 143 ${rimY-2} 130 ${rimY+4}Z" fill="#FFF3E0"/>`;}
+  if(c.dome){s+=`<path d="M${x1+4} ${rimY} C${x1+8} ${rimY-32} ${x2-8} ${rimY-32} ${x2-4} ${rimY} A${hw-4} ${ry} 0 0 1 ${x1+4} ${rimY}Z" fill="#FFF3E0" stroke="${INK}" stroke-width="2"/>`+[[118,-17],[132,-22],[146,-16],[126,-9],[141,-9]].map(p=>`<circle cx="${p[0]}" cy="${rimY+p[1]}" r="2.2" fill="#7A4A32"/>`).join('');sy=rimY-40;}
+  if(c.cream){s+=`<ellipse cx="130" cy="${rimY-6}" rx="${hw-14}" ry="9" fill="#FFF6E8" stroke="${INK}" stroke-width="2"/><ellipse cx="130" cy="${rimY-16}" rx="${hw-28}" ry="8" fill="#FFF6E8" stroke="${INK}" stroke-width="2"/><ellipse cx="130" cy="${rimY-25}" rx="${hw-42}" ry="7" fill="#FFF6E8" stroke="${INK}" stroke-width="2"/><path d="M${x1+22} ${rimY-14} q12 8 24 0 t24 0 t24 0" fill="none" stroke="#5B3322" stroke-width="3" stroke-linecap="round"/>`;sy=rimY-44;}
+  return s+steam(sy);
+}
+function ice(){return [[102,92,-8],[126,104,14],[110,130,6],[138,122,-12],[122,152,10],[106,166,-6],[140,160,8]].map(p=>`<rect x="${p[0]}" y="${p[1]}" width="22" height="22" rx="5" transform="rotate(${p[2]} ${p[0]+11} ${p[1]+11})" fill="#fff" opacity=".5" stroke="#fff" stroke-opacity=".8"/>`).join('');}
+function glass(g,u,tint){
+  const gp='M90 50 H170 L160 184 Q159 192 151 192 H109 Q101 192 100 184 Z',id='gc'+u;
+  const layers=g.layers.map(l=>`<rect x="80" y="${l[1]}" width="100" height="${200-l[1]}" fill="${(tint&&l[2]&&TINT[tint])?TINT[tint]:l[0]}"/>`).join('');
+  let s=`<path d="${gp}" fill="var(--ml-glass)"/><clipPath id="${id}"><path d="${gp}"/></clipPath><g clip-path="url(#${id})">${layers}${ice()}</g>`;
+  s+=`<path d="M98 66 L106 170" stroke="#fff" stroke-opacity=".4" stroke-width="4" stroke-linecap="round" fill="none"/><path d="${gp}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  s+=`<path d="M142 8 L124 172" stroke="var(--ml-accent)" stroke-width="8" stroke-linecap="round" fill="none"/>`;
+  if(g.citrus) s+=`<circle cx="172" cy="56" r="15" fill="#F2B84B" stroke="${INK}" stroke-width="2.2"/><path d="M172 41v30M157 56h30M161 45l22 22M183 45l-22 22" stroke="#FFE7A8" stroke-width="1.5"/>`;
+  if(g.cream) s+=`<ellipse cx="130" cy="48" rx="44" ry="12" fill="#FFF6E8" stroke="${INK}" stroke-width="2.2"/><ellipse cx="130" cy="35" rx="32" ry="10" fill="#FFF6E8" stroke="${INK}" stroke-width="2.2"/><ellipse cx="130" cy="24" rx="20" ry="8" fill="#FFF6E8" stroke="${INK}" stroke-width="2.2"/><path d="M104 44 q8 8 16 0 t16 0 t16 0" fill="none" stroke="#5B3322" stroke-width="3" stroke-linecap="round"/>`;
+  return `<ellipse cx="130" cy="194" rx="56" ry="8" fill="var(--ml-plate-2)"/>`+s;
+}
+function blockArt(f){
+  return plate()+`<polygon points="82,118 172,118 204,98 114,98" fill="${f.top}" stroke="${INK}" stroke-width="2.3" stroke-linejoin="round"/>`+
+  `<polygon points="172,118 204,98 204,160 172,180" fill="${f.side}" stroke="${INK}" stroke-width="2.3" stroke-linejoin="round"/>`+
+  f.front.map(b=>`<rect x="82" y="${b[0]}" width="90" height="${b[1]}" fill="${b[2]}"/>`).join('')+
+  `<rect x="82" y="118" width="90" height="62" fill="none" stroke="${INK}" stroke-width="2.3" stroke-linejoin="round"/>`+f.extra;
+}
+const RINGS=(x,y,r,w)=>`<circle cx="${x-r*.55}" cy="${y}" r="${r}" fill="none" stroke="#E3A72F" stroke-width="${w}"/><circle cx="${x+r*.55}" cy="${y}" r="${r}" fill="none" stroke="#8FA68A" stroke-width="${w}"/>`;
+function goodsBody(k){
+  switch(k){
+   case 'mug':{const hd='M176 112 C214 108 214 168 172 164';return `<ellipse cx="130" cy="200" rx="66" ry="8" fill="var(--ml-plate-2)"/><path d="${hd}" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${hd}" fill="none" stroke="var(--ml-cup)" stroke-width="7" stroke-linecap="round"/><path d="M80 96 H180 V160 Q180 196 146 196 H114 Q80 196 80 160 Z" fill="var(--ml-cup)" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="130" cy="96" rx="50" ry="9" fill="#5A3524" stroke="${INK}" stroke-width="2.2"/>${RINGS(130,146,14,3.4)}<g fill="var(--ml-accent)" opacity=".7"><circle cx="102" cy="120" r="2.6"/><circle cx="158" cy="120" r="2.6"/><circle cx="96" cy="172" r="2.6"/><circle cx="164" cy="172" r="2.6"/></g>`;}
+   case 'tote':return `<ellipse cx="130" cy="206" rx="76" ry="8" fill="var(--ml-plate-2)"/><path d="M96 104 C96 50 164 50 164 104" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><path d="M70 100 H190 L198 204 H62 Z" fill="#EAD7B7" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>${RINGS(130,138,17,4)}<path d="M104 162 h52 v8 a22 22 0 0 1 -22 22 h-8 a22 22 0 0 1 -22 -22z" fill="var(--ml-accent)" stroke="${INK}" stroke-width="2"/>`;
+   case 'beans':return `<ellipse cx="130" cy="208" rx="62" ry="7" fill="var(--ml-plate-2)"/><path d="M82 74 H178 L186 204 Q186 210 180 210 H80 Q74 210 74 204 Z" fill="#3B2A20" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><rect x="80" y="62" width="100" height="14" rx="3" fill="#2B1F17" stroke="${INK}" stroke-width="2.2"/><rect x="94" y="102" width="72" height="78" rx="8" fill="var(--ml-cup)"/>${RINGS(130,128,10,3)}<rect x="106" y="152" width="48" height="5" rx="2.5" fill="#3B2A20" opacity=".5"/><rect x="112" y="163" width="36" height="5" rx="2.5" fill="#3B2A20" opacity=".5"/>`;
+   case 'note':return `<ellipse cx="130" cy="208" rx="70" ry="7" fill="var(--ml-plate-2)"/><g transform="rotate(-8 130 140)"><rect x="82" y="62" width="100" height="144" rx="8" fill="var(--ml-accent)" stroke="${INK}" stroke-width="2.5"/>${[0,1,2,3,4,5,6].map(i=>`<ellipse cx="82" cy="${78+i*19}" rx="8" ry="4.5" fill="var(--ml-cup)" stroke="${INK}" stroke-width="1.8"/>`).join('')}<rect x="102" y="92" width="64" height="54" rx="6" fill="var(--ml-cup)"/>${RINGS(134,118,11,3)}<rect x="170" y="62" width="7" height="144" fill="#3B2A20"/></g>`;
+  }
+  return '';
+}
+export function art(it, o, u){
+  o=o||{};const sc=o.scale||1,tint=o.tint||0;let b='';
+  switch(it.art){
+   case 'espresso':b=cup({hw:44,rimY:132,h:58,coffee:'#3B2013',crema:'#B07A4B'},0);break;
+   case 'latte':b=cup({hw:62,rimY:104,h:86,coffee:'#CBA074',heart:true,milky:true},tint);break;
+   case 'cappuccino':b=cup({hw:60,rimY:108,h:82,coffee:'#C69A6E',dome:true,milky:true},tint);break;
+   case 'mocha':b=cup({hw:62,rimY:106,h:84,coffee:'#6B3E2A',cream:true},0);break;
+   case 'icedlatte':b=glass({layers:[['#E8D2B2',80,true],['#5A3524',132]]},u,tint);break;
+   case 'iceamer':b=glass({layers:[['#4B2A1B',74]]},u,0);break;
+   case 'coldbrew':b=glass({layers:[['#2E190F',70]],citrus:true},u,0);break;
+   case 'shake':b=glass({layers:[['#7A4630',92],['#946049',150]],cream:true},u,0);break;
+   case 'cheesecake':b=blockArt({top:'#D8654A',side:'#EBCF9C',front:[[118,10,'#C8503C'],[128,36,'#FBE9C4'],[164,16,'#A9714B']],extra:`<polygon points="172,162 204,142 204,160 172,180" fill="#A9714B" stroke="${INK}" stroke-width="2"/><circle cx="130" cy="108" r="6.5" fill="#4B3F8C" stroke="${INK}" stroke-width="1.6"/><circle cx="152" cy="106" r="6.5" fill="#4B3F8C" stroke="${INK}" stroke-width="1.6"/><circle cx="176" cy="104" r="6.5" fill="#4B3F8C" stroke="${INK}" stroke-width="1.6"/><path d="M138 102c2-8 9-10 12-7-4 1-8 3-12 7Z" fill="#6F9A5E" stroke="${INK}" stroke-width="1.4"/>`});break;
+   case 'brownie':b=blockArt({top:'#7A4A32',side:'#4A2C1F',front:[[118,62,'#5A3727'],[134,5,'#6E4632'],[152,5,'#6E4632']],extra:`<path d="M96 108 q10 -7 20 0 t20 0 t20 0 t18 -2" fill="none" stroke="#FFF3E0" stroke-width="3" stroke-linecap="round"/><polygon points="106,103 116,99 120,106 111,110" fill="#C9996B" stroke="${INK}" stroke-width="1.4"/><polygon points="150,106 160,102 165,108 156,112" fill="#C9996B" stroke="${INK}" stroke-width="1.4"/>`});break;
+   case 'croissant':b=plate()+`<path d="M52 176 C42 126 84 78 130 78 C176 78 218 126 208 176 C198 184 188 176 186 164 C178 134 156 120 130 120 C104 120 82 134 74 164 C72 176 60 184 52 176Z" fill="#E5A24A" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M88 124 C98 112 108 106 118 102M130 98 L130 120M172 124 C162 112 152 106 142 102M64 150 C70 140 76 134 82 130M196 150 C190 140 184 134 178 130" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/><path d="M104 96 C116 88 144 88 156 96" fill="none" stroke="#F6C77A" stroke-width="4" stroke-linecap="round"/>`;break;
+   case 'cookie':b=plate()+`<ellipse cx="130" cy="150" rx="68" ry="46" fill="#B9834C" stroke="${INK}" stroke-width="2.5"/><ellipse cx="130" cy="140" rx="68" ry="46" fill="#D9A66C" stroke="${INK}" stroke-width="2.5"/>`+[[102,126],[132,118],[158,132],[116,152],[146,156],[98,142],[170,150]].map(p=>`<ellipse cx="${p[0]}" cy="${p[1]}" rx="8" ry="6" fill="#4A2C1D"/>`).join('');break;
+   default:b=goodsBody(it.art);
+  }
+  const cubes=(isDrink(it)&&o.sugar)?Array.from({length:o.sugar},(_,i)=>`<g transform="translate(${204+i*16} ${186-i*2})"><rect width="16" height="16" rx="3" fill="#fff" stroke="${INK}" stroke-width="1.8"/><path d="M3 4h5" stroke="${INK}" stroke-opacity=".3" stroke-width="1.5"/></g>`).join(''):'';
+  return `<svg viewBox="0 0 260 230" role="img" aria-label="${esc(it.name)}"><ellipse cx="130" cy="206" rx="98" ry="11" fill="var(--ml-shadow)"/><g transform="translate(130 200) scale(${sc}) translate(-130 -200)">${b}</g>${cubes}</svg>`;
+}
+
+function foliage(cx,cy,r,c){return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}" stroke="${INK}" stroke-opacity=".2" stroke-width="1.3"/>`;}
+export function sceneSVG(kind, label, sign){
+  const vb=kind==='mini'?'250 20 900 840':'0 0 1232 880';
+  const stripes=Array.from({length:6},(_,i)=>{const tw=(1040-850)/6,bw=(1062-826)/6,tx=850+i*tw,bx=826+i*bw;return `<path d="M${tx.toFixed(1)} 640 H${(tx+tw).toFixed(1)} L${(bx+bw).toFixed(1)} 690 a${(bw/2).toFixed(1)} 13 0 0 1 ${(-bw).toFixed(1)} 0 Z" fill="${i%2?'#FFF8EE':'#EFB93B'}" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>`;}).join('');
+  const sm=Array.from({length:5},(_,i)=>{const w=94/5,x=656+i*w;return `<path d="M${x.toFixed(1)} 356 h${w.toFixed(1)} v12 a${(w/2).toFixed(1)} 9 0 0 1 ${(-w).toFixed(1)} 0 Z" fill="${i%2?'#FFF8EE':'var(--ml-brick)'}" stroke="${INK}" stroke-width="1.4"/>`;}).join('');
+  const beans=[[300,200],[390,330],[250,500],[1130,300],[1150,440],[720,60],[1000,70]].map(p=>`<ellipse class="bean" cx="${p[0]}" cy="${p[1]}" rx="6" ry="9" transform="rotate(35 ${p[0]} ${p[1]})" fill="#5A3524" opacity=".5"/>`).join('');
+  const flowers=(x,y,n)=>Array.from({length:n},(_,i)=>`<circle cx="${x+i*9}" cy="${y+(i%2)*3}" r="4.2" fill="#D94B3F"/>`).join('');
+  return `<svg viewBox="${vb}" preserveAspectRatio="${kind==='mini'?'xMinYMax slice':'xMaxYMax meet'}" role="img" aria-label="${esc(label)}">
+  <defs><radialGradient id="hz" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="var(--ml-sky-1)" stop-opacity=".55"/><stop offset="1" stop-color="var(--ml-sky-1)" stop-opacity="0"/></radialGradient></defs>
+  <ellipse cx="780" cy="420" rx="420" ry="400" fill="url(#hz)"/>
+  <ellipse cx="640" cy="420" rx="300" ry="330" fill="var(--ml-haze)" opacity=".38"/>
+  <g class="sun"><circle cx="1090" cy="120" r="30" fill="#FFD77A" opacity=".9"/></g>
+  <g class="moon"><circle cx="1090" cy="122" r="26" fill="#F4EBD0"/><circle cx="1102" cy="114" r="23" fill="var(--ml-sky-1)"/></g>
+  <g class="stars" fill="#F4EBD0"><circle cx="300" cy="90" r="2"/><circle cx="420" cy="140" r="1.6"/><circle cx="1000" cy="60" r="2"/><circle cx="1150" cy="200" r="1.7"/><circle cx="200" cy="250" r="1.8"/></g>
+  ${beans}
+  <polygon points="0,812 700,744 1180,812 640,872" fill="var(--ml-ground-edge)"/>
+  <polygon points="0,790 700,722 1180,790 640,852" fill="var(--ml-ground)" stroke="${INK}" stroke-opacity=".25" stroke-width="1.5"/>
+  <path d="M60 800 L640 836 L1100 790" fill="none" stroke="var(--ml-wall-2)" stroke-width="10" opacity=".55" stroke-linecap="round"/>
+  <g><path d="M488 560 L486 800 L514 800 L508 560Z" fill="#8B6A4F" stroke="${INK}" stroke-width="2"/><path d="M498 640 L452 590M500 610 L548 560" stroke="#8B6A4F" stroke-width="7" stroke-linecap="round"/>
+   ${foliage(505,470,78,'#A9C48D')}${foliage(440,530,58,'#97B87F')}${foliage(575,515,60,'#B6CF9A')}${foliage(478,402,52,'#B6CF9A')}${foliage(545,420,46,'#A2C086')}${foliage(420,455,40,'#C3D8A8')}</g>
+  <g><rect x="1086" y="540" width="13" height="250" fill="#8B6A4F" stroke="${INK}" stroke-width="2"/>${foliage(1092,470,52,'#A9C48D')}${foliage(1135,520,40,'#97B87F')}${foliage(1058,525,38,'#B6CF9A')}</g>
+  <g><rect x="538" y="540" width="11" height="256" fill="${INK}"/><rect x="530" y="790" width="27" height="8" rx="2" fill="${INK}"/><rect x="528" y="492" width="31" height="44" rx="5" fill="var(--ml-glow)" stroke="${INK}" stroke-width="2.4"/><path d="M522 492 L543 470 L564 492Z" fill="${INK}"/><circle cx="543" cy="466" r="4" fill="${INK}"/></g>
+  <rect x="612" y="166" width="336" height="384" fill="var(--ml-wall)" stroke="${INK}" stroke-width="2.4"/>
+  <g fill="var(--ml-wall-2)" opacity=".75"><rect x="626" y="190" width="18" height="9"/><rect x="650" y="196" width="14" height="8"/><rect x="624" y="330" width="16" height="8"/><rect x="926" y="214" width="14" height="8"/><rect x="636" y="450" width="20" height="9"/><rect x="760" y="500" width="16" height="8"/><rect x="842" y="210" width="16" height="8"/></g>
+  <rect x="598" y="128" width="364" height="38" rx="3" fill="var(--ml-wall-2)" stroke="${INK}" stroke-width="2.4"/>
+  <g stroke="${INK}" stroke-width="2.2" fill="none"><path d="M604 126 V94 H956 V126"/><path d="M604 110 H956"/>${Array.from({length:15},(_,i)=>`<path d="M${616+i*24.6} 94 V126"/>`).join('')}</g>
+  <path d="M700 44 H864 C864 100 840 120 782 120 C724 120 700 100 700 44Z" fill="var(--ml-accent)" stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="M864 56 C908 52 908 106 856 102" fill="none" stroke="${INK}" stroke-width="12" stroke-linecap="round"/><path d="M864 56 C908 52 908 106 856 102" fill="none" stroke="var(--ml-accent)" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="782" cy="44" rx="82" ry="12" fill="#5A3524" stroke="${INK}" stroke-width="2.4"/>
+  ${RINGS(782,80,17,4)}
+  <path class="steam" d="M752 30 q-10 -12 0 -24 q10 -10 0 -22" fill="none" stroke="${INK}" stroke-width="3.4" stroke-linecap="round" opacity=".35"/><path class="steam s1" d="M812 30 q-10 -12 0 -24 q10 -10 0 -22" fill="none" stroke="${INK}" stroke-width="3.4" stroke-linecap="round" opacity=".35"/>
+  <path d="M690 360 V300 a30 30 0 0 1 60 0 V360Z" fill="var(--ml-glow)" stroke="${INK}" stroke-width="2.4"/><path d="M720 270 V360 M690 316 H750" stroke="${INK}" stroke-width="1.8"/>
+  ${sm}
+  <rect x="660" y="384" width="86" height="22" fill="var(--ml-wall-2)" stroke="${INK}" stroke-width="2"/><g>${flowers(668,382,9)}</g><path d="M664 384 q8 -12 16 0 q8 -12 16 0 q8 -12 16 0 q8 -12 16 0 q8 -12 16 0" fill="none" stroke="#5C8A5A" stroke-width="5" stroke-linecap="round"/>
+  <path d="M884 540 V318 a34 34 0 0 1 68 0 V540Z" fill="var(--ml-glow)" stroke="${teal()}" stroke-width="9"/><path d="M918 284 V540 M884 400 H952" stroke="${teal()}" stroke-width="4"/>
+  <polygon points="948,380 1010,380 1010,544 948,544" fill="var(--ml-wall-2)" stroke="${INK}" stroke-width="2.2"/>
+  <path d="M944 410 H1062 L1074 452 H934Z" fill="#EFB93B" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M964 410 L958 452M990 410 L988 452M1016 410 L1018 452M1040 410 L1048 452" stroke="#FFF8EE" stroke-width="7"/>
+  <g stroke="${INK}" stroke-width="2.2" fill="none"><rect x="944" y="524" width="118" height="14" fill="var(--ml-wall-2)"/>${Array.from({length:9},(_,i)=>`<path d="M${952+i*13} 484 V524"/>`).join('')}<path d="M944 484 H1062"/></g>
+  <g>${flowers(954,472,11)}<path d="M950 478 q10 -10 20 0 q10 -10 20 0 q10 -10 20 0 q10 -10 20 0" fill="none" stroke="#5C8A5A" stroke-width="5" stroke-linecap="round"/></g>
+  <rect x="606" y="548" width="348" height="58" fill="var(--ml-teal)" stroke="${INK}" stroke-width="2.4"/><g fill="#fff" opacity=".18"><rect x="630" y="560" width="70" height="12" rx="6"/><rect x="800" y="580" width="90" height="10" rx="5"/></g>
+  <rect x="608" y="606" width="392" height="189" fill="var(--ml-brick)" stroke="${INK}" stroke-width="2.4"/>
+  <rect x="650" y="640" width="86" height="26" rx="3" fill="#3B2A20" stroke="${INK}" stroke-width="2"/><text x="693" y="659" text-anchor="middle" font-family="Aref Ruqaa,Vazirmatn,sans-serif" font-weight="700" font-size="17" fill="#F6EBDD">${esc(sign)}</text>
+  <rect x="650" y="670" width="86" height="125" rx="4" fill="var(--ml-teal)" stroke="${INK}" stroke-width="2.4"/><rect x="660" y="680" width="66" height="76" rx="3" fill="var(--ml-glow)" stroke="${INK}" stroke-width="1.8"/><path d="M693 680 V756" stroke="${INK}" stroke-width="1.6"/><circle cx="728" cy="740" r="3" fill="${INK}"/>
+  <rect x="842" y="700" width="148" height="86" rx="3" fill="var(--ml-glow)" stroke="var(--ml-teal)" stroke-width="7"/><path d="M916 700 V786" stroke="var(--ml-teal)" stroke-width="4"/>
+  <g fill="#fff" stroke="${INK}" stroke-width="1.6"><rect x="856" y="760" width="14" height="14" rx="3"/><rect x="936" y="760" width="14" height="14" rx="3"/></g><circle cx="868" cy="728" r="9" fill="#5A3524"/><circle cx="952" cy="728" r="9" fill="#5A3524"/>
+  ${stripes}
+  <g stroke="${INK}" stroke-width="1.6" fill="#fff"><rect x="758" y="660" width="40" height="50" rx="4"/></g>${RINGS(778,684,7,2.4)}<path d="M778 650 V660" stroke="${INK}" stroke-width="2"/>
+  <ellipse cx="1000" cy="790" rx="26" ry="7" fill="var(--ml-plate)" stroke="${INK}" stroke-width="2"/><path d="M1000 796 V818M988 818 H1012" stroke="${INK}" stroke-width="2.4"/>
+  <ellipse cx="962" cy="806" rx="12" ry="4" fill="var(--ml-accent)" stroke="${INK}" stroke-width="1.8"/><path d="M962 810V826" stroke="${INK}" stroke-width="2"/><ellipse cx="1040" cy="806" rx="12" ry="4" fill="var(--ml-sage)" stroke="${INK}" stroke-width="1.8"/><path d="M1040 810V826" stroke="${INK}" stroke-width="2"/>
+  <g stroke="${INK}" stroke-width="1.6" fill="#fff"><rect x="990" y="774" width="9" height="10" rx="2"/><rect x="1004" y="774" width="9" height="10" rx="2"/></g>
+  <g stroke="${INK}" stroke-width="2"><rect x="590" y="770" width="24" height="24" fill="var(--ml-accent)"/><ellipse cx="602" cy="762" rx="18" ry="12" fill="#5C8A5A"/></g>
+  <g stroke="${INK}" stroke-width="2"><rect x="776" y="772" width="22" height="22" fill="var(--ml-brick)"/><ellipse cx="787" cy="764" rx="16" ry="11" fill="#6E9469"/></g>
+  <ellipse cx="1060" cy="770" rx="26" ry="20" fill="#6E9469" stroke="${INK}" stroke-width="2"/>
+  <g transform="translate(850 800)"><g class="gift"><rect x="-17" y="-26" width="34" height="28" rx="3" fill="var(--ml-accent)" stroke="${INK}" stroke-width="2.2"/><rect x="-4" y="-26" width="8" height="28" fill="#E3A72F" stroke="${INK}" stroke-width="1.4"/><path d="M0 -26c-9-9-16-2-10 1zM0 -26c9-9 16-2 10 1z" fill="#E3A72F" stroke="${INK}" stroke-width="1.4"/></g></g>
+  </svg>`;
+}
+function teal(){return 'var(--ml-teal)';}

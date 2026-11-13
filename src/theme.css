@@ -1,0 +1,220 @@
+/* Meet Lounge design tokens. Placeholder brand: edit values here, nothing else in the app hard-codes a color.
+   Usage: import this file once. Dark mode follows the OS, and [data-theme="light"|"dark"] on <html> overrides it. */
+
+/* ---------- 1. Light palette (bare :root defines every token) ---------- */
+:root {
+  /* surfaces */
+  --ml-bg: #FBF2E4;            /* page ground */
+  --ml-bg-2: #EFDFCB;          /* deeper ground, wells */
+  --ml-surface: #FFFCF6;       /* cards, bars */
+  --ml-surface-2: #FBEFDD;     /* inner tiles, inputs on cards */
+  --ml-pill: #F6E7D3;          /* top-bar pills */
+  --ml-line: #E8D6BF;          /* hairlines, dividers */
+  --ml-blush: #F9D9CC;         /* offer-card glow */
+  --ml-peach: #F8E5D7;         /* tile backgrounds */
+  --ml-grass: #CFE2BE;         /* goods tile base */
+
+  /* text */
+  --ml-ink: #3B2A20;           /* primary text */
+  --ml-ink-2: #6E5748;         /* secondary text (4.5:1 on surface) */
+  --ml-on-accent: #FFF8EE;     /* text on accent fills */
+  --ml-on-gold: #3B2A20;       /* text on gold fills */
+
+  /* brand */
+  --ml-accent: #A9481F;        /* terracotta: buttons, links, headlines */
+  --ml-accent-soft: #FBE9DD;   /* selected chip background */
+  --ml-gold: #E3A72F;          /* coins, rewards */
+  --ml-gold-soft: #F8E4B3;
+  --ml-sage: #8FA68A;          /* second logo ring, switches on */
+  --ml-brick: #C4553A;         /* cafe scene: brick wall */
+  --ml-teal: #5A9A91;          /* cafe scene: trim */
+
+  /* status */
+  --ml-success: #2F7D4F;
+  --ml-warning: #8E5A0E;
+  --ml-danger: #B3261E;
+
+  /* chart (categorical, validated for light surfaces) */
+  --ml-chart-1: #A9481F;
+  --ml-chart-2: #5A9A91;
+  --ml-chart-3: #B07508;
+  --ml-chart-4: #7A5C9E;
+  --ml-chart-5: #6E8A69;
+  --ml-chart-axis: #B8A58F;
+
+  /* illustration (flat SVG placeholders) */
+  --ml-draw: #4A3629;          /* outlines */
+  --ml-plate: #FFFDF8;
+  --ml-plate-2: #F1E4D2;
+  --ml-cup: #FFF9F0;
+  --ml-glass: rgba(255, 255, 255, .45);
+  --ml-shadow: rgba(59, 42, 32, .16);
+  --ml-wall: #F6ECDD;
+  --ml-wall-2: #E6D2B0;
+  --ml-glow: #FFD98A;          /* lit windows, lamp */
+  --ml-ground: #E6E9CF;
+  --ml-ground-edge: #6FA39A;
+  --ml-haze: #D9E6DD;
+  --ml-sky-1: #A9D8EC;         /* overridden by time of day */
+  --ml-sky-2: #E9F5F0;
+
+  /* typography */
+  --ml-font-script: 'Aref Ruqaa', 'Vazirmatn', Tahoma, serif;                 /* fa display */
+  --ml-font-serif: 'Noto Naskh Arabic', 'Vazirmatn', Tahoma, serif;           /* fa descriptions */
+  --ml-font-body: 'Vazirmatn', Tahoma, 'Segoe UI', sans-serif;                /* fa UI text */
+  --ml-font-display-en: 'Fraunces', Georgia, 'Times New Roman', serif;         /* en display */
+  --ml-font-body-en: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; /* en UI text */
+
+  /* type scale (1.2 ratio, clamp for the one-screen layout) */
+  --ml-text-xs: 11.5px;
+  --ml-text-sm: 12.5px;
+  --ml-text-md: 14px;
+  --ml-text-lg: 16px;
+  --ml-text-xl: clamp(18px, 2.8vh, 26px);
+  --ml-text-2xl: clamp(26px, 5.2vh, 56px);
+  --ml-text-3xl: clamp(32px, 6.4vh, 72px);
+  --ml-text-4xl: clamp(40px, 8.2vh, 92px);
+  --ml-leading-tight: 1.12;
+  --ml-leading-body: 1.6;
+  --ml-leading-read: 1.85;
+
+  /* spacing (4 px base) */
+  --ml-space-1: 4px;
+  --ml-space-2: 8px;
+  --ml-space-3: 12px;
+  --ml-space-4: 16px;
+  --ml-space-5: 24px;
+  --ml-space-6: 32px;
+  --ml-space-7: 48px;
+  --ml-gutter-start: max(16px, env(safe-area-inset-left, 0px));
+  --ml-gutter-end: max(16px, env(safe-area-inset-right, 0px));
+
+  /* radii */
+  --ml-radius-sm: 12px;
+  --ml-radius-md: 16px;
+  --ml-radius-lg: 24px;
+  --ml-radius-pill: 999px;
+
+  /* shadows */
+  --ml-shadow-card: 0 14px 38px -14px rgba(120, 70, 40, .28), 0 1px 0 rgba(255, 255, 255, .7) inset;
+  --ml-shadow-small: 0 6px 16px -8px rgba(120, 70, 40, .3);
+  --ml-shadow-cta: 0 12px 22px -10px color-mix(in srgb, var(--ml-accent) 80%, transparent);
+
+  /* motion */
+  --ml-dur-fast: 120ms;
+  --ml-dur-base: 220ms;
+  --ml-dur-slow: 550ms;
+  --ml-ease: cubic-bezier(.2, .9, .3, 1);
+  --ml-ease-spring: cubic-bezier(.2, .9, .3, 1.25);
+
+  /* focus */
+  --ml-focus: #A9481F;
+  --ml-focus-width: 2px;
+  --ml-focus-offset: 2px;
+
+  /* layout */
+  --ml-tap: 44px;              /* minimum touch target */
+  --ml-top-h: 72px;
+  --ml-foot-h: 64px;
+}
+
+/* ---------- 2. Dark palette (same tokens, only the ones that change) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ml-bg: #1C1410; --ml-bg-2: #241912; --ml-surface: #2B1F17; --ml-surface-2: #33251B;
+    --ml-pill: #3A2B20; --ml-line: #4A382B; --ml-blush: #4A2D26; --ml-peach: #3B2B21; --ml-grass: #3A4A33;
+    --ml-ink: #F6EBDD; --ml-ink-2: #C9B39D; --ml-on-accent: #1C1410; --ml-on-gold: #2B1F17;
+    --ml-accent: #E27E4F; --ml-accent-soft: #3E2519; --ml-gold: #E9B648; --ml-gold-soft: #4A3A16;
+    --ml-sage: #8FA68A; --ml-brick: #A94A33; --ml-teal: #477C75;
+    --ml-success: #6FCB93; --ml-warning: #E6B15C; --ml-danger: #F28B82;
+    --ml-chart-1: #E27E4F; --ml-chart-2: #6FB6AB; --ml-chart-3: #E9B648; --ml-chart-4: #B79BDB; --ml-chart-5: #9DB898; --ml-chart-axis: #6B5849;
+    --ml-draw: #DCC7B0; --ml-plate: #4A392E; --ml-plate-2: #3B2D23; --ml-cup: #F1E3D0;
+    --ml-glass: rgba(255, 255, 255, .12); --ml-shadow: rgba(0, 0, 0, .4);
+    --ml-wall: #3A2B21; --ml-wall-2: #2F2219; --ml-glow: #F4B960; --ml-ground: #2F3A2A; --ml-ground-edge: #2E4F4A; --ml-haze: #2A3A33;
+    --ml-shadow-card: 0 14px 38px -14px rgba(0, 0, 0, .6), 0 1px 0 rgba(255, 255, 255, .04) inset;
+    --ml-shadow-small: 0 6px 16px -8px rgba(0, 0, 0, .6);
+    --ml-focus: #E27E4F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ml-bg: #1C1410; --ml-bg-2: #241912; --ml-surface: #2B1F17; --ml-surface-2: #33251B;
+  --ml-pill: #3A2B20; --ml-line: #4A382B; --ml-blush: #4A2D26; --ml-peach: #3B2B21; --ml-grass: #3A4A33;
+  --ml-ink: #F6EBDD; --ml-ink-2: #C9B39D; --ml-on-accent: #1C1410; --ml-on-gold: #2B1F17;
+  --ml-accent: #E27E4F; --ml-accent-soft: #3E2519; --ml-gold: #E9B648; --ml-gold-soft: #4A3A16;
+  --ml-sage: #8FA68A; --ml-brick: #A94A33; --ml-teal: #477C75;
+  --ml-success: #6FCB93; --ml-warning: #E6B15C; --ml-danger: #F28B82;
+  --ml-chart-1: #E27E4F; --ml-chart-2: #6FB6AB; --ml-chart-3: #E9B648; --ml-chart-4: #B79BDB; --ml-chart-5: #9DB898; --ml-chart-axis: #6B5849;
+  --ml-draw: #DCC7B0; --ml-plate: #4A392E; --ml-plate-2: #3B2D23; --ml-cup: #F1E3D0;
+  --ml-glass: rgba(255, 255, 255, .12); --ml-shadow: rgba(0, 0, 0, .4);
+  --ml-wall: #3A2B21; --ml-wall-2: #2F2219; --ml-glow: #F4B960; --ml-ground: #2F3A2A; --ml-ground-edge: #2E4F4A; --ml-haze: #2A3A33;
+  --ml-shadow-card: 0 14px 38px -14px rgba(0, 0, 0, .6), 0 1px 0 rgba(255, 255, 255, .04) inset;
+  --ml-shadow-small: 0 6px 16px -8px rgba(0, 0, 0, .6);
+  --ml-focus: #E27E4F;
+  color-scheme: dark;
+}
+
+/* ---------- 3. Time-of-day sky (set data-time on the page wrapper) ---------- */
+[data-time="morning"] { --ml-sky-1: #FBD3A5; --ml-sky-2: #FFF1D6; }
+[data-time="day"]     { --ml-sky-1: #A9D8EC; --ml-sky-2: #E9F5F0; }
+[data-time="evening"] { --ml-sky-1: #EE9F68; --ml-sky-2: #F7D9A8; }
+[data-time="night"]   { --ml-sky-1: #1E2747; --ml-sky-2: #3C3A63; }
+
+/* ---------- 4. Base ---------- */
+html { box-sizing: border-box; height: 100%; }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  margin: 0; height: 100%; background: var(--ml-bg); color: var(--ml-ink);
+  font: var(--ml-text-md)/var(--ml-leading-body) var(--ml-font-body);
+}
+:lang(en) body, html:lang(en) body { font-family: var(--ml-font-body-en); }
+:focus-visible { outline: var(--ml-focus-width) solid var(--ml-focus); outline-offset: var(--ml-focus-offset); }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- 5. Primitives (the first consumers of the tokens; Phase 2 builds components on these) ---------- */
+.ml-app { height: 100%; display: grid; grid-template-rows: minmax(var(--ml-top-h), auto) minmax(0, 1fr) minmax(var(--ml-foot-h), auto); background: var(--ml-bg); }
+.ml-gutters { padding-inline: var(--ml-gutter-start) var(--ml-gutter-end); }
+.ml-stack > * + * { margin-block-start: var(--ml-space-3); }
+.ml-display { font-family: var(--ml-font-script); font-weight: 700; line-height: var(--ml-leading-tight); color: var(--ml-ink); }
+:lang(en) .ml-display { font-family: var(--ml-font-display-en); font-weight: 600; }
+.ml-reading { font-family: var(--ml-font-serif); line-height: var(--ml-leading-read); font-size: var(--ml-text-lg); }
+:lang(en) .ml-reading { font-family: var(--ml-font-display-en); font-weight: 400; }
+.ml-h-hero { font-size: var(--ml-text-3xl); }
+.ml-h-page { font-size: var(--ml-text-4xl); }
+.ml-h-card { font-size: var(--ml-text-2xl); color: var(--ml-accent); }
+.ml-price { font-size: var(--ml-text-xl); font-variant-numeric: tabular-nums; }
+.ml-caption { font-size: var(--ml-text-sm); color: var(--ml-ink-2); }
+.ml-micro { font-size: var(--ml-text-xs); color: var(--ml-ink-2); }
+.ml-card { background: var(--ml-surface); border: 1px solid var(--ml-line); border-radius: var(--ml-radius-lg); box-shadow: var(--ml-shadow-card); }
+.ml-tile { background: var(--ml-peach); border-radius: var(--ml-radius-md); }
+.ml-chip { min-height: 32px; padding-inline: var(--ml-space-4); border-radius: var(--ml-radius-pill); border: 1px solid var(--ml-line); background: var(--ml-surface-2); color: var(--ml-ink); font-size: var(--ml-text-md); transition: background var(--ml-dur-fast) var(--ml-ease); }
+.ml-chip[aria-pressed="true"] { background: var(--ml-accent-soft); border-color: var(--ml-accent); color: var(--ml-accent); }
+.ml-btn { min-height: var(--ml-tap); padding-inline: var(--ml-space-6); border: 0; border-radius: var(--ml-radius-pill); background: var(--ml-accent); color: var(--ml-on-accent); font-weight: 700; box-shadow: var(--ml-shadow-cta); transition: transform var(--ml-dur-base) var(--ml-ease-spring), box-shadow var(--ml-dur-base) var(--ml-ease); }
+.ml-btn:active { transform: scale(.98); }
+.ml-btn--gold { background: var(--ml-gold); color: var(--ml-on-gold); box-shadow: none; }
+.ml-btn--ghost { background: transparent; color: var(--ml-ink); border: 1px solid var(--ml-line); box-shadow: none; }
+.ml-btn[disabled] { opacity: .45; pointer-events: none; }
+.ml-pill { display: inline-flex; align-items: center; gap: var(--ml-space-2); min-height: var(--ml-tap); padding-inline: var(--ml-space-4); border-radius: var(--ml-radius-pill); background: var(--ml-pill); box-shadow: var(--ml-shadow-small); }
+.ml-pop { animation: ml-pop var(--ml-dur-slow) var(--ml-ease-spring); }
+@keyframes ml-pop { 30% { transform: scale(1.12); } }
+.ml-status--ok { color: var(--ml-success); } .ml-status--warn { color: var(--ml-warning); } .ml-status--bad { color: var(--ml-danger); }
+.ml-well { background: var(--ml-bg-2); border-radius: var(--ml-radius-sm); }
+.ml-scene-ground { background: linear-gradient(var(--ml-ground), var(--ml-plate-2)); border-block-end: 4px solid var(--ml-ground-edge); }
+.ml-scene-wall { background: var(--ml-wall); border-block-end: 8px solid var(--ml-wall-2); }
+.ml-scene-sky { background: linear-gradient(var(--ml-sky-1), var(--ml-sky-2)); }
+/* chart series: use var(--ml-chart-1..5) for fills and var(--ml-chart-axis) for axes (Phase 4 dashboard) */
+.ml-chart-axis { stroke: var(--ml-chart-axis); }
+.ml-s1 { fill: var(--ml-chart-1); } .ml-s2 { fill: var(--ml-chart-2); } .ml-s3 { fill: var(--ml-chart-3); } .ml-s4 { fill: var(--ml-chart-4); } .ml-s5 { fill: var(--ml-chart-5); }
+.ml-fs-lg { font-size: var(--ml-text-lg); }
+.ml-pad-1 { padding: var(--ml-space-1); } .ml-pad-5 { padding: var(--ml-space-5); } .ml-pad-7 { padding: var(--ml-space-7); }
+.ml-offer-card { background: linear-gradient(100deg, var(--ml-surface) 36%, var(--ml-blush)); }
+.ml-goods-tile { background: linear-gradient(var(--ml-surface-2) 55%, var(--ml-grass)); border-radius: var(--ml-radius-md); }
+.ml-badge-discount { background: var(--ml-gold-soft); color: var(--ml-ink); border-radius: var(--ml-radius-sm); padding-inline: var(--ml-space-3); }
+.ml-switch[aria-pressed="true"] { background: var(--ml-sage); border-color: var(--ml-sage); }
+/* Illustration tokens are consumed inside inline SVG: stroke="var(--ml-draw)", fill="var(--ml-plate|cup|glass|glow|haze|brick|teal)", shadow ellipse fill="var(--ml-shadow)". */
+.ml-art { color: var(--ml-draw); }
+.ml-art .plate { fill: var(--ml-plate); } .ml-art .cup { fill: var(--ml-cup); } .ml-art .glass { fill: var(--ml-glass); }
+.ml-art .lit { fill: var(--ml-glow); } .ml-art .haze { fill: var(--ml-haze); } .ml-art .brick { fill: var(--ml-brick); } .ml-art .trim { fill: var(--ml-teal); } .ml-art .drop { fill: var(--ml-shadow); }

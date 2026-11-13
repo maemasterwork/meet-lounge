@@ -1,0 +1,32 @@
+{
+  "name": "meet-lounge",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "e2e": "node e2e/smoke.mjs && node e2e/admin.mjs",
+    "test:db": "vitest run --config vitest.db.config.ts",
+    "gen:seed": "node scripts/gen-seed.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "verify": "tsc --noEmit && vitest run && vitest run --config vitest.db.config.ts && vite build && node scripts/check-bundle.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zustand": "4.5.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.6.3",
+    "vite": "5.4.11",
+    "vitest": "2.1.8"
+  }
+}
