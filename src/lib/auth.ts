@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { isConfigured, supabase } from './supabase'
 
 export type Role = 'customer' | 'staff' | 'owner'
+export interface CustomerRegistration { fullName?: string; phone?: string; seat?: string }
 interface AuthState {
   configured: boolean
   ready: boolean
@@ -11,7 +12,7 @@ interface AuthState {
   isGuest: boolean
   role: Role
   signInPassword(email: string, password: string): Promise<string | null>
-  signUpPassword(email: string, password: string): Promise<string | null>
+  signUpPassword(email: string, password: string, profile?: CustomerRegistration): Promise<string | null>
   signOut(): Promise<void>
 }
 
@@ -21,10 +22,17 @@ export const useAuth = create<AuthState>((_set, get) => ({
     const { error } = await supabase().auth.signInWithPassword({ email, password })
     return error?.message ?? null
   },
-  async signUpPassword(email, password) {
+  async signUpPassword(email, password, profile = {}) {
     // A guest who signs up keeps their coins: updateUser links the email to the same user id.
     const sb = supabase()
-    const { error } = get().isGuest ? await sb.auth.updateUser({ email, password }) : await sb.auth.signUp({ email, password })
+    const data = {
+      name: profile.fullName?.trim() ?? '',
+      phone: profile.phone?.trim() ?? '',
+      seat: profile.seat?.trim() ?? '',
+    }
+    const { error } = get().isGuest
+      ? await sb.auth.updateUser({ email, password, data })
+      : await sb.auth.signUp({ email, password, options: { data } })
     return error?.message ?? null
   },
   async signOut() { await supabase().auth.signOut() },

@@ -34,6 +34,18 @@ describe('schema and seed', () => {
   it('creates a profile for each new auth user', async () => {
     expect((await as(db, alice, 'select role from public.profiles where id=$1', [alice.id]))[0].role).toBe('customer')
   })
+  it('stores customer signup details and syncs guest profile upgrades', async () => {
+    const metadata = JSON.stringify({ name: 'Taylor Namvaran', phone: '+982112345678', seat: 'Building 2, floor 4, design' })
+    const [user] = await as<{ id: string }>(db, null, 'insert into auth.users (raw_user_meta_data) values ($1::jsonb) returning id', [metadata])
+    const profile = await as(db, null, 'select display_name, phone, seat from public.profiles where id=$1', [user.id])
+    expect(profile[0]).toEqual({ display_name: 'Taylor Namvaran', phone: '+982112345678', seat: 'Building 2, floor 4, design' })
+
+    await as(db, null, 'update auth.users set raw_user_meta_data=$1::jsonb where id=$2', [
+      JSON.stringify({ name: 'Taylor Updated', phone: '', seat: 'Building 3, floor 1' }), user.id,
+    ])
+    const upgraded = await as(db, null, 'select display_name, phone, seat from public.profiles where id=$1', [user.id])
+    expect(upgraded[0]).toEqual({ display_name: 'Taylor Updated', phone: null, seat: 'Building 3, floor 1' })
+  })
 })
 
 describe('prices are computed in Postgres and match the app', () => {
