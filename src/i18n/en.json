@@ -220,6 +220,7 @@
   "loading": "Loading…",
   "offline": "You are offline. Some parts will not work.",
   "common.cancel": "Cancel",
+  "common.refreshOrders": "Refresh orders",
   "common.save": "Save",
   "common.close": "Close",
   "common.confirm": "Confirm",

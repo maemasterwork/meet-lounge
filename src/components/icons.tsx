@@ -18,6 +18,7 @@ const P: Record<string, string> = {
   chevL: '<path d="m14 6-6 6 6 6"/>',
   leaf: '<path d="M5 19C5 10 10 5 19 5c0 9-5 14-14 14Z"/><path d="M5 19 14 10"/>',
   check: '<path d="m5 12 5 5 9-10"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4"/>',
 }
 
 /** Decorative stroke icon (hidden from assistive tech; put the label on the button). */

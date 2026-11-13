@@ -220,6 +220,7 @@
   "loading": "در حال بارگذاری…",
   "offline": "آفلاین هستی. بعضی بخش‌ها کار نمی‌کنند.",
   "common.cancel": "انصراف",
+  "common.refreshOrders": "بازخوانی سفارش‌ها",
   "common.save": "ذخیره",
   "common.close": "بستن",
   "common.confirm": "تأیید",

@@ -64,7 +64,7 @@ Pictures go to the `menu-images` bucket (JPG, PNG, WebP or AVIF, up to 2.5 MB; p
 1. `npx web-push generate-vapid-keys`. Put the **public** key in `.env.local` / the GitHub secret `VITE_VAPID_PUBLIC_KEY`.
 2. `npm i -g supabase`, then `supabase login` and `supabase link --project-ref <ref>`.
 3. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com`
-4. `supabase functions deploy send-push`
+4. `supabase functions deploy send-push` or `supabase --workdir "D:\Work\MeetLounge\meet-lounge-app" functions deploy send-push --project-ref cawfcfbgyzxuxoxughvj`
 5. In the app: settings popup → notifications switch → allow. Then in the dashboard send an offer, or advance an order to Ready: the phone shows the message (offers in the customer's language; audience filters apply).
 
 The function checks the caller's role itself (offers: owner only; order updates: staff or owner) and uses the platform-provided service key inside the function only. If you skip these steps everything else works; the in-app offer bell remains.

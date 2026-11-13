@@ -16,8 +16,8 @@ export interface ShopData {
   mine: Order[]
   byId: (id: string) => MenuItem | undefined
 }
-interface Ctx { data: ShopData | null; error: boolean; reload: () => void }
-const C = createContext<Ctx>({ data: null, error: false, reload: () => {} })
+interface Ctx { data: ShopData | null; error: boolean; loading: boolean; reload: () => void }
+const C = createContext<Ctx>({ data: null, error: false, loading: false, reload: () => {} })
 
 const load = () =>
   Promise.all([repos.menu.list(), repos.offers.listActive(), repos.settings.get(), repos.coins.balance(), repos.coins.ledger(), repos.orders.listMine()])
@@ -31,11 +31,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (first.current) { first.current = false; return } reloadRef.current() }, [uid])
   useEffect(() => { if (r.data) applyAssets(r.data[0], r.data[2]) }, [r.data])
   const value = useMemo<Ctx>(() => {
-    if (!r.data) return { data: null, error: r.error, reload: r.reload }
+    if (!r.data) return { data: null, error: r.error, loading: r.loading, reload: r.reload }
     const [menu, offers, settings, balance, ledger, mine] = r.data
     applyCopy(menu, settings)
-    return { data: { menu, offers, settings, balance, ledger, mine, byId: (id) => menu.find((m) => m.id === id) }, error: r.error, reload: r.reload }
-  }, [r.data, r.error, r.reload])
+    return { data: { menu, offers, settings, balance, ledger, mine, byId: (id) => menu.find((m) => m.id === id) }, error: r.error, loading: r.loading, reload: r.reload }
+  }, [r.data, r.error, r.loading, r.reload])
   return <C.Provider value={value}>{children}</C.Provider>
 }
 

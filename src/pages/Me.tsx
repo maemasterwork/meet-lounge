@@ -4,6 +4,7 @@ import { go } from '../lib/route'
 import { useUi, type MeTab } from '../store/ui'
 import { useCart } from '../store/cart'
 import { Frame, LoadState } from '../components/Frame'
+import { Icon } from '../components/icons'
 import { ItemArt } from '../art/ItemArt'
 import { coinsToNext } from '../lib/coins'
 import { AuthPanel } from '../components/AuthPanel'
@@ -26,7 +27,7 @@ function Ring({ c, total, size = 210, sw = 15 }: { c: number; total: number; siz
 
 export function MePage() {
   const { t, n, price, lang } = useI18n()
-  const { data, error, reload } = useShop()
+  const { data, error, loading, reload } = useShop()
   const tab = useUi((s) => s.meTab)
   const isGuest = useAuth((a) => a.isGuest)
   const setTab = useUi((s) => s.setMeTab)
@@ -42,6 +43,12 @@ export function MePage() {
   if (tab === 'orders') {
     content = (
       <div className="list">
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button type="button" className="btn ghost sm" disabled={loading} onClick={reload}>
+            <Icon name="refresh" size={16} />{t('common.refreshOrders')}
+          </button>
+        </div>
+        {error && <p className="muted sm" role="alert">{t('err.loadFailed')}</p>}
         {data.mine.length === 0 ? <p className="muted">{t('me.ordersEmpty')}</p> : data.mine.map((o) => {
           const st = STEPS[o.mode], ci = st.indexOf(o.status)
           return (

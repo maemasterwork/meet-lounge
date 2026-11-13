@@ -63,7 +63,13 @@ export default function Admin() {
       {tab === 'offers' && <OffersTab owner={owner} />}
       {tab === 'stats' && <StatsTab />}
       {tab === 'brand' && <BrandTab owner={owner} />}
-      {tab === 'orders' && <div className="apane">
+      {tab === 'orders' && <div className="apane order-pane">
+        <div className="order-tools">
+          {orders.error && <span className="muted sm" role="alert">{t('err.loadFailed')}</span>}
+          <button type="button" className="btn ghost sm" disabled={orders.loading} onClick={orders.reload}>
+            <Icon name="refresh" size={16} />{t('common.refreshOrders')}
+          </button>
+        </div>
         <div className="board">
           {COLS.map((c) => {
             const L = list.filter((o) => o.status === c)
