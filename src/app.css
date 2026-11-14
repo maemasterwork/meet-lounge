@@ -447,3 +447,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .depbox ~ .earn,.placed .earn{margin-top:2px}
 .tickets{display:grid;gap:10px;min-height:0;overflow:auto;position:relative;z-index:2}
 .cd .more{position:absolute;top:3px;inset-inline-end:5px;font-style:normal;font-size:10px;font-weight:700;color:var(--ml-accent)}
+.cancelbtn{margin-top:8px}
+.cancelask{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;border:1px dashed var(--ml-accent);border-radius:12px;background:color-mix(in srgb,var(--ml-accent) 7%,transparent)}
+.btn.danger{background:#b3261e;color:#fff;border-color:#b3261e}
+.stamp.x{border-color:var(--ml-ink-2,#777);color:var(--ml-ink-2,#777)}

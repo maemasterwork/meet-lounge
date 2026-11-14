@@ -502,5 +502,14 @@
   "ev.held": "Seats you keep",
   "ev.heldHelp": "Not offered online (walk-ins, friends). Customers see the rest.",
   "ev.icon": "Icon",
-  "ev.tooSmall": "{n} seats are already saved, so total seats minus kept seats can’t go below that."
+  "ev.tooSmall": "{n} seats are already saved, so total seats minus kept seats can’t go below that.",
+  "cancel.order": "Cancel order",
+  "cancel.title": "Cancel this order?",
+  "cancel.ask": "Cancel this order? Any coins you spent come back.",
+  "cancel.askPaid": "Cancel this order? You already paid: the cafe will refund your deposit, and any coins you spent come back.",
+  "cancel.yes": "Yes, cancel",
+  "cancel.no": "Keep it",
+  "cancel.done": "Order {n} cancelled",
+  "cancel.tooLate": "Too late to cancel — the cafe has already started on it.",
+  "cancel.placedDone": "This order was cancelled. We hope to see you soon!"
 }
