@@ -14,6 +14,7 @@ import { clamp } from '../lib/format'
 import type { MenuItem } from '../types'
 
 const GROUPS = ['hot', 'cold', 'sweet'] as const
+type Filter = 'all' | (typeof GROUPS)[number]
 
 export function MenuPage() {
   const { t, n, price } = useI18n()
@@ -21,11 +22,88 @@ export function MenuPage() {
   if (!data) return <Frame title={t('menu.title')} caps={t('menu.sub')} here><LoadState error={error} onRetry={reload} /></Frame>
   const items = data.menu.filter((m) => m.cat !== 'goods')
   if (!items.length) return <Frame title={t('menu.title')} caps={t('menu.sub')} here><div className="body"><p className="muted">{t('menu.empty')}</p><button type="button" className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => go('home')}>{t('nav.home')}</button></div></Frame>
-  return <MenuBody items={items} key="menu" t={t} n={n} price={price} />
+  return <MenuSwitch items={items} t={t} n={n} price={price} />
 }
 
 type TFn = ReturnType<typeof useI18n>['t']
-function MenuBody({ items, t, n, price }: { items: MenuItem[]; t: TFn; n: (v: number) => string; price: (v: number) => string }) {
+type Fmt = { t: TFn; n: (v: number) => string; price: (v: number) => string }
+
+/** Grid first (as on the reference); tapping a card, or an offer/favorite elsewhere, opens that item's options. */
+function MenuSwitch({ items, ...f }: { items: MenuItem[] } & Fmt) {
+  const detail = useUi((s) => s.menuDetail)
+  const setDetail = useUi((s) => s.setMenuDetail)
+  useEffect(() => () => setDetail(false), [setDetail])
+  return detail ? <MenuBody items={items} key="detail" {...f} /> : <MenuGrid items={items} {...f} />
+}
+
+function useMedia(q: string) {
+  const [m, setM] = useState(() => typeof matchMedia === 'function' && matchMedia(q).matches)
+  useEffect(() => { const mq = matchMedia(q), f = () => setM(mq.matches); mq.addEventListener('change', f); return () => mq.removeEventListener('change', f) }, [q])
+  return m
+}
+
+function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
+  const { data } = useShop()
+  const select = useUi((s) => s.select)
+  const toast = useUi((s) => s.toast)
+  const cart = useCart()
+  const [filter, setFilter] = useState<Filter>('all')
+  const [page, setPage] = useState(0)
+  const phone = useMedia('(max-width: 820px)')
+  const per = phone ? 6 : 8
+  const tk = timeKey()
+  const offers = data?.offers ?? []
+  const shown = filter === 'all' ? items : items.filter((m) => m.cat === filter)
+  const pages = Math.max(1, Math.ceil(shown.length / per))
+  const cur = Math.min(page, pages - 1)
+  const view = shown.slice(cur * per, cur * per + per)
+  const count = (f: Filter) => (f === 'all' ? items.length : items.filter((m) => m.cat === f).length)
+  const quick = (m: MenuItem) => {
+    if (!m.available) return
+    cart.add({ itemId: m.id, size: m.cat === 'hot' || m.cat === 'cold' ? 'medium' : m.sizes[0].key, milk: 0, sugar: 1, qty: 1, free: false })
+    toast(t('menu.addedToast', { name: t(`item.${m.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
+  }
+  return (
+    <Frame title={t('menu.title')} caps={t('menu.sub')} here>
+      <div className="mhead ltr">
+        <span className="mt"><Icon name="leaf" size={16} />{t('menu.cardTitle')}</span>
+        <div className="chips2" role="group" aria-label={t('menu.cardTitle')}>
+          {(['all', ...GROUPS] as Filter[]).filter((f) => count(f) > 0).map((f) => (
+            <button key={f} type="button" aria-pressed={filter === f} onClick={() => { setFilter(f); setPage(0) }}>{t(`menu.chip.${f}`)}<sup>{n(count(f))}</sup></button>))}
+        </div>
+      </div>
+      <div className="mgrid ltr" style={{ gridTemplateRows: `repeat(${phone ? 3 : 2},minmax(0,1fr))` }}>
+        {view.map((m) => {
+          const o = offerFor(m.id, offers)
+          const name = t(`item.${m.id}.name`)
+          return (
+            <div key={m.id} className={`mc${m.available ? '' : ' off'}`}>
+              <button type="button" className="mo" aria-label={t('menu.openItem', { name })} onClick={() => select(m.id)}>
+                <span className="im">
+                  {o && <i className="sale">{n(o.pct)}٪</i>}
+                  {REC[tk].includes(m.id) && <i className="star" />}
+                  <ItemArt item={m} uid={`g${m.id}`} />
+                </span>
+                <b className="nm">{name}</b>
+                <span className="sb">{m.tags.slice(0, 2).map((k) => t(`tag.${k}`)).join(' · ')}</span>
+              </button>
+              <div className="pr2">
+                <span>{price(unitPrice(m, { size: m.cat === 'hot' || m.cat === 'cold' ? 'medium' : m.sizes[0].key, milk: 0 }, offers))}</span>
+                <button type="button" className="plus" disabled={!m.available} aria-label={t(m.available ? 'menu.quickAdd' : 'menu.soldOut', { name })} onClick={() => quick(m)}><Icon name="plus" size={16} /></button>
+              </div>
+            </div>)
+        })}
+      </div>
+      {pages > 1 && (
+        <div className="dots" role="group" aria-label={t('menu.cardTitle')}>
+          {Array.from({ length: pages }, (_, i) => <button key={i} type="button" aria-label={t('menu.page', { n: n(i + 1) })} aria-current={i === cur ? 'page' : undefined} onClick={() => setPage(i)} />)}
+        </div>)}
+    </Frame>
+  )
+}
+
+function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
+  const setDetail = useUi((s) => s.setMenuDetail)
   const { data } = useShop()
   const selectedId = useUi((s) => s.selectedId)
   const select = useUi((s) => s.select)
@@ -87,7 +165,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[]; t: TFn; n: (v: nu
           <div className="hint ltr"><span><Icon name="chevL" size={16} /></span><span>{t('menu.dragHint')}</span></div>
         </div>
         <div className="info">
-          <button type="button" className="back ltr" onClick={() => { if (strip.current) strip.current.scrollLeft = 0 }}><Icon name="arrowL" size={16} /><span>{t('menu.allItems')}</span></button>
+          <button type="button" className="back ltr" onClick={() => setDetail(false)}><Icon name="arrowL" size={16} /><span>{t('menu.allItems')}</span></button>
           <div className="eyebrow">{t(`cat.${item.cat}`)}</div>
           <h2 className="script" style={{ margin: 0, fontSize: 'clamp(34px,6.2vh,66px)', lineHeight: 1.1, color: 'var(--ml-accent)' }}>{t(`item.${item.id}.name`)}</h2>
           <div className="price">{price(p)}{off && <><s>{price(b)}</s><span className="off">{t('home.offerOff', { pct: n(off.pct) })}</span></>}</div>

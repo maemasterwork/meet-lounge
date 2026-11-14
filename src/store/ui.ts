@@ -26,6 +26,9 @@ interface UiState {
   setMeTab: (t: MeTab) => void
   selectedId: string
   select: (id: string) => void
+  /** True when the Menu page shows one item's options instead of the grid. Reset when the page is left. */
+  menuDetail: boolean
+  setMenuDetail: (v: boolean) => void
   toasts: Toast[]
   toast: (text: string, o?: { gold?: boolean; action?: Toast['action']; ms?: number }) => void
   dismissToast: (id: number) => void
@@ -52,7 +55,9 @@ export const useUi = create<UiState>()(
       meTab: 'orders',
       setMeTab: (meTab) => set({ meTab }),
       selectedId: 'cheesecake',
-      select: (selectedId) => set({ selectedId }),
+      select: (selectedId) => set({ selectedId, menuDetail: true }),
+      menuDetail: false,
+      setMenuDetail: (menuDetail) => set({ menuDetail }),
       toasts: [],
       toast: (text, o) => {
         const id = ++tid

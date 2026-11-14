@@ -288,3 +288,29 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .btnp{margin-top:4px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- menu grid (reference: title + filter chips on top, 4 x 2 item cards) ---- */
+.mhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:clamp(12px,2.6vh,28px) clamp(16px,3.4%,40px) 6px clamp(16px,3.4%,40px)}
+.mt{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ml-ink)}
+.mt .ic{color:var(--ml-sage)}
+.chips2{display:flex;gap:8px;flex-wrap:wrap}
+.chips2 button{height:34px;padding:0 16px;border-radius:17px;border:0;background:var(--ml-surface-2);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ml-ink);box-shadow:var(--ml-shadow-small)}
+.chips2 button sup{font-size:9px;margin-inline-start:6px;opacity:.7;letter-spacing:0}
+.chips2 button[aria-pressed="true"]{background:var(--ml-accent);color:var(--ml-on-accent)}
+.mgrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.6vh,18px) clamp(10px,1.5%,18px);padding:6px clamp(16px,3.4%,40px) clamp(10px,2vh,20px) clamp(16px,3.4%,40px)}
+.mc{min-height:0;display:flex;flex-direction:column;gap:clamp(2px,.6vh,6px);border-radius:20px;background:var(--ml-surface);border:1px solid color-mix(in srgb,var(--ml-line) 55%,transparent);box-shadow:var(--ml-shadow-card);padding:clamp(6px,1.1vh,12px)}
+.mc.off{opacity:.55}
+.mo{flex:1;min-height:0;display:flex;flex-direction:column;gap:clamp(1px,.5vh,5px);background:none;border:0;padding:0;color:var(--ml-ink);text-align:center}
+.mo .im{flex:1;min-height:0;display:block;position:relative;border-radius:14px;background:var(--ml-peach);padding:clamp(3px,.8vh,8px)}
+.mo .im svg,.mo .im img{width:100%;height:100%;object-fit:contain;display:block}
+.mo .sale{position:absolute;top:6px;left:8px;font-size:10px;font-weight:700;background:var(--ml-accent);color:var(--ml-on-accent);border-radius:8px;padding:0 6px;line-height:1.6;z-index:1}
+.mo .star{position:absolute;top:8px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--ml-gold);z-index:1}
+.mo .nm{font-family:var(--ml-font-serif);font-size:clamp(13px,2.1vh,18px);font-weight:600;line-height:1.25}
+.mo .sb{font-size:clamp(8.5px,1.25vh,10.5px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ml-ink-2);min-height:1.2em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.pr2{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px;font-size:clamp(12px,1.9vh,15px);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.plus{width:clamp(26px,4vh,34px);height:clamp(26px,4vh,34px);border-radius:50%;border:0;background:var(--ml-accent);color:var(--ml-on-accent);display:grid;place-items:center;flex:none;box-shadow:0 6px 12px -6px color-mix(in srgb,var(--ml-accent) 80%,transparent)}
+.plus[disabled]{opacity:.4;cursor:not-allowed}
+.dots{display:flex;justify-content:center;gap:8px;padding:0 0 clamp(8px,1.6vh,14px)}
+.dots button{width:9px;height:9px;padding:0;border-radius:50%;border:0;background:var(--ml-line)}
+.dots button[aria-current="page"]{background:var(--ml-accent);width:22px;border-radius:5px}
+@media (max-width:820px){.mgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-inline:12px}.mhead{padding:8px 12px 2px;gap:6px}.mt{display:none}.chips2{gap:6px;flex-wrap:nowrap}.chips2 button{height:30px;padding:0 11px;letter-spacing:.04em;font-size:11px}.pr2 span{white-space:nowrap;font-size:11.5px;letter-spacing:0}.mc{padding:6px}.mo .sb{display:none}}

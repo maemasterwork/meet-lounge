@@ -320,6 +320,8 @@
   "auth.signUp": "Create account",
   "auth.haveAccount": "Already have an account? Sign in",
   "auth.accountCreated": "Registration submitted. Check your email only if confirmation is enabled.",
+  "auth.magic": "Email me a sign-in link",
+  "auth.magicSent": "We sent a sign-in link to your email.",
   "auth.guestNote": "You are a guest right now. Create an account to keep your coins on every device.",
   "auth.signOut": "Sign out",
   "auth.staffOnly": "This section is for cafe staff. Sign in to continue.",
@@ -328,7 +330,7 @@
   "bag.phoneLabel": "Phone number",
   "err.phoneRequired": "A phone number is needed to place the order.",
   "err.notEnoughCoins": "You do not have enough coins for that reward.",
-  "auth.error": "Could not complete the request: {msg}",
+  "auth.error": "Could not sign in: {msg}",
   "a2.saved": "Saved",
   "a2.saveFailed": "Could not save. Please try again.",
   "a2.ownerOnly": "Only the owner can change this.",
@@ -384,5 +386,13 @@
   "a2.qrHelp": "Print this sheet and put one code on each table. Guests scan it and order for that table.",
   "a2.qrPrint": "Print",
   "a2.qrTable": "Table {n}",
-  "a2.qrScan": "Scan to order"
+  "a2.qrScan": "Scan to order",
+  "menu.cardTitle": "Our menu",
+  "menu.chip.all": "All",
+  "menu.chip.hot": "Hot",
+  "menu.chip.cold": "Cold",
+  "menu.chip.sweet": "Sweets",
+  "menu.page": "Page {n}",
+  "menu.quickAdd": "Add {name} to bag",
+  "menu.openItem": "Options for {name}"
 }
