@@ -1,6 +1,6 @@
 import type { LedgerEntry, MenuItem, Offer, Order, OrderStatus, PlaceOrderInput } from '../types'
 import { DEFAULT_REWARD_EVERY, DELIVERY_FEE, DRINK_SIZES, initialMenu } from '../data/catalog'
-import { awardForOrder, balanceOf, cancelOrder, spendRewards } from '../lib/coins'
+import { awardForOrder, balanceOf, cancelOrder, earnOfOrder, rewardCostOf, spendRewards } from '../lib/coins'
 import { orderTotals } from '../lib/pricing'
 import { OrderError, type AdminItem, type Customer, type LedgerRow, type Repos, type Settings } from './types'
 import fa from '../i18n/fa.json'
@@ -21,6 +21,7 @@ export function createMockRepos(): Repos {
   const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb) } }
 
   let menu: MenuItem[] = initialMenu()
+  const stockTaken = new Map<number, Record<string, number>>()
   let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانج', en: 'Meet Lounge' }, paymentCard: '6037991234567890', paymentHolder: 'Meet Lounge', requireDeposit: true }
   let offers: Offer[] = [
     { id: 1, title: { fa: 'لاته صبحگاهی', en: 'Morning latte' }, body: { fa: 'یک لاته با ۱۵٪ تخفیف، همین حالا.', en: 'A latte at 15% off, right now.' }, itemId: 'latte', pct: 15, audience: 'all', active: true, read: false },
@@ -57,14 +58,22 @@ export function createMockRepos(): Repos {
         if (!settings.shopOpen) throw new OrderError('shop-closed')
         if (!input.lines.length) throw new OrderError('empty')
         if (input.mode === 'delivery' && !input.address?.trim()) throw new OrderError('address-required')
-        for (const l of input.lines) if (!menu.find((m) => m.id === l.itemId)?.available) throw new OrderError('item-unavailable')
+        const want = new Map<string, number>()
+        for (const l of input.lines) {
+          const m = menu.find((x) => x.id === l.itemId)
+          if (!m || !m.available) throw new OrderError('item-unavailable')
+          want.set(m.id, (want.get(m.id) ?? 0) + (l.free ? 1 : l.qty))
+        }
+        for (const [id, q] of want) { const st = menu.find((x) => x.id === id)!.stock; if (st !== null && st < q) throw new OrderError('out-of-stock') }
         const n = nextOrder++
-        const rewardCount = input.lines.filter((l) => l.free).length
-        try { ledger = spendRewards(ledger, settings.rewardEvery, rewardCount, n, clock()) } catch { throw new OrderError('not-enough-coins') }
+        try { ledger = spendRewards(ledger, rewardCostOf(input.lines, menu), n, clock()) } catch { nextOrder--; throw new OrderError('not-enough-coins') }
+        const taken: Record<string, number> = {}
+        menu = menu.map((m) => { const q = want.get(m.id); if (q && m.stock !== null) { taken[m.id] = q; return { ...m, stock: m.stock - q } } return m })
+        stockTaken.set(n, taken)
         const totals = orderTotals(input.lines, menu, offers, input.mode, settings.deliveryFee)
         const order: Order = {
           n, mode: input.mode, table: input.mode === 'table' ? input.table : undefined, address: input.mode === 'delivery' ? input.address?.trim() : undefined,
-          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
+          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free, coin: l.free ? 0 : menu.find((m) => m.id === l.itemId)?.coinsEarned ?? 0 })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
         }
         orders = [order, ...orders]
         emit()
@@ -78,7 +87,7 @@ export function createMockRepos(): Repos {
         if (o.status === 'new' && !o.paid) throw new OrderError('deposit-required')
         const updated = { ...o, status: next }
         replace(updated)
-        if (next === 'done' && o.mine) ledger = awardForOrder(ledger, n, clock())
+        if (next === 'done' && o.mine) ledger = awardForOrder(ledger, n, clock(), earnOfOrder(o))
         emit()
         return updated
       },
@@ -95,6 +104,8 @@ export function createMockRepos(): Repos {
         const updated = { ...o, status: 'cancelled' as const }
         replace(updated)
         if (o.mine) ledger = cancelOrder(ledger, n, clock())
+        const back = stockTaken.get(n)
+        if (back) { menu = menu.map((m) => (back[m.id] && m.stock !== null ? { ...m, stock: m.stock + back[m.id] } : m)); stockTaken.delete(n) }
         emit()
         return updated
       },
@@ -112,7 +123,7 @@ export function createMockRepos(): Repos {
       saveItem: async (id, patch) => { menu = menu.map((m) => (m.id === id ? { ...m, ...patch } : m)); emit() },
       addItem: async (i) => {
         const id = `x-${Date.now().toString(36)}`
-        menu = [...menu, { id, cat: i.cat, price: i.price, art: i.cat === 'goods' ? 'mug' : i.cat === 'sweet' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso', milk: i.milk, available: true, rewardEligible: i.rewardEligible,
+        menu = [...menu, { id, cat: i.cat, price: i.price, art: i.cat === 'goods' ? 'mug' : i.cat === 'sweet' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso', milk: i.milk, available: true, rewardEligible: i.rewardEligible, coinsEarned: i.coinsEarned ?? 1, rewardCost: i.rewardCost ?? settings.rewardEvery, stock: i.stock ?? null,
           sizes: i.cat === 'hot' || i.cat === 'cold' ? DRINK_SIZES : [{ key: 'piece1', mult: 1, scale: 1 }], tags: [], name: i.name, desc: i.desc }]
         emit()
         return id

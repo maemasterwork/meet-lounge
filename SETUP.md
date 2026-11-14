@@ -83,3 +83,7 @@ Customers pay by card-to-card deposit. After checkout they see the cafe's card n
 3. Staff press **Deposit received** on a new order; only then can it move to *Preparing*. Orders with nothing to pay (all rewards) start immediately.
 4. Switch "Require a deposit" off to go back to cash on delivery/pickup.
 Note: the card number is readable by every visitor (it is part of the public `settings` row) — that is intended, it is shown to customers.
+
+## Per-item coins and stock (migration 20261113000800)
+Dashboard → Menu now has, for every item: **Stock** (empty = unlimited, 0 = sold out), **Coins earned** (per unit, default 1, paid when the order is done) and **Reward price (coins)** (used when "Reward" is on).
+Run the migration after 0700. Existing items get reward price = your current global number; open orders keep the old 1-coin-per-line rule. The global number in Coins & rewards is now only the default for new items.

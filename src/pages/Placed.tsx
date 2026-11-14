@@ -3,6 +3,7 @@ import { useI18n } from '../i18n'
 import { useUi } from '../store/ui'
 import { go } from '../lib/route'
 import { fmtCard } from '../lib/card'
+import { earnOfOrder } from '../lib/coins'
 import { Icon } from '../components/icons'
 import type { Order } from '../types'
 import type { Settings } from '../repos/types'
@@ -56,6 +57,7 @@ export function Placed({ order, lines, settings, onDone }: { order: Order; lines
         <div className="rt ltr"><small>{t('bag.total')}</small><b className="script">{price(order.total)}</b>
           <span className={`stamp${paid || !needsDeposit ? ' ok' : ''}`}>{paid || !needsDeposit ? t('dep.paid') : t('dep.awaiting')}</span></div>
       </div>
+      {earnOfOrder(order) > 0 && <p className="earn sm"><Icon name="heart" size={12} />{t('bag.willEarnDone', { n: n(earnOfOrder(order)) })}</p>}
       <div className="row pbtn">
         <button type="button" className="btn ghost" onClick={() => { setMeTab('orders'); go('me') }}>{t('dep.track')}</button>
         <button type="button" className="btn" onClick={() => { onDone(); go('home') }}>{t('dep.back')}</button>

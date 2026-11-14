@@ -438,5 +438,19 @@
   "events.seatsOf": "{n} of {total} seats left",
   "events.saveSeat": "Save a seat",
   "events.none": "No gathering on this day.",
-  "events.jumpNext": "Show the next one"
+  "events.jumpNext": "Show the next one",
+  "a2.stock": "Stock",
+  "a2.unlimited": "Unlimited",
+  "a2.stockHelp": "How many are available. Leave empty for no limit; 0 = sold out. Taken when an order is placed, returned if it is cancelled.",
+  "a2.coinsEarned": "Coins earned",
+  "a2.coinsEarnedHelp": "Coins a customer earns for each unit of this item, once the order is done. Default 1; 0 = none.",
+  "a2.rewardCost": "Reward price (coins)",
+  "a2.rewardCostHelp": "Coins a customer spends to take this item for free. Only used when “Reward” is on.",
+  "menu.onlyLeft": "Only {n} left",
+  "menu.maxInBag": "All in your bag",
+  "menu.maxInBagToast": "You already have every {name} we have in your bag.",
+  "err.outOfStock": "Sorry, there isn’t enough stock for one of the items. Please lower the quantity.",
+  "bag.willEarn": "You’ll earn {n} coins when it’s done",
+  "bag.willEarnDone": "You’ll earn {n} coins when it’s done",
+  "coins.costs": "{n} coins"
 }

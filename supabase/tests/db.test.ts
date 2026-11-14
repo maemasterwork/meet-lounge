@@ -210,11 +210,11 @@ describe('rewards', () => {
     await as(db, c, 'select public.cancel_order($1)', [o.id]); await as(db, c, 'select public.cancel_order($1)', [o.id])
     expect(await balance(c.id)).toBe(6)
   })
-  it('a completed reward order still earns its +1 coin', async () => {
+  it('a completed reward order earns nothing for the free item', async () => {
     const c = await addUser(db); await give(c.id, 6)
     const o = await order(c, line({ reward: true }))
     for (let i = 0; i < 3; i++) await advance(o.id)
-    expect(await balance(c.id)).toBe(1)
+    expect(await balance(c.id)).toBe(0)
   })
   it('owner cannot push a balance below zero or demote the last owner', async () => {
     const c = await addUser(db)
@@ -264,11 +264,11 @@ describe('dashboard (owner tools)', () => {
     await as(db, owner, "update public.offers set ends_at = now() - interval '1 hour' where item_id='espresso'")
     expect((await order(alice, line({ item_id: 'espresso' }))).subtotal).toBe(95000)        // expired offers do not apply
   })
-  it('changing the reward rule changes what a reward costs', async () => {
+  it('changing an item reward cost changes what that reward costs', async () => {
     const c = await addUser(db); await give(c.id, 3)
-    await as(db, owner, 'update public.settings set reward_every=3')
+    await as(db, owner, "update public.menu_items set reward_cost=3 where id='latte'")
     expect((await order(c, line({ reward: true }))).reward_coins).toBe(3)
-    await as(db, owner, 'update public.settings set reward_every=6')
+    await as(db, owner, "update public.menu_items set reward_cost=6 where id='latte'")
   })
 })
 
@@ -341,5 +341,80 @@ describe('deposit before preparation', () => {
     expect((await as(db, 'anon', 'select payment_card from public.settings'))[0].payment_card).toBeNull()
     await as(db, owner, "update public.settings set payment_card='6037991234567890', payment_holder='Meet Lounge'")
     expect((await as(db, 'anon', 'select payment_card from public.settings'))[0].payment_card).toBe('6037991234567890')
+  })
+})
+
+describe('per-item coins and stock', () => {
+  const setItem = (id: string, set: string) => as(db, owner, `update public.menu_items set ${set} where id='${id}'`)
+  const stock = async (id: string) => (await as(db, null, 'select stock from public.menu_items where id=$1', [id]))[0].stock
+  const finish = async (id: string) => { for (let i = 0; i < 3; i++) await advance(id) }
+  it('an order earns coins_earned per unit of each paid line', async () => {
+    const c = await addUser(db)
+    await setItem('latte', 'coins_earned=3'); await setItem('espresso', 'coins_earned=0')
+    const o = await order(c, JSON.stringify([{ item_id: 'latte', size: 'small', milk: 0, sugar: 1, qty: 2 }, { item_id: 'espresso', size: 'small', sugar: 1, qty: 1 }]))
+    await finish(o.id)
+    expect(await balance(c.id)).toBe(6)
+    await setItem('latte', 'coins_earned=1'); await setItem('espresso', 'coins_earned=1')
+  })
+  it('the coins promised at order time are kept even if the item changes later', async () => {
+    const c = await addUser(db)
+    await setItem('latte', 'coins_earned=2')
+    const o = await order(c)
+    await setItem('latte', 'coins_earned=9')
+    await finish(o.id)
+    expect(await balance(c.id)).toBe(2)
+    await setItem('latte', 'coins_earned=1')
+  })
+  it('default is one coin per unit, and an item with 0 coins earns no ledger row', async () => {
+    const c = await addUser(db)
+    await finish((await order(c, line({ qty: 3 }))).id)
+    expect(await balance(c.id)).toBe(3)
+    await setItem('latte', 'coins_earned=0')
+    const d = await addUser(db); await finish((await order(d)).id)
+    expect(await balance(d.id)).toBe(0)
+    await setItem('latte', 'coins_earned=1')
+  })
+  it('each reward item has its own price in coins', async () => {
+    const c = await addUser(db); await give(c.id, 7)
+    await setItem('latte', 'reward_cost=4'); await setItem('cappuccino', 'reward_cost=7')
+    expect((await order(c, line({ reward: true }))).reward_coins).toBe(4)
+    await expect(order(c, line({ item_id: 'cappuccino', reward: true }))).rejects.toThrow(/not-enough-coins/)
+    expect(await balance(c.id)).toBe(3)
+    await setItem('latte', 'reward_cost=6'); await setItem('cappuccino', 'reward_cost=6')
+  })
+  it('limited stock: taken at checkout, refused when short, returned on cancel', async () => {
+    await setItem('cookie', 'stock=3')
+    const o = await order(alice, line({ item_id: 'cookie', size: 'piece1', qty: 2 }))
+    expect(await stock('cookie')).toBe(1)
+    await expect(order(bob, line({ item_id: 'cookie', size: 'piece1', qty: 2 }))).rejects.toThrow(/out-of-stock/)
+    expect(await stock('cookie')).toBe(1)                                     // the failed order took nothing
+    await as(db, alice, 'select public.cancel_order($1)', [o.id]); await as(db, alice, 'select public.cancel_order($1)', [o.id])
+    expect(await stock('cookie')).toBe(3)                                     // returned once
+    await setItem('cookie', 'stock=null')
+  })
+  it('two lines of the same item share the stock, and zero stock means sold out', async () => {
+    await setItem('cookie', 'stock=2')
+    await expect(order(alice, JSON.stringify([{ item_id: 'cookie', size: 'piece1', qty: 1 }, { item_id: 'cookie', size: 'piece1', qty: 2 }]))).rejects.toThrow(/out-of-stock/)
+    expect(await stock('cookie')).toBe(2)
+    await order(alice, line({ item_id: 'cookie', size: 'piece1', qty: 2 }))
+    expect(await stock('cookie')).toBe(0)
+    await expect(order(bob, line({ item_id: 'cookie', size: 'piece1' }))).rejects.toThrow(/out-of-stock/)
+    await setItem('cookie', 'stock=null')
+  })
+  it('unlimited stock (null) never changes; rewards also use stock', async () => {
+    expect(await stock('latte')).toBeNull()
+    await order(alice, line({ qty: 2 })); expect(await stock('latte')).toBeNull()
+    const c = await addUser(db); await give(c.id, 6)
+    await setItem('latte', 'stock=1')
+    const o = await order(c, line({ reward: true })); expect(await stock('latte')).toBe(0)
+    await as(db, c, 'select public.cancel_order($1)', [o.id]); expect(await stock('latte')).toBe(1)
+    await setItem('latte', 'stock=null')
+  })
+  it('only the owner can change coins and stock; values are range-checked', async () => {
+    await expect(as(db, staff, "update public.menu_items set stock=5 where id='latte'")).resolves.toBeDefined()
+    expect(await stock('latte')).toBeNull()                                   // staff update matched no rows
+    await expect(setItem('latte', 'stock=-1')).rejects.toThrow(/check/)
+    await expect(setItem('latte', 'coins_earned=-1')).rejects.toThrow(/check/)
+    await expect(setItem('latte', 'reward_cost=0')).rejects.toThrow(/check/)
   })
 })

@@ -15,6 +15,12 @@ export interface MenuItem {
   milk: boolean
   available: boolean
   rewardEligible: boolean
+  /** Coins earned for each unit ordered (default 1), paid when the order is done. */
+  coinsEarned: number
+  /** Coins needed to take this item as a free reward. */
+  rewardCost: number
+  /** Units left; null = unlimited. 0 means sold out. */
+  stock: number | null
   sizes: SizeOption[]
   /** Copy keys (without the "tag." prefix) shown as tags. */
   tags: string[]
@@ -47,7 +53,7 @@ export interface CartLine {
   free: boolean
 }
 
-export interface OrderItemSummary { itemId: string; qty: number; free: boolean }
+export interface OrderItemSummary { itemId: string; qty: number; free: boolean; /** coins earned per unit, fixed when the order was placed */ coin?: number }
 
 export interface Order {
   n: number

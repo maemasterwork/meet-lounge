@@ -18,7 +18,7 @@ export const SUGARS = ['sugar.none', 'sugar.1', 'sugar.2'] as const
 export const DELIVERY_FEE = 30000
 export const DEFAULT_REWARD_EVERY = 6
 
-type Seed = Omit<MenuItem, 'available' | 'sizes'> & { sizes?: SizeOption[] }
+type Seed = Omit<MenuItem, 'available' | 'sizes' | 'coinsEarned' | 'rewardCost' | 'stock'> & { sizes?: SizeOption[] }
 const seeds: Seed[] = [
   { id: 'espresso', cat: 'hot', price: 95000, art: 'espresso', milk: false, rewardEligible: false, tags: ['freshRoast', 'singleOrigin'] },
   { id: 'latte', cat: 'hot', price: 135000, art: 'latte', milk: true, rewardEligible: true, tags: ['silkyFoam', 'doubleShot'] },
@@ -45,7 +45,7 @@ const seeds: Seed[] = [
 ]
 
 export const initialMenu = (): MenuItem[] =>
-  seeds.map((s) => ({ ...s, available: true, sizes: s.sizes ?? DRINK_SIZES }))
+  seeds.map((s) => ({ ...s, available: true, coinsEarned: 1, rewardCost: DEFAULT_REWARD_EVERY, stock: null, sizes: s.sizes ?? DRINK_SIZES }))
 
 export const isDrink = (i: Pick<MenuItem, 'cat'>) => i.cat === 'hot' || i.cat === 'cold'
 

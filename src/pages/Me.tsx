@@ -6,7 +6,7 @@ import { useCart } from '../store/cart'
 import { Frame, LoadState } from '../components/Frame'
 import { Icon } from '../components/icons'
 import { ItemArt } from '../art/ItemArt'
-import { coinsToNext } from '../lib/coins'
+import { canTakeReward, coinsToNext, isAvailable, nextRewardCost, rewardCostOf, stockLeft } from '../lib/coins'
 import { AuthPanel } from '../components/AuthPanel'
 import { useAuth } from '../lib/auth'
 import type { Order } from '../types'
@@ -61,9 +61,8 @@ export function MePage() {
         })}
       </div>)
   } else if (tab === 'coins') {
-    const N = data.settings.rewardEvery, ready = data.balance >= N, elig = data.menu.filter((m) => m.rewardEligible)
-    const freeInBag = cart.lines.filter((l) => l.free).length
-    const canTake = ready && freeInBag * N + N <= data.balance
+    const N = nextRewardCost(data.menu, data.settings.rewardEvery), ready = data.balance >= N, elig = data.menu.filter((m) => m.rewardEligible)
+    const committed = rewardCostOf(cart.lines, data.menu)
     content = (
       <div className="two ltr">
         <div className="ringbox">
@@ -83,9 +82,10 @@ export function MePage() {
               <div className="gc" key={m.id}>
                 <div className="im" style={{ height: 80 }}><ItemArt item={m} uid={`r${m.id}`} /></div>
                 <b style={{ fontSize: 14 }}>{t(`item.${m.id}.name`)}</b>
-                {canTake && m.available
+                {canTakeReward(data.balance, m.rewardCost, committed) && isAvailable(m) && stockLeft(m, cart.lines) >= 1
                   ? <button type="button" className="btn gold sm" onClick={() => { cart.addReward(m.id, m.sizes[0].key); toast(t('menu.freeAddedToast', { name: t(`item.${m.id}.name`) }), { gold: true, action: { label: t('menu.openBag'), run: () => go('bag') } }) }}>{t('coins.claim')}</button>
-                  : <span className="muted sm">{m.available ? t('coins.needs', { n: n(N) }) : t('menu.soldOut')}</span>}
+                    : <span className="muted sm">{isAvailable(m) ? t('coins.needs', { n: n(m.rewardCost) }) : t('menu.soldOut')}</span>}
+                {canTakeReward(data.balance, m.rewardCost, committed) && isAvailable(m) && <small className="muted">{t('coins.costs', { n: n(m.rewardCost) })}</small>}
               </div>))}
           </div>
           <b>{t('coins.history')}</b>
@@ -108,7 +108,7 @@ export function MePage() {
     <div className="body">
       <div className="tabsm" role="tablist">{tabs.map(([k, label]) => <button key={k} type="button" role="tab" className="pill" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => setTab(k)}>{t(label)}</button>)}</div>
       {content}
-      {tab === 'coins' && <AuthPanel mode="customer" note={isGuest ? t('auth.guestNote') : undefined} onClose={() => setTab('orders')} />}
+      {tab === 'coins' && <AuthPanel note={isGuest ? t('auth.guestNote') : undefined} />}
     </div>,
   )
 }

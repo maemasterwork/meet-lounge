@@ -6,11 +6,13 @@ import { useCart } from '../store/cart'
 import { Frame, LoadState } from '../components/Frame'
 import { ItemArt } from '../art/ItemArt'
 import { unitPrice } from '../lib/pricing'
+import { isAvailable, stockLeft } from '../lib/coins'
 
 export function ShopPage() {
   const { t, price } = useI18n()
   const { data, error, reload } = useShop()
   const add = useCart((s) => s.add)
+  const lines = useCart((s) => s.lines)
   const toast = useUi((s) => s.toast)
   const goods = data?.menu.filter((m) => m.cat === 'goods') ?? []
   return (
@@ -25,10 +27,10 @@ export function ShopPage() {
                   <b>{t(`item.${g.id}.name`)}</b>
                   <span className="muted sm">{t(`item.${g.id}.desc`)}</span>
                   <span>{price(unitPrice(g, { size: g.sizes[0].key, milk: 0 }, data.offers))}</span>
-                  <button type="button" className="btn sm" disabled={!g.available} onClick={() => {
+                  <button type="button" className="btn sm" disabled={!isAvailable(g) || stockLeft(g, lines) < 1} onClick={() => {
                     add({ itemId: g.id, size: g.sizes[0].key, milk: 0, sugar: 1, qty: 1, free: false })
                     toast(t('menu.addedToast', { name: t(`item.${g.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
-                  }}>{t(g.available ? 'menu.add' : 'menu.soldOut')}</button>
+                  }}>{t(!isAvailable(g) ? 'menu.soldOut' : stockLeft(g, lines) < 1 ? 'menu.maxInBag' : 'menu.add')}</button>
                 </div>
               ))}
             </div>)}

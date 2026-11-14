@@ -436,3 +436,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .mon{font-size:30px}.cnav{width:30px;height:30px}.evr{padding-top:0;gap:4px;overflow:auto}.onday{display:none}
   .stub b{font-size:30px}.td{font-size:12.5px;line-height:1.4}.tbody h4{font-size:20px}.cfoot{display:none}.tbody{gap:3px;padding:8px 12px}
 }
+
+/* ---- per-item stock and coins ---- */
+.tblw input.num{width:104px}.tblw input.num:disabled{opacity:.4}
+.pillst.bad{background:color-mix(in srgb,#c0392b 18%,transparent);color:#c0392b;margin-inline-start:6px}
+.mc .im .low{position:absolute;inset-inline-start:6px;bottom:6px;font-style:normal;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--ml-gold);color:#4a3200;z-index:2}
+.mc .im .low.out{background:var(--ml-ink);color:var(--ml-surface)}
+.lowline{margin:0;font-size:12.5px;font-weight:600;color:var(--ml-accent)}
+.earn{margin:0;display:flex;align-items:center;gap:6px;color:var(--ml-accent);font-weight:600}
+.depbox ~ .earn,.placed .earn{margin-top:2px}
