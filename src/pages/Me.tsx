@@ -7,8 +7,6 @@ import { Frame, LoadState } from '../components/Frame'
 import { Icon } from '../components/icons'
 import { ItemArt } from '../art/ItemArt'
 import { canTakeReward, coinsToNext, isAvailable, nextRewardCost, rewardCostOf, stockLeft } from '../lib/coins'
-import { AuthPanel } from '../components/AuthPanel'
-import { useAuth } from '../lib/auth'
 import type { Order } from '../types'
 
 const STEPS: Record<Order['mode'], Order['status'][]> = {
@@ -29,7 +27,6 @@ export function MePage() {
   const { t, n, price, lang } = useI18n()
   const { data, error, loading, reload } = useShop()
   const tab = useUi((s) => s.meTab)
-  const isGuest = useAuth((a) => a.isGuest)
   const setTab = useUi((s) => s.setMeTab)
   const favs = useUi((s) => s.favorites)
   const select = useUi((s) => s.select)
@@ -108,7 +105,6 @@ export function MePage() {
     <div className="body">
       <div className="tabsm" role="tablist">{tabs.map(([k, label]) => <button key={k} type="button" role="tab" className="pill" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => setTab(k)}>{t(label)}</button>)}</div>
       {content}
-      {tab === 'coins' && <AuthPanel note={isGuest ? t('auth.guestNote') : undefined} />}
     </div>,
   )
 }

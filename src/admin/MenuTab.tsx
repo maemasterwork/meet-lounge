@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { repos, type AdminItem } from '../repos'
 import { useRepo } from '../lib/useRepo'
 import { ItemArt } from '../art/ItemArt'
-import { IMAGE_ACCEPT, Msg, Switch, useAct } from './common'
+import { IMAGE_ACCEPT, Msg, NumInput, Switch, useAct } from './common'
 import type { Category } from '../types'
 
 const CATS: Category[] = ['hot', 'cold', 'sweet', 'goods']
@@ -12,19 +12,6 @@ function PriceInput({ item, onSave, disabled }: { item: AdminItem; onSave: (p: n
   const [v, setV] = useState(String(item.price))
   const commit = () => { const p = Math.round(Number(v)); if (Number.isFinite(p) && p >= 0 && p !== item.price) onSave(p); else setV(String(item.price)) }
   return <input type="number" min={0} step={1000} dir="ltr" value={v} disabled={disabled} aria-label={item.name.fa} onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
-}
-
-/** Whole-number input that saves on blur/Enter. With `nullable`, an empty box means "no limit" (null). */
-function NumInput({ value, min, max, nullable, onSave, disabled, label, placeholder }: { value: number | null; min: number; max: number; nullable?: boolean; onSave: (v: number | null) => void; disabled: boolean; label: string; placeholder?: string }) {
-  const show = (v: number | null) => (v === null ? '' : String(v))
-  const [v, setV] = useState(show(value))
-  useEffect(() => setV(show(value)), [value])
-  const commit = () => {
-    if (v.trim() === '') { if (nullable) { if (value !== null) onSave(null) } else setV(show(value)); return }
-    const x = Math.round(Number(v))
-    if (Number.isFinite(x) && x >= min && x <= max) { if (x !== value) onSave(x); setV(String(x)) } else setV(show(value))
-  }
-  return <input className="num" type="number" inputMode="numeric" min={min} max={max} dir="ltr" value={v} placeholder={placeholder} disabled={disabled} aria-label={label} onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
 }
 
 function Editor({ item, onClose, act }: { item: AdminItem; onClose: () => void; act: ReturnType<typeof useAct> }) {

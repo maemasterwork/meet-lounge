@@ -30,7 +30,13 @@ export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff';
   }
   if (!a.configured) return null
   return (
-    <dialog ref={dialog} className="auth-modal" aria-labelledby="auth-panel-title" onCancel={(e) => { e.preventDefault(); onClose() }}>
+    <dialog
+      ref={dialog}
+      className="auth-modal"
+      aria-labelledby="auth-panel-title"
+      onCancel={(e) => { e.preventDefault(); onClose() }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
       <section className="auth-card">
         <header className="auth-head">
           <div>
