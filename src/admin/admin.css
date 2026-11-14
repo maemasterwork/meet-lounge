@@ -8,7 +8,11 @@
 .atabs button{flex:none;height:36px;padding:0 16px;border-radius:18px;border:1px solid var(--ml-line);background:var(--ml-surface);font-size:13px}
 .atabs button[aria-pressed="true"]{background:var(--ml-ink);color:var(--ml-bg);border-color:var(--ml-ink)}
 .apane{min-height:0;overflow:auto;padding-bottom:8px}
+.order-pane{display:flex;flex-direction:column;gap:8px}
+.order-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:36px}
+.order-tools .btn{flex:none}
 .board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;height:100%;overflow-x:auto}
+.order-pane .board{flex:1;min-height:0;height:auto}
 .col{background:var(--ml-surface-2);border:1px solid var(--ml-line);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow:auto}
 .col h3{margin:0;font-size:13.5px;display:flex;justify-content:space-between;align-items:center}
 .col h3 em{font-style:normal;background:var(--ml-surface);border-radius:10px;padding:0 8px;font-size:12px}
