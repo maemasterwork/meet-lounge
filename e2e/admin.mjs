@@ -54,8 +54,9 @@ await tab('Stats')
 await page.waitForSelector('.kpis')
 
 // Back to the shop: new item is in the menu strip, brand name changed
-await page.goto(BASE + '#menu'); await page.waitForSelector('.bigg')
-const names = await page.evaluate(() => [...document.querySelectorAll('.th')].map((e) => e.getAttribute('aria-label')))
+await page.goto(BASE + '#menu'); await page.waitForSelector('.mgrid')
+await page.click('.chips2 button:has-text("Hot")')
+const names = await page.evaluate(() => [...document.querySelectorAll('.mo .nm')].map((e) => e.textContent))
 if (!names.includes('Fresh Special')) fail('new item missing from the shop: ' + names.join('|'))
 if (errors.length) fail('console errors: ' + errors.join(' | '))
 await browser.close()

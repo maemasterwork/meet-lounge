@@ -16,11 +16,14 @@ for (const lang of ['fa', 'en']) {
   page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|ERR_/.test(m.text())) errors.push(m.text()) })
   await page.addInitScript((l) => localStorage.setItem('ml-ui', JSON.stringify({ state: { lang: l, theme: null, notifyOn: true, favorites: [], registered: [] }, version: 1 })), lang)
   await page.goto(BASE + '#menu')
-  await page.waitForSelector('.bigg')
+  await page.waitForSelector('.mgrid')
   const noScroll = await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)
   if (!noScroll) fail(`${lang}: page scrolls on the menu`)
-  // pick the cappuccino from the strip, add 2
-  await page.click('.th[aria-label]:nth-child(3)')
+  // quick add from the grid (+), then open the cappuccino and add 2 more with options
+  await page.click('.mc:nth-child(1) .plus'); await page.waitForSelector('.toast')
+  await page.click('.mc:nth-child(3) .mo')
+  await page.waitForSelector('.bigg')
+  if (await page.evaluate(() => document.documentElement.scrollHeight > innerHeight + 1)) fail(`${lang}: detail view scrolls`)
   await page.click('.step button:last-child')
   await page.click('.buy .btn:not(.gold)')
   await page.waitForSelector('.toast')

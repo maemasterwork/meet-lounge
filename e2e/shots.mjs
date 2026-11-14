@@ -10,7 +10,7 @@ for (const lang of ['fa', 'en']) for (const [w, h] of sizes) {
   const page = await ctx.newPage()
   await page.addInitScript((l) => localStorage.setItem('ml-ui', JSON.stringify({ state: { lang: l, theme: 'light', notifyOn: true, favorites: ['latte'], registered: [] }, version: 1 })), lang)
   for (const v of ['home', 'menu']) {
-    await page.goto(BASE + '#' + v); await page.waitForSelector(v === 'home' ? '.hr' : '.bigg'); await page.waitForTimeout(400)
+    await page.goto(BASE + '#' + v); await page.waitForSelector(v === 'home' ? '.hr' : v === 'menu' ? '.mgrid' : '.bigg'); await page.waitForTimeout(400)
     const over = await page.evaluate(() => ({ y: document.documentElement.scrollHeight - innerHeight, x: document.documentElement.scrollWidth - innerWidth }))
     report.push(`${lang} ${w}x${h} ${v}: overflow y=${over.y} x=${over.x}`)
     await page.screenshot({ path: `shots/${v}-${lang}-${w}x${h}.png` })
