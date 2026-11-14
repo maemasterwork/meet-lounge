@@ -1,11 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput } from '../types'
+import type { CafeEvent, EventInput, LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput } from '../types'
 import { OrderError, type AdminItem, type Customer, type LedgerRow, type OrderErrorCode, type Repos, type Settings } from './types'
 
 const CODES: OrderErrorCode[] = [
   'shop-closed', 'empty', 'item-unavailable', 'address-required', 'not-enough-coins', 'not-found',
   'table-required', 'phone-required', 'bad-option', 'reward-not-allowed', 'not-allowed', 'not-authenticated',
-  'deposit-required', 'order-closed',
+  'deposit-required', 'order-closed', 'out-of-stock', 'event-full', 'event-closed', 'event-not-found', 'capacity-too-small',
 ]
 /** Postgres raises our error codes as the message; anything else is a network/unknown failure and is rethrown as is. */
 function mapError(e: unknown): never {
@@ -21,9 +21,17 @@ const readIds = (): number[] => { try { return JSON.parse(localStorage.getItem(R
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const BUCKET = 'menu-images'
+const toEvent = (r: any): CafeEvent => ({
+  id: r.id, icon: r.icon, title: { fa: r.title_fa, en: r.title_en }, desc: { fa: r.description_fa, en: r.description_en }, place: { fa: r.place_fa, en: r.place_en },
+  day: r.day, time: String(r.start_time).slice(0, 5), hours: r.hours, capacity: r.capacity, held: r.held, booked: r.booked, published: r.published,
+})
+const fromEvent = (e: EventInput) => ({
+  icon: e.icon, title_fa: e.title.fa, title_en: e.title.en, description_fa: e.desc.fa, description_en: e.desc.en, place_fa: e.place.fa, place_en: e.place.en,
+  day: e.day, start_time: e.time, hours: e.hours, capacity: e.capacity, held: e.held, published: e.published,
+})
 const toMenu = (r: any, pub: (path: string | null) => string | undefined): MenuItem => ({
   id: r.id, cat: r.category, price: r.base_price, art: r.art, milk: r.milk_options, available: r.available,
-  rewardEligible: r.reward_eligible, sizes: r.sizes, tags: r.tags ?? [],
+  rewardEligible: r.reward_eligible, coinsEarned: r.coins_earned ?? 1, rewardCost: r.reward_cost ?? 6, stock: r.stock ?? null, sizes: r.sizes, tags: r.tags ?? [],
   name: { fa: r.name_fa, en: r.name_en }, desc: { fa: r.description_fa, en: r.description_en },
   image: pub(r.image_path), archived: r.archived,
 })
@@ -38,11 +46,11 @@ const toOffer = (r: any, read: number[]): Offer => ({
 })
 const toOrder = (r: any, uid: string | null): Order => ({
   n: r.number, mode: r.mode as OrderMode, table: r.table_no ?? undefined, address: r.address ?? undefined,
-  items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward })),
+  items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, coin: i.coin_each })),
   subtotal: r.subtotal, fee: r.delivery_fee, total: r.total, status: r.status as OrderStatus, paid: !!r.paid_at,
   mine: r.customer_id === uid, who: r.profiles?.display_name || r.guest_phone || r.profiles?.phone || String(r.customer_id).slice(0, 6), at: r.created_at,
 })
-const ORDER_SELECT = '*, order_items(item_id, qty, is_reward), profiles(display_name, phone)'
+const ORDER_SELECT = '*, order_items(item_id, qty, is_reward, coin_each), profiles(display_name, phone)'
 
 export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string | null): Repos {
   const listeners = new Set<() => void>()
@@ -66,7 +74,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
   const ensureChannel = () => {
     if (channel) return
     channel = sb.channel('meet-lounge')
-    for (const table of ['orders', 'coin_ledger', 'offers', 'menu_items', 'settings']) {
+    for (const table of ['orders', 'coin_ledger', 'offers', 'menu_items', 'settings', 'events']) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, emit)
     }
     channel.subscribe()
@@ -167,6 +175,13 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         emit()
       },
     },
+    events: {
+      subscribe: sub,
+      async list() { return ok(await sb.from('events').select('*').eq('published', true).order('day').order('start_time')).map(toEvent) },
+      async mine() { const uid = getUserId(); if (!uid) return []; return ok(await sb.from('event_seats').select('event_id').eq('customer_id', uid)).map((r: any) => r.event_id as string) },
+      async book(id) { const e = toEvent(ok(await sb.rpc('book_event', { p_event: id }))); emit(); return e },
+      async cancel(id) { const e = toEvent(ok(await sb.rpc('cancel_booking', { p_event: id }))); emit(); return e },
+    },
     settings: {
       subscribe: sub,
       async get(): Promise<Settings> {
@@ -175,12 +190,31 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
     },
     admin: {
       subscribe: sub,
+      async events() { return ok(await sb.from('events').select('*').order('day').order('start_time')).map(toEvent) },
+      async saveEvent(id, input) {
+        if (id) {
+          const r = await sb.from('events').update(fromEvent(input)).eq('id', id).select('id')
+          if (!r.error && !r.data?.length) throw new OrderError('not-allowed')
+          ok(r); emit(); return id
+        }
+        const row: any = ok(await sb.from('events').insert(fromEvent(input)).select('id').single())
+        emit(); return row.id as string
+      },
+      async deleteEvent(id) {
+        const r = await sb.from('events').delete().eq('id', id).select('id')
+        if (!r.error && !r.data?.length) throw new OrderError('not-allowed')
+        ok(r); emit()
+      },
+      async attendees(id) { return ok(await sb.rpc('event_attendees', { p_event: id })).map((r: any) => ({ name: r.name ?? '', phone: r.phone ?? undefined, at: r.at })) },
       async items() { return ok(await sb.from('menu_items').select('*').order('sort')).map((r: any): AdminItem => ({ ...toMenu(r, pub), name: { fa: r.name_fa, en: r.name_en }, desc: { fa: r.description_fa, en: r.description_en }, archived: r.archived })) },
       async saveItem(id, p) {
         const u: Record<string, unknown> = {}
         if (p.price !== undefined) u.base_price = p.price
         if (p.available !== undefined) u.available = p.available
         if (p.rewardEligible !== undefined) u.reward_eligible = p.rewardEligible
+        if (p.coinsEarned !== undefined) u.coins_earned = p.coinsEarned
+        if (p.rewardCost !== undefined) u.reward_cost = p.rewardCost
+        if (p.stock !== undefined) u.stock = p.stock
         if (p.archived !== undefined) u.archived = p.archived
         if (p.name) { u.name_fa = p.name.fa; u.name_en = p.name.en }
         if (p.desc) { u.description_fa = p.desc.fa; u.description_en = p.desc.en }
@@ -194,7 +228,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         const sizes = i.cat === 'hot' || i.cat === 'cold' ? [{ key: 'small', mult: 1, scale: 0.9 }, { key: 'medium', mult: 1.15, scale: 1 }, { key: 'large', mult: 1.3, scale: 1.08 }] : [{ key: 'piece1', mult: 1, scale: 1 }]
         const art = i.cat === 'goods' ? 'mug' : i.cat === 'sweet' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso'
         const sort = Number((await sb.from('menu_items').select('sort').order('sort', { ascending: false }).limit(1)).data?.[0]?.sort ?? 0) + 1
-        ok(await sb.from('menu_items').insert({ id, category: i.cat, name_fa: i.name.fa, name_en: i.name.en, description_fa: i.desc.fa, description_en: i.desc.en, base_price: i.price, sizes, milk_options: i.milk, reward_eligible: i.rewardEligible, art, sort }).select('id'))
+        ok(await sb.from('menu_items').insert({ id, category: i.cat, name_fa: i.name.fa, name_en: i.name.en, description_fa: i.desc.fa, description_en: i.desc.en, base_price: i.price, sizes, milk_options: i.milk, reward_eligible: i.rewardEligible, coins_earned: i.coinsEarned ?? 1, reward_cost: i.rewardCost ?? 6, stock: i.stock ?? null, art, sort }).select('id'))
         emit(); return id
       },
       async setItemImage(id, file) {

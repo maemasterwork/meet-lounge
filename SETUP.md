@@ -14,10 +14,13 @@ Easiest: open **SQL Editor** and paste, run, in this order, each file in full:
 4. `supabase/migrations/20261113000400_realtime_storage.sql`
 4b. `supabase/migrations/20261113000500_admin.sql`
 4c. `supabase/migrations/20261113000600_push.sql`
+4d. `supabase/migrations/20261113000700_customer_registration.sql`
+4e. `supabase/migrations/20261114000100_required_customer_phone.sql`
 5. `supabase/seed.sql`
 
 (With the Supabase CLI instead: `supabase link --project-ref <ref>`, `supabase db push`, then run `seed.sql` in the SQL editor.)
 Do not run a file twice; the migrations are meant for a fresh project. `seed.sql` can be re-run safely.
+For an existing project, apply any missing migrations in order, through `20261114000100_required_customer_phone.sql`.
 
 ## 3. Turn on sign-in
 **Authentication → Sign In / Providers**
@@ -64,7 +67,7 @@ Pictures go to the `menu-images` bucket (JPG, PNG, WebP or AVIF, up to 2.5 MB; p
 1. `npx web-push generate-vapid-keys`. Put the **public** key in `.env.local` / the GitHub secret `VITE_VAPID_PUBLIC_KEY`.
 2. `npm i -g supabase`, then `supabase login` and `supabase link --project-ref <ref>`.
 3. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com`
-4. `supabase functions deploy send-push` or `supabase --workdir "D:\Work\MeetLounge\meet-lounge-app" functions deploy send-push --project-ref cawfcfbgyzxuxoxughvj`
+4. `supabase functions deploy send-push`
 5. In the app: settings popup → notifications switch → allow. Then in the dashboard send an offer, or advance an order to Ready: the phone shows the message (offers in the customer's language; audience filters apply).
 
 The function checks the caller's role itself (offers: owner only; order updates: staff or owner) and uses the platform-provided service key inside the function only. If you skip these steps everything else works; the in-app offer bell remains.
@@ -83,3 +86,10 @@ Customers pay by card-to-card deposit. After checkout they see the cafe's card n
 3. Staff press **Deposit received** on a new order; only then can it move to *Preparing*. Orders with nothing to pay (all rewards) start immediately.
 4. Switch "Require a deposit" off to go back to cash on delivery/pickup.
 Note: the card number is readable by every visitor (it is part of the public `settings` row) — that is intended, it is shown to customers.
+
+## Per-item coins and stock (migration 20261113000800)
+Dashboard → Menu now has, for every item: **Stock** (empty = unlimited, 0 = sold out), **Coins earned** (per unit, default 1, paid when the order is done) and **Reward price (coins)** (used when "Reward" is on).
+Run the migration after 0700. Existing items get reward price = your current global number; open orders keep the old 1-coin-per-line rule. The global number in Coins & rewards is now only the default for new items.
+
+## Events (migration 20261113000900)
+Dashboard → Events (owner): add, edit, hide (unpublish) or delete gatherings; set date, time, place, icon, total seats and "seats you keep" (walk-ins). Customers save a seat on the Events page; the server stops bookings when the event is full or already past (cafe time = Asia/Tehran, change `cafe_today()` if needed). Staff can see each event's guests. `seed.sql` adds four example events relative to today — delete or edit them in the dashboard.

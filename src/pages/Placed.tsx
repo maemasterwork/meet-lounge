@@ -3,6 +3,8 @@ import { useI18n } from '../i18n'
 import { useUi } from '../store/ui'
 import { go } from '../lib/route'
 import { fmtCard } from '../lib/card'
+import { CancelOrder } from '../components/CancelOrder'
+import { earnOfOrder } from '../lib/coins'
 import { Icon } from '../components/icons'
 import type { Order } from '../types'
 import type { Settings } from '../repos/types'
@@ -27,14 +29,15 @@ export function Placed({ order, lines, settings, onDone }: { order: Order; lines
   const card = settings.paymentCard
   const needsDeposit = settings.requireDeposit && order.total > 0
   const paid = order.paid
+  const cancelled = order.status === 'cancelled'
   const when = new Date(order.at).toLocaleDateString(lang === 'fa' ? 'fa-IR' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   const copy = async (text: string, msg: string) => { if (await copyText(text)) { setCopied(true); toast(msg); setTimeout(() => setCopied(false), 2000) } }
   return (
     <article className="card bagc placed" aria-live="polite">
       <div className="bhead ltr"><span className="mt"><Icon name="bag" size={16} />{t('dep.kicker')}</span></div>
       <h2 className="script ty">{t('dep.thanks')}</h2>
-      <p className="lead">{paid || !needsDeposit ? t('dep.readySoon') : t('dep.afterDeposit')}</p>
-      {needsDeposit && !paid && (
+      <p className="lead">{cancelled ? t('cancel.placedDone') : paid || !needsDeposit ? t('dep.readySoon') : t('dep.afterDeposit')}</p>
+      {needsDeposit && !paid && !cancelled && (
         <div className="depbox" role="group" aria-label={t('dep.cardTitle')}>
           <small>{t('dep.amount')}</small>
           <b className="script amt">{price(order.total)}</b>
@@ -54,8 +57,10 @@ export function Placed({ order, lines, settings, onDone }: { order: Order; lines
           <div key={i} className="rl ltr"><span>{n(l.qty)} × {l.name} <em>{l.size}</em></span><span className={l.free ? 'fr' : ''}>{l.free ? t('bag.free2') : price(l.price)}</span></div>))}
         {order.fee > 0 && <div className="rl ltr"><span>{t('bag.fee')}</span><span>{price(order.fee)}</span></div>}
         <div className="rt ltr"><small>{t('bag.total')}</small><b className="script">{price(order.total)}</b>
-          <span className={`stamp${paid || !needsDeposit ? ' ok' : ''}`}>{paid || !needsDeposit ? t('dep.paid') : t('dep.awaiting')}</span></div>
+          <span className={`stamp${cancelled ? ' x' : paid || !needsDeposit ? ' ok' : ''}`}>{cancelled ? t('status.cancelled') : paid || !needsDeposit ? t('dep.paid') : t('dep.awaiting')}</span></div>
       </div>
+      {earnOfOrder(order) > 0 && <p className="earn sm"><Icon name="heart" size={12} />{t('bag.willEarnDone', { n: n(earnOfOrder(order)) })}</p>}
+      <CancelOrder order={order} />
       <div className="row pbtn">
         <button type="button" className="btn ghost" onClick={() => { setMeTab('orders'); go('me') }}>{t('dep.track')}</button>
         <button type="button" className="btn" onClick={() => { onDone(); go('home') }}>{t('dep.back')}</button>

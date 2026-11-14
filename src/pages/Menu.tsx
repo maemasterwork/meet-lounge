@@ -9,7 +9,7 @@ import { Frame, LoadState } from '../components/Frame'
 import { ItemArt, ItemStage } from '../art/ItemArt'
 import { MILKS, REC, SUGARS, isDrink, timeKey } from '../data/catalog'
 import { basePrice, offerFor, unitPrice } from '../lib/pricing'
-import { rewardsAvailable } from '../lib/coins'
+import { LOW_STOCK, canTakeReward, isAvailable, rewardCostOf, stockLeft } from '../lib/coins'
 import { clamp } from '../lib/format'
 import type { MenuItem } from '../types'
 
@@ -59,7 +59,8 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const view = shown.slice(cur * per, cur * per + per)
   const count = (f: Filter) => (f === 'all' ? items.length : items.filter((m) => m.cat === f).length)
   const quick = (m: MenuItem) => {
-    if (!m.available) return
+    if (!isAvailable(m)) return
+    if (stockLeft(m, cart.lines) < 1) { toast(t('menu.maxInBagToast', { name: t(`item.${m.id}.name`) })); return }
     cart.add({ itemId: m.id, size: m.cat === 'hot' || m.cat === 'cold' ? 'medium' : m.sizes[0].key, milk: 0, sugar: 1, qty: 1, free: false })
     toast(t('menu.addedToast', { name: t(`item.${m.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
@@ -77,10 +78,11 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
           const o = offerFor(m.id, offers)
           const name = t(`item.${m.id}.name`)
           return (
-            <div key={m.id} className={`mc${m.available ? '' : ' off'}`}>
+            <div key={m.id} className={`mc${isAvailable(m) ? '' : ' off'}`}>
               <button type="button" className="mo" aria-label={t('menu.openItem', { name })} onClick={() => select(m.id)}>
                 <span className="im">
                   {o && <i className="sale">{n(o.pct)}٪</i>}
+                  {!isAvailable(m) ? <i className="low out">{t('menu.soldOut')}</i> : m.stock !== null && m.stock <= LOW_STOCK && <i className="low">{t('menu.onlyLeft', { n: n(m.stock) })}</i>}
                   {REC[tk].includes(m.id) && <i className="star" />}
                   <ItemArt item={m} uid={`g${m.id}`} />
                 </span>
@@ -89,7 +91,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
               </button>
               <div className="pr2">
                 <span>{price(unitPrice(m, { size: m.cat === 'hot' || m.cat === 'cold' ? 'medium' : m.sizes[0].key, milk: 0 }, offers))}</span>
-                <button type="button" className="plus" disabled={!m.available} aria-label={t(m.available ? 'menu.quickAdd' : 'menu.soldOut', { name })} onClick={() => quick(m)}><Icon name="plus" size={16} /></button>
+                <button type="button" className="plus" disabled={!isAvailable(m)} aria-label={t(isAvailable(m) ? 'menu.quickAdd' : 'menu.soldOut', { name })} onClick={() => quick(m)}><Icon name="plus" size={16} /></button>
               </div>
             </div>)
         })}
@@ -133,12 +135,12 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const offers = data?.offers ?? []
   const off = offerFor(item.id, offers)
   const p = unitPrice(item, sel, offers), b = basePrice(item, sel)
-  const freeInBag = cart.lines.filter((l) => l.free).length
-  const canFree = !!data && item.rewardEligible && item.available && rewardsAvailable(data.balance, data.settings.rewardEvery, freeInBag) > 0
+  const left = stockLeft(item, cart.lines), maxQty = Math.min(20, left), onSale = isAvailable(item)
+  const canFree = !!data && item.rewardEligible && onSale && left >= 1 && canTakeReward(data.balance, item.rewardCost, rewardCostOf(cart.lines, data.menu))
 
   const add = () => {
-    if (!item.available) return
-    cart.add({ itemId: item.id, size: sel.size, milk: item.milk ? milk : 0, sugar: isDrink(item) ? sugar : 1, qty, free: false })
+    if (!onSale || left < 1) return
+    cart.add({ itemId: item.id, size: sel.size, milk: item.milk ? milk : 0, sugar: isDrink(item) ? sugar : 1, qty: Math.min(qty, left), free: false })
     setQty(1)
     toast(t('menu.addedToast', { name: t(`item.${item.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
@@ -184,14 +186,15 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
               {SUGARS.map((k, i) => <button key={k} type="button" aria-pressed={sugar === i} onClick={() => setSugar(i)}>{t(k)}</button>)}
             </div>
           )}
+          {onSale && item.stock !== null && item.stock <= LOW_STOCK && <p className="lowline">{t('menu.onlyLeft', { n: n(item.stock) })}</p>}
           <div className="buy ltr">
             <div className="step" role="group" aria-label={t('menu.optQty')}>
               <button type="button" onClick={() => setQty((q) => clamp(q - 1, 1, 20))} aria-label={t('menu.less')} disabled={qty <= 1}><Icon name="minus" size={16} /></button>
               <output aria-live="polite">{n(qty)}</output>
-              <button type="button" onClick={() => setQty((q) => clamp(q + 1, 1, 20))} aria-label={t('menu.more')} disabled={qty >= 20}><Icon name="plus" size={16} /></button>
+              <button type="button" onClick={() => setQty((q) => clamp(q + 1, 1, Math.max(1, maxQty)))} aria-label={t('menu.more')} disabled={qty >= maxQty}><Icon name="plus" size={16} /></button>
             </div>
-            <button type="button" className="btn" onClick={add} disabled={!item.available}>{t(item.available ? 'menu.add' : 'menu.soldOut')}<Icon name="bag" size={18} /></button>
-            {canFree && <button type="button" className="btn gold" onClick={takeFree}>{t('menu.freeWith', { n: n(data!.settings.rewardEvery) })}</button>}
+            <button type="button" className="btn" onClick={add} disabled={!onSale || left < 1}>{t(!onSale ? 'menu.soldOut' : left < 1 ? 'menu.maxInBag' : 'menu.add')}<Icon name="bag" size={18} /></button>
+            {canFree && <button type="button" className="btn gold" onClick={takeFree}>{t('menu.freeWith', { n: n(item.rewardCost) })}</button>}
           </div>
         </div>
       </div>
@@ -204,7 +207,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
               {items.filter((m) => m.cat === g).map((m) => {
                 const o = offerFor(m.id, offers)
                 return (
-                  <button key={m.id} type="button" className={`th${m.available ? '' : ' off'}`} aria-pressed={item.id === m.id} aria-label={t(`item.${m.id}.name`)} title={t(`item.${m.id}.name`)} onClick={() => select(m.id)}>
+                  <button key={m.id} type="button" className={`th${isAvailable(m) ? '' : ' off'}`} aria-pressed={item.id === m.id} aria-label={t(`item.${m.id}.name`)} title={t(`item.${m.id}.name`)} onClick={() => select(m.id)}>
                     {o && <i className="sale">{n(o.pct)}٪</i>}
                     {REC[tk].includes(m.id) && <i className="star" />}
                     <ItemArt item={m} uid={`t${m.id}`} />

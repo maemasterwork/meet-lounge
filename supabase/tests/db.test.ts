@@ -42,10 +42,20 @@ describe('schema and seed', () => {
     expect(profile[0]).toEqual({ display_name: 'Taylor Namvaran', phone: '+982112345678', seat: 'Building 2, floor 4, design' })
 
     await as(db, null, 'update auth.users set raw_user_meta_data=$1::jsonb where id=$2', [
-      JSON.stringify({ name: 'Taylor Updated', phone: '', seat: 'Building 3, floor 1' }), user.id,
+      JSON.stringify({ name: 'Taylor Updated', phone: '09121112233', seat: 'Building 3, floor 1' }), user.id,
     ])
     const upgraded = await as(db, null, 'select display_name, phone, seat from public.profiles where id=$1', [user.id])
-    expect(upgraded[0]).toEqual({ display_name: 'Taylor Updated', phone: null, seat: 'Building 3, floor 1' })
+    expect(upgraded[0]).toEqual({ display_name: 'Taylor Updated', phone: '09121112233', seat: 'Building 3, floor 1' })
+  })
+  it('requires a phone for registered customers and permits profile edits', async () => {
+    await expect(db.query("insert into auth.users (raw_user_meta_data) values ('{}'::jsonb)")).rejects.toThrow(/phone-required/)
+
+    const updated = await as(db, alice,
+      'update public.profiles set display_name=$1, phone=$2, seat=$3 where id=$4 returning display_name, phone, seat',
+      ['Alice Updated', '09129998877', 'Building 1, floor 2', alice.id],
+    )
+    expect(updated[0]).toEqual({ display_name: 'Alice Updated', phone: '09129998877', seat: 'Building 1, floor 2' })
+    await expect(as(db, alice, 'update public.profiles set phone=null where id=$1', [alice.id])).rejects.toThrow(/phone-required/)
   })
 })
 
@@ -210,11 +220,11 @@ describe('rewards', () => {
     await as(db, c, 'select public.cancel_order($1)', [o.id]); await as(db, c, 'select public.cancel_order($1)', [o.id])
     expect(await balance(c.id)).toBe(6)
   })
-  it('a completed reward order still earns its +1 coin', async () => {
+  it('a completed reward order earns nothing for the free item', async () => {
     const c = await addUser(db); await give(c.id, 6)
     const o = await order(c, line({ reward: true }))
     for (let i = 0; i < 3; i++) await advance(o.id)
-    expect(await balance(c.id)).toBe(1)
+    expect(await balance(c.id)).toBe(0)
   })
   it('owner cannot push a balance below zero or demote the last owner', async () => {
     const c = await addUser(db)
@@ -264,11 +274,11 @@ describe('dashboard (owner tools)', () => {
     await as(db, owner, "update public.offers set ends_at = now() - interval '1 hour' where item_id='espresso'")
     expect((await order(alice, line({ item_id: 'espresso' }))).subtotal).toBe(95000)        // expired offers do not apply
   })
-  it('changing the reward rule changes what a reward costs', async () => {
+  it('changing an item reward cost changes what that reward costs', async () => {
     const c = await addUser(db); await give(c.id, 3)
-    await as(db, owner, 'update public.settings set reward_every=3')
+    await as(db, owner, "update public.menu_items set reward_cost=3 where id='latte'")
     expect((await order(c, line({ reward: true }))).reward_coins).toBe(3)
-    await as(db, owner, 'update public.settings set reward_every=6')
+    await as(db, owner, "update public.menu_items set reward_cost=6 where id='latte'")
   })
 })
 
@@ -341,5 +351,135 @@ describe('deposit before preparation', () => {
     expect((await as(db, 'anon', 'select payment_card from public.settings'))[0].payment_card).toBeNull()
     await as(db, owner, "update public.settings set payment_card='6037991234567890', payment_holder='Meet Lounge'")
     expect((await as(db, 'anon', 'select payment_card from public.settings'))[0].payment_card).toBe('6037991234567890')
+  })
+})
+
+describe('per-item coins and stock', () => {
+  const setItem = (id: string, set: string) => as(db, owner, `update public.menu_items set ${set} where id='${id}'`)
+  const stock = async (id: string) => (await as(db, null, 'select stock from public.menu_items where id=$1', [id]))[0].stock
+  const finish = async (id: string) => { for (let i = 0; i < 3; i++) await advance(id) }
+  it('an order earns coins_earned per unit of each paid line', async () => {
+    const c = await addUser(db)
+    await setItem('latte', 'coins_earned=3'); await setItem('espresso', 'coins_earned=0')
+    const o = await order(c, JSON.stringify([{ item_id: 'latte', size: 'small', milk: 0, sugar: 1, qty: 2 }, { item_id: 'espresso', size: 'small', sugar: 1, qty: 1 }]))
+    await finish(o.id)
+    expect(await balance(c.id)).toBe(6)
+    await setItem('latte', 'coins_earned=1'); await setItem('espresso', 'coins_earned=1')
+  })
+  it('the coins promised at order time are kept even if the item changes later', async () => {
+    const c = await addUser(db)
+    await setItem('latte', 'coins_earned=2')
+    const o = await order(c)
+    await setItem('latte', 'coins_earned=9')
+    await finish(o.id)
+    expect(await balance(c.id)).toBe(2)
+    await setItem('latte', 'coins_earned=1')
+  })
+  it('default is one coin per unit, and an item with 0 coins earns no ledger row', async () => {
+    const c = await addUser(db)
+    await finish((await order(c, line({ qty: 3 }))).id)
+    expect(await balance(c.id)).toBe(3)
+    await setItem('latte', 'coins_earned=0')
+    const d = await addUser(db); await finish((await order(d)).id)
+    expect(await balance(d.id)).toBe(0)
+    await setItem('latte', 'coins_earned=1')
+  })
+  it('each reward item has its own price in coins', async () => {
+    const c = await addUser(db); await give(c.id, 7)
+    await setItem('latte', 'reward_cost=4'); await setItem('cappuccino', 'reward_cost=7')
+    expect((await order(c, line({ reward: true }))).reward_coins).toBe(4)
+    await expect(order(c, line({ item_id: 'cappuccino', reward: true }))).rejects.toThrow(/not-enough-coins/)
+    expect(await balance(c.id)).toBe(3)
+    await setItem('latte', 'reward_cost=6'); await setItem('cappuccino', 'reward_cost=6')
+  })
+  it('limited stock: taken at checkout, refused when short, returned on cancel', async () => {
+    await setItem('cookie', 'stock=3')
+    const o = await order(alice, line({ item_id: 'cookie', size: 'piece1', qty: 2 }))
+    expect(await stock('cookie')).toBe(1)
+    await expect(order(bob, line({ item_id: 'cookie', size: 'piece1', qty: 2 }))).rejects.toThrow(/out-of-stock/)
+    expect(await stock('cookie')).toBe(1)                                     // the failed order took nothing
+    await as(db, alice, 'select public.cancel_order($1)', [o.id]); await as(db, alice, 'select public.cancel_order($1)', [o.id])
+    expect(await stock('cookie')).toBe(3)                                     // returned once
+    await setItem('cookie', 'stock=null')
+  })
+  it('two lines of the same item share the stock, and zero stock means sold out', async () => {
+    await setItem('cookie', 'stock=2')
+    await expect(order(alice, JSON.stringify([{ item_id: 'cookie', size: 'piece1', qty: 1 }, { item_id: 'cookie', size: 'piece1', qty: 2 }]))).rejects.toThrow(/out-of-stock/)
+    expect(await stock('cookie')).toBe(2)
+    await order(alice, line({ item_id: 'cookie', size: 'piece1', qty: 2 }))
+    expect(await stock('cookie')).toBe(0)
+    await expect(order(bob, line({ item_id: 'cookie', size: 'piece1' }))).rejects.toThrow(/out-of-stock/)
+    await setItem('cookie', 'stock=null')
+  })
+  it('unlimited stock (null) never changes; rewards also use stock', async () => {
+    expect(await stock('latte')).toBeNull()
+    await order(alice, line({ qty: 2 })); expect(await stock('latte')).toBeNull()
+    const c = await addUser(db); await give(c.id, 6)
+    await setItem('latte', 'stock=1')
+    const o = await order(c, line({ reward: true })); expect(await stock('latte')).toBe(0)
+    await as(db, c, 'select public.cancel_order($1)', [o.id]); expect(await stock('latte')).toBe(1)
+    await setItem('latte', 'stock=null')
+  })
+  it('only the owner can change coins and stock; values are range-checked', async () => {
+    await expect(as(db, staff, "update public.menu_items set stock=5 where id='latte'")).resolves.toBeDefined()
+    expect(await stock('latte')).toBeNull()                                   // staff update matched no rows
+    await expect(setItem('latte', 'stock=-1')).rejects.toThrow(/check/)
+    await expect(setItem('latte', 'coins_earned=-1')).rejects.toThrow(/check/)
+    await expect(setItem('latte', 'reward_cost=0')).rejects.toThrow(/check/)
+  })
+})
+
+describe('events', () => {
+  const mk = async (extra = '') => (await as(db, owner, `insert into public.events (title_fa, title_en, day, start_time, capacity ${extra ? ', ' + extra.split('|')[0] : ''}) values ('ت', 'T', public.cafe_today() + 2, '18:00', 3 ${extra ? ', ' + extra.split('|')[1] : ''}) returning id, booked`))[0]
+  const book = (u: any, id: string) => as(db, u, 'select (public.book_event($1)).booked b', [id])
+  it('everyone reads published events; drafts are staff-only; only the owner writes', async () => {
+    const pub = await mk(); const draft = (await as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity, published) values ('پ','D', public.cafe_today()+1, '10:00', 5, false) returning id"))[0]
+    const seen = (await as(db, 'anon', 'select id from public.events')).map((r: any) => r.id)
+    expect(seen).toContain(pub.id); expect(seen).not.toContain(draft.id)
+    expect((await as(db, staff, 'select id from public.events')).map((r: any) => r.id)).toContain(draft.id)
+    await expect(as(db, staff, "insert into public.events (title_fa, title_en, day, start_time, capacity) values ('x','x', current_date, '10:00', 1)")).rejects.toThrow(/row-level security/)
+    await expect(as(db, alice, 'delete from public.events where id=$1', [pub.id])).resolves.toEqual([])
+    await expect(as(db, 'anon', 'select public.book_event($1)', [pub.id])).rejects.toThrow(/permission denied/)
+  })
+  it('a customer saves one seat; saving twice does nothing; cancelling frees it', async () => {
+    const e = await mk()
+    expect((await book(alice, e.id))[0].b).toBe(1)
+    expect((await book(alice, e.id))[0].b).toBe(1)
+    expect((await book(bob, e.id))[0].b).toBe(2)
+    expect((await as(db, alice, 'select (public.cancel_booking($1)).booked b', [e.id]))[0].b).toBe(1)
+    expect((await as(db, alice, 'select (public.cancel_booking($1)).booked b', [e.id]))[0].b).toBe(1)
+    expect((await as(db, alice, 'select count(*)::int c from public.event_seats')).map((r: any) => r.c)[0]).toBe(0)   // alice sees only her own rows
+  })
+  it('is full at capacity minus held seats, and cancelling reopens a seat', async () => {
+    const e = (await as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity, held) values ('ت','T', public.cafe_today()+1, '18:00', 3, 1) returning id"))[0]
+    await book(alice, e.id); await book(bob, e.id)
+    const c = await addUser(db)
+    await expect(book(c, e.id)).rejects.toThrow(/event-full/)
+    await as(db, bob, 'select public.cancel_booking($1)', [e.id])
+    expect((await book(c, e.id))[0].b).toBe(2)
+  })
+  it('past or hidden events cannot be booked', async () => {
+    const past = (await as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity) values ('ت','T', public.cafe_today()-1, '18:00', 3) returning id"))[0]
+    await expect(book(alice, past.id)).rejects.toThrow(/event-closed/)
+    const hid = (await as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity, published) values ('ت','T', public.cafe_today()+1, '18:00', 3, false) returning id"))[0]
+    await expect(book(alice, hid.id)).rejects.toThrow(/event-not-found/)
+  })
+  it('seat counts cannot be edited directly, and capacity cannot drop below taken seats', async () => {
+    const e = await mk(); await book(alice, e.id)
+    await as(db, owner, 'update public.events set booked = 0 where id=$1', [e.id])
+    expect((await as(db, null, 'select booked from public.events where id=$1', [e.id]))[0].booked).toBe(1)
+    await expect(as(db, owner, 'update public.events set capacity = 0 where id=$1', [e.id])).rejects.toThrow(/capacity-too-small/)
+    await expect(as(db, owner, 'update public.events set held = 3 where id=$1', [e.id])).rejects.toThrow(/capacity-too-small|check/)
+  })
+  it('staff see who saved a seat; customers do not; deleting an event removes its seats', async () => {
+    const e = await mk(); await book(alice, e.id)
+    expect((await as(db, staff, 'select * from public.event_attendees($1)', [e.id])).length).toBe(1)
+    await expect(as(db, alice, 'select * from public.event_attendees($1)', [e.id])).rejects.toThrow(/not-allowed/)
+    await as(db, owner, 'delete from public.events where id=$1', [e.id])
+    expect((await as(db, null, 'select count(*)::int c from public.event_seats where event_id=$1', [e.id]))[0].c).toBe(0)
+  })
+  it('input is range-checked', async () => {
+    await expect(as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity) values ('ت','T', current_date, '25:00', 3)")).rejects.toThrow(/check/)
+    await expect(as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity, icon) values ('ت','T', current_date, '10:00', 3, 'x')")).rejects.toThrow(/check/)
   })
 })

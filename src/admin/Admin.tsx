@@ -10,12 +10,13 @@ import { useAuth } from '../lib/auth'
 import type { Order, OrderStatus } from '../types'
 import { MenuTab } from './MenuTab'
 import { CoinsTab } from './CoinsTab'
+import { EventsTab } from './EventsTab'
 import { OffersTab } from './OffersTab'
 import { StatsTab } from './StatsTab'
 import { BrandTab } from './BrandTab'
 
-type Tab = 'orders' | 'menu' | 'coins' | 'offers' | 'stats' | 'brand'
-const TABS: [Tab, string][] = [['orders', 'admin.tabOrders'], ['menu', 'admin.tabMenu'], ['coins', 'admin.tabCoins'], ['offers', 'admin.tabOffers'], ['stats', 'admin.tabStats'], ['brand', 'admin.tabBrand']]
+type Tab = 'orders' | 'menu' | 'coins' | 'events' | 'offers' | 'stats' | 'brand'
+const TABS: [Tab, string][] = [['orders', 'admin.tabOrders'], ['menu', 'admin.tabMenu'], ['coins', 'admin.tabCoins'], ['events', 'admin.tabEvents'], ['offers', 'admin.tabOffers'], ['stats', 'admin.tabStats'], ['brand', 'admin.tabBrand']]
 
 const COLS: OrderStatus[] = ['new', 'prep', 'ready', 'out', 'done']
 const NEXT: Record<string, string> = { new: 'admin.startPrep', prep: 'admin.markReady', ready: 'admin.markDone', out: 'admin.markDone' }
@@ -60,10 +61,17 @@ export default function Admin() {
       </div>
       {tab === 'menu' && <MenuTab owner={owner} />}
       {tab === 'coins' && <CoinsTab owner={owner} />}
+      {tab === 'events' && <EventsTab owner={owner} />}
       {tab === 'offers' && <OffersTab owner={owner} />}
       {tab === 'stats' && <StatsTab />}
       {tab === 'brand' && <BrandTab owner={owner} />}
-      {tab === 'orders' && <div className="apane">
+      {tab === 'orders' && <div className="apane order-pane">
+        <div className="order-tools">
+          {orders.error && <span className="muted sm" role="alert">{t('err.loadFailed')}</span>}
+          <button type="button" className="btn ghost sm" disabled={orders.loading} onClick={orders.reload}>
+            <Icon name="refresh" size={16} />{t('common.refreshOrders')}
+          </button>
+        </div>
         <div className="board">
           {COLS.map((c) => {
             const L = list.filter((o) => o.status === c)

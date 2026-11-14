@@ -15,6 +15,12 @@ export interface MenuItem {
   milk: boolean
   available: boolean
   rewardEligible: boolean
+  /** Coins earned for each unit ordered (default 1), paid when the order is done. */
+  coinsEarned: number
+  /** Coins needed to take this item as a free reward. */
+  rewardCost: number
+  /** Units left; null = unlimited. 0 means sold out. */
+  stock: number | null
   sizes: SizeOption[]
   /** Copy keys (without the "tag." prefix) shown as tags. */
   tags: string[]
@@ -47,7 +53,7 @@ export interface CartLine {
   free: boolean
 }
 
-export interface OrderItemSummary { itemId: string; qty: number; free: boolean }
+export interface OrderItemSummary { itemId: string; qty: number; free: boolean; /** coins earned per unit, fixed when the order was placed */ coin?: number }
 
 export interface Order {
   n: number
@@ -69,3 +75,17 @@ export interface Order {
 export interface LedgerEntry { id: number; at: string; delta: number; reason: string; orderN?: number }
 
 export interface PlaceOrderInput { lines: CartLine[]; mode: OrderMode; table?: string; address?: string; /** Required for guests (no account); the cafe calls it if something is wrong. */ phone?: string }
+
+export type EventIcon = 'music' | 'book' | 'cake' | 'bean' | 'cup' | 'lantern' | 'brush' | 'jar' | 'heart'
+export const EVENT_ICONS: EventIcon[] = ['music', 'book', 'cake', 'bean', 'cup', 'lantern', 'brush', 'jar', 'heart']
+/** A little gathering at the cafe. `day` is YYYY-MM-DD and `time` is HH:MM, both at the cafe. */
+export interface CafeEvent {
+  id: string; icon: EventIcon
+  title: Record<Lang, string>; desc: Record<Lang, string>; place: Record<Lang, string>
+  day: string; time: string; hours: number
+  capacity: number
+  /** Seats the cafe keeps for itself. */ held: number
+  /** Seats saved by customers (includes the signed-in customer's own). */ booked: number
+  published: boolean
+}
+export type EventInput = Omit<CafeEvent, 'id' | 'booked'>

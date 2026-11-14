@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 import { OrderError } from '../repos'
 
@@ -44,3 +44,17 @@ export function contrast(a: string, b: string): number {
   const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p)
   return (x + 0.05) / (y + 0.05)
 }
+
+/** Whole-number input that saves on blur/Enter. With `nullable`, an empty box means "no limit" (null). */
+export function NumInput({ value, min, max, nullable, onSave, disabled, label, placeholder }: { value: number | null; min: number; max: number; nullable?: boolean; onSave: (v: number | null) => void; disabled: boolean; label: string; placeholder?: string }) {
+  const show = (v: number | null) => (v === null ? '' : String(v))
+  const [v, setV] = useState(show(value))
+  useEffect(() => setV(show(value)), [value])
+  const commit = () => {
+    if (v.trim() === '') { if (nullable) { if (value !== null) onSave(null) } else setV(show(value)); return }
+    const x = Math.round(Number(v))
+    if (Number.isFinite(x) && x >= min && x <= max) { if (x !== value) onSave(x); setV(String(x)) } else setV(show(value))
+  }
+  return <input className="num" type="number" inputMode="numeric" min={min} max={max} dir="ltr" value={v} placeholder={placeholder} disabled={disabled} aria-label={label} onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
+}
+

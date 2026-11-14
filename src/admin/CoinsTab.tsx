@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { repos, type Customer } from '../repos'
 import { useRepo } from '../lib/useRepo'
-import { Msg, Switch, useAct } from './common'
+import { Msg, NumInput, Switch, useAct } from './common'
 
 function Adjust({ c, act }: { c: Customer; act: ReturnType<typeof useAct> }) {
   const { t } = useI18n()
@@ -25,59 +25,100 @@ export function CoinsTab({ owner }: { owner: boolean }) {
   const customers = useRepo(() => (owner ? repos.admin.customers() : Promise.resolve([])), [repos.admin, repos.coins])
   const ledger = useRepo(() => (owner ? repos.admin.ledgerAll() : Promise.resolve([])), [repos.admin, repos.coins])
   const act = useAct()
-  const N = settings.data?.rewardEvery ?? 6
+  const dflt = settings.data?.rewardEvery ?? 6
   const [every, setEvery] = useState<string | null>(null)
-  const shown = every ?? String(N)
+  const shown = every ?? String(dflt)
   const ev = Math.round(Number(shown))
   const valid = Number.isFinite(ev) && ev >= 2 && ev <= 50
+  const list = (items.data ?? []).filter((i) => !i.archived)
+  const rewards = list.filter((i) => i.rewardEligible)
+  const cheapest = rewards.length ? Math.min(...rewards.map((i) => i.rewardCost)) : dflt
   const cs = customers.data ?? []
-  const near = cs.filter((c) => N - (c.balance % N) <= 2 && c.balance % N !== 0).length
+  const led = ledger.data ?? []
+  const inCirculation = cs.reduce((a, c) => a + c.balance, 0)
+  const issued = led.filter((l) => l.delta > 0 && l.reason !== 'refund').reduce((a, l) => a + l.delta, 0)
+  const redeemed = led.filter((l) => l.reason === 'reward').reduce((a, l) => a - l.delta, 0)
+  const ready = cs.filter((c) => c.balance >= cheapest).length
+  const near = cs.filter((c) => c.balance < cheapest && cheapest - c.balance <= 2).length
+  const save = (id: string, p: Parameters<typeof repos.admin.saveItem>[1]) => void act.run(() => repos.admin.saveItem(id, p))
+  const applyAll = () => act.run(async () => { for (const i of rewards) if (i.rewardCost !== ev) await repos.admin.saveItem(i.id, { rewardCost: ev }); return true }, t('a2.cn.applied'))
   return (
     <div className="apane" style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
+      {owner && (
+        <div className="kpis">
+          <div className="kpi"><small>{t('a2.cn.circulation')}</small><b>{n(inCirculation)}</b><small>{t('a2.cn.holders', { n: n(cs.filter((c) => c.balance > 0).length) })}</small></div>
+          <div className="kpi"><small>{t('a2.cn.issued')}</small><b>{n(issued)}</b></div>
+          <div className="kpi"><small>{t('a2.cn.redeemed')}</small><b>{n(redeemed)}</b></div>
+          <div className="kpi"><small>{t('a2.cn.ready')}</small><b>{n(ready)}</b><small>{t('a2.nearCount', { n: n(near) })}</small></div>
+        </div>)}
+
+      <div className="panel">
+        <div className="row" style={{ gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>{t('a2.cn.itemsTitle')}</h3>
+          <span className="muted sm" style={{ marginInlineStart: 'auto' }}>{t('a2.cn.itemsHelp')}</span>
+        </div>
+        <Msg msg={act.msg} />
+        <div className="tblw"><table>
+          <thead><tr><th>{t('a2.item')}</th><th>{t('admin.rewardEligible')}</th><th>{t('a2.rewardCost')}</th><th>{t('a2.coinsEarned')}</th><th>{t('a2.stock')}</th></tr></thead>
+          <tbody>
+            {list.map((i) => (
+              <tr key={i.id} style={i.rewardEligible ? undefined : { opacity: 0.8 }}>
+                <td><b>{i.name[lang]}</b> <span className="muted sm">{price(i.price)}</span></td>
+                <td><Switch on={i.rewardEligible} label={`${t('admin.rewardEligible')} — ${i.name[lang]}`} disabled={!owner || act.busy} onChange={(v) => save(i.id, { rewardEligible: v })} /></td>
+                <td><NumInput value={i.rewardCost} min={1} max={200} label={`${t('a2.rewardCost')} — ${i.name[lang]}`} disabled={!owner || act.busy || !i.rewardEligible} onSave={(v) => save(i.id, { rewardCost: v ?? dflt })} /></td>
+                <td><NumInput value={i.coinsEarned} min={0} max={50} label={`${t('a2.coinsEarned')} — ${i.name[lang]}`} disabled={!owner || act.busy} onSave={(v) => save(i.id, { coinsEarned: v ?? 1 })} /></td>
+                <td>{i.stock === null ? <span className="muted sm">{t('a2.unlimited')}</span> : i.stock === 0 ? <span className="pillst bad">{t('menu.soldOut')}</span> : n(i.stock)}</td>
+              </tr>))}
+          </tbody>
+        </table></div>
+      </div>
+
       <div className="twocol">
         <div className="panel">
-          <h3>{t('admin.coinRule')}</h3>
-          <label className="field">{t('admin.coinRuleText')}
-            <input type="number" dir="ltr" min={2} max={50} value={shown} disabled={!owner} onChange={(e) => setEvery(e.target.value)} />
+          <h3>{t('a2.cn.defaultTitle')}</h3>
+          <p className="muted sm" style={{ margin: 0 }}>{t('a2.cn.defaultHelp')}</p>
+          <label className="field">{t('a2.cn.defaultLabel')}
+            <input type="number" dir="ltr" min={2} max={50} value={shown} disabled={!owner} onChange={(e) => setEvery(e.target.value)} aria-invalid={!valid} />
           </label>
-          <div className="row" style={{ gap: 8, alignItems: 'center' }}>
-            <button type="button" className="btn sm" disabled={act.busy || !owner || !valid || ev === N} onClick={async () => { if (await act.run(async () => { await repos.admin.saveSettings({ rewardEvery: ev }); return true })) setEvery(null) }}>{t('common.save')}</button>
-            {owner && <span className="muted sm">{t('a2.nearCount', { n: n(near) })}</span>}
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" className="btn sm" disabled={act.busy || !owner || !valid || ev === dflt} onClick={async () => { if (await act.run(async () => { await repos.admin.saveSettings({ rewardEvery: ev }); return true })) setEvery(null) }}>{t('common.save')}</button>
+            <button type="button" className="btn ghost sm" disabled={act.busy || !owner || !valid || rewards.every((i) => i.rewardCost === ev)} onClick={() => void applyAll()}>{t('a2.cn.applyAll', { n: n(ev) })}</button>
           </div>
-          <Msg msg={act.msg} />
         </div>
         <div className="panel">
-          <h3>{t('admin.eligibleItems')}</h3>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {(items.data ?? []).filter((i) => !i.archived).map((i) => (
-              <div key={i.id} className="row" style={{ gap: 10, alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>{i.name[lang]} <span className="muted sm">{price(i.price)}</span></span>
-                <Switch on={i.rewardEligible} label={i.name[lang]} disabled={!owner || act.busy} onChange={(v) => void act.run(() => repos.admin.saveItem(i.id, { rewardEligible: v }))} />
-              </div>))}
-          </div>
+          <h3>{t('a2.cn.howTitle')}</h3>
+          <ul className="muted sm" style={{ margin: 0, paddingInlineStart: 18, display: 'grid', gap: 6 }}>
+            <li>{t('a2.cn.how1')}</li><li>{t('a2.cn.how2')}</li><li>{t('a2.cn.how3')}</li>
+          </ul>
         </div>
       </div>
+
       {owner && (
         <div className="panel">
           <h3>{t('a2.customers')}</h3>
           {cs.length === 0 ? <p className="muted">{t('a2.noCustomers')}</p> : (
             <div className="tblw"><table>
-              <thead><tr><th>{t('a2.customer')}</th><th>{t('a2.balance')}</th><th>{t('a2.ordersCount')}</th><th>{t('admin.adjust')}</th></tr></thead>
-              <tbody>{cs.map((c) => (
-                <tr key={c.id}>
-                  <td><b>{c.name || '—'}</b>{c.phone && <><br /><span className="muted sm" dir="ltr">{c.phone}</span></>}</td>
-                  <td>{n(c.balance)} <span className="muted sm">/ {n(N)}</span></td>
-                  <td>{n(c.orders)}</td>
-                  <td><Adjust c={c} act={act} /></td>
-                </tr>))}</tbody>
+              <thead><tr><th>{t('a2.customer')}</th><th>{t('a2.balance')}</th><th>{t('a2.cn.canClaim')}</th><th>{t('a2.ordersCount')}</th><th>{t('admin.adjust')}</th></tr></thead>
+              <tbody>{cs.map((c) => {
+                const can = rewards.filter((i) => i.rewardCost <= c.balance && (i.stock === null || i.stock > 0) && i.available)
+                return (
+                  <tr key={c.id}>
+                    <td><b>{c.name || '—'}</b>{c.phone && <><br /><span className="muted sm" dir="ltr">{c.phone}</span></>}</td>
+                    <td><b>{n(c.balance)}</b></td>
+                    <td>{can.length ? <span title={can.map((i) => i.name[lang]).join('، ')}>{t('a2.cn.nItems', { n: n(can.length) })}</span> : <span className="muted sm">{t('a2.cn.nextIn', { n: n(Math.max(0, cheapest - c.balance)) })}</span>}</td>
+                    <td>{n(c.orders)}</td>
+                    <td><Adjust c={c} act={act} /></td>
+                  </tr>)
+              })}</tbody>
             </table></div>)}
         </div>)}
+
       {owner && (
         <div className="panel">
           <h3>{t('a2.ledgerAll')}</h3>
-          {(ledger.data ?? []).length === 0 ? <p className="muted">{t('a2.noData')}</p> : (
+          {led.length === 0 ? <p className="muted">{t('a2.noData')}</p> : (
             <div className="tblw"><table><tbody>
-              {(ledger.data ?? []).slice(0, 40).map((l) => (
+              {led.slice(0, 40).map((l) => (
                 <tr key={l.id}>
                   <td className="muted sm">{new Date(l.at).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })}</td>
                   <td>{l.customer || '—'}</td>

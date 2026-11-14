@@ -55,3 +55,8 @@ svg text{font-family:var(--ml-font-body)}
   body.print-qr .qrwrap{border:0!important;padding:0!important}
   body.print-qr .qrgrid{grid-template-columns:repeat(3,1fr);gap:10mm}
 }
+.iconpick{display:flex;flex-wrap:wrap;gap:6px}
+.iconpick button{width:38px;height:38px;border-radius:10px;border:1px solid var(--ml-line);background:var(--ml-surface);color:var(--ml-ink);display:grid;place-items:center;cursor:pointer}
+.iconpick button.on{border-color:var(--ml-accent);color:var(--ml-accent);background:color-mix(in srgb,var(--ml-accent) 12%,var(--ml-surface))}
+.guests{margin:0;padding-inline-start:18px;display:grid;gap:4px}
+.btn.danger{background:#b3261e;color:#fff}

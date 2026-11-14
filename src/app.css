@@ -436,3 +436,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .mon{font-size:30px}.cnav{width:30px;height:30px}.evr{padding-top:0;gap:4px;overflow:auto}.onday{display:none}
   .stub b{font-size:30px}.td{font-size:12.5px;line-height:1.4}.tbody h4{font-size:20px}.cfoot{display:none}.tbody{gap:3px;padding:8px 12px}
 }
+
+/* ---- per-item stock and coins ---- */
+.tblw input.num{width:104px}.tblw input.num:disabled{opacity:.4}
+.pillst.bad{background:color-mix(in srgb,#c0392b 18%,transparent);color:#c0392b;margin-inline-start:6px}
+.mc .im .low{position:absolute;inset-inline-start:6px;bottom:6px;font-style:normal;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--ml-gold);color:#4a3200;z-index:2}
+.mc .im .low.out{background:var(--ml-ink);color:var(--ml-surface)}
+.lowline{margin:0;font-size:12.5px;font-weight:600;color:var(--ml-accent)}
+.earn{margin:0;display:flex;align-items:center;gap:6px;color:var(--ml-accent);font-weight:600}
+.depbox ~ .earn,.placed .earn{margin-top:2px}
+.tickets{display:grid;gap:10px;min-height:0;overflow:auto;position:relative;z-index:2}
+.cd .more{position:absolute;top:3px;inset-inline-end:5px;font-style:normal;font-size:10px;font-weight:700;color:var(--ml-accent)}
+.cancelbtn{margin-top:8px}
+.cancelask{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;border:1px dashed var(--ml-accent);border-radius:12px;background:color-mix(in srgb,var(--ml-accent) 7%,transparent)}
+.btn.danger{background:#b3261e;color:#fff;border-color:#b3261e}
+.stamp.x{border-color:var(--ml-ink-2,#777);color:var(--ml-ink-2,#777)}

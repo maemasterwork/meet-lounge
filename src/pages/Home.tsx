@@ -1,3 +1,4 @@
+import { isAvailable } from '../lib/coins'
 import { useI18n } from '../i18n'
 import { useShop } from '../data/context'
 import { go } from '../lib/route'
@@ -35,7 +36,7 @@ export function Home() {
           <div className="chead ltr"><h3><Icon name="check" />{t('home.bestTitle')}</h3><button type="button" onClick={() => go('menu')}>{t('home.seeAll')} <Icon name="arrowL" size={16} /></button></div>
           <div className="tiles ltr">
             {data && BEST.map((id) => { const m = data.byId(id); if (!m) return null; return (
-              <button key={id} type="button" className="tile" onClick={() => open(id)} disabled={!m.available}>
+              <button key={id} type="button" className="tile" onClick={() => open(id)} disabled={!isAvailable(m)}>
                 <span className="im"><ItemArt item={m} uid={`b${id}`} /></span>
                 <span className="nm">{t(`item.${id}.name`)}</span>
                 <span className="pr">{price(basePrice(m, { size: m.sizes[0].key, milk: 0 }))}</span>

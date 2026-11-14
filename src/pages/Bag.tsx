@@ -10,6 +10,7 @@ import { HomeScene } from '../components/HomeScene'
 import { ItemArt } from '../art/ItemArt'
 import { MILKS, SUGARS, isDrink } from '../data/catalog'
 import { lineTotal, orderTotals } from '../lib/pricing'
+import { earnFor, isAvailable, rewardCostOf, stockLeft } from '../lib/coins'
 import { OrderError, repos } from '../repos'
 import { useAuth } from '../lib/auth'
 import { Placed, type ReceiptLine } from './Placed'
@@ -17,7 +18,7 @@ import type { CartLine, Order, OrderMode } from '../types'
 
 const MODES: OrderMode[] = ['pickup', 'table', 'delivery']
 const ERR: Record<string, string> = {
-  'address-required': 'err.addressRequired', 'shop-closed': 'err.shopClosed', 'item-unavailable': 'err.itemUnavailable', 'not-enough-coins': 'err.notEnoughCoins',
+  'address-required': 'err.addressRequired', 'shop-closed': 'err.shopClosed', 'item-unavailable': 'err.itemUnavailable', 'out-of-stock': 'err.outOfStock', 'not-enough-coins': 'err.notEnoughCoins',
   'table-required': 'err.generic', 'phone-required': 'err.phoneRequired', 'bad-option': 'err.generic', 'reward-not-allowed': 'err.generic',
   'deposit-required': 'err.generic', 'order-closed': 'err.generic', 'not-allowed': 'err.notAllowed', 'not-authenticated': 'err.network',
 }
@@ -45,9 +46,9 @@ export function BagPage() {
     return parts.join(lang === 'fa' ? '، ' : ', ')
   }
   const totals = orderTotals(cart.lines, data.menu, data.offers, cart.mode, data.settings.deliveryFee)
-  const freeCount = cart.lines.filter((l) => l.free).length
-  const overRewards = freeCount * data.settings.rewardEvery > data.balance
-  const unavailable = cart.lines.some((l) => !data.byId(l.itemId)?.available)
+  const overRewards = rewardCostOf(cart.lines, data.menu) > data.balance
+  const unavailable = cart.lines.some((l) => { const m = data.byId(l.itemId); return !m || !isAvailable(m) || stockLeft(m, cart.lines) === 0 && m.stock !== null && cart.lines.filter((x) => x.itemId === m.id).reduce((a, x) => a + x.qty, 0) > m.stock })
+  const earn = earnFor(cart.lines, data.menu)
 
   const place = async () => {
     setBusy(true); setErr('')
@@ -65,7 +66,7 @@ export function BagPage() {
   const lineSub = (l: CartLine) => {
     const it = data.byId(l.itemId)
     if (!it) return ''
-    return l.free ? t('bag.rewardSub', { n: n(data.settings.rewardEvery) }) : `${lineLabel(l)} · ${t('bag.each', { price: price(lineTotal({ ...l, qty: 1 }, data.menu, data.offers)) })}`
+    return l.free ? t('bag.rewardSub', { n: n(it.rewardCost) }) : `${lineLabel(l)} · ${t('bag.each', { price: price(lineTotal({ ...l, qty: 1 }, data.menu, data.offers)) })}`
   }
 
   const rows = cart.lines.map((l, i) => {
@@ -77,13 +78,14 @@ export function BagPage() {
         <span className="tx">
           <b className="nm">{t(`item.${it.id}.name`)}</b>
           <span className="sb">{lineSub(l)}</span>
-          {!it.available && <span className="err">{t('err.itemUnavailable')}</span>}
+          {!isAvailable(it) && <span className="err">{t(it.stock === 0 ? 'menu.soldOut' : 'err.itemUnavailable')}</span>}
+          {isAvailable(it) && it.stock !== null && cart.lines.filter((x) => x.itemId === it.id).reduce((a, x) => a + x.qty, 0) > it.stock && <span className="err">{t('menu.onlyLeft', { n: n(it.stock) })}</span>}
         </span>
         {l.free ? <span className="onus"><Icon name="heart" size={11} />{t('bag.onUs')}</span> : (
           <span className="step" role="group" aria-label={t('menu.optQty')}>
             <button type="button" onClick={() => cart.setQty(i, l.qty - 1)} aria-label={t('menu.less')} disabled={l.qty <= 1}><Icon name="minus" size={13} /></button>
             <output>{n(l.qty)}</output>
-            <button type="button" onClick={() => cart.setQty(i, l.qty + 1)} aria-label={t('menu.more')} disabled={l.qty >= 20}><Icon name="plus" size={13} /></button>
+            <button type="button" onClick={() => cart.setQty(i, l.qty + 1)} aria-label={t('menu.more')} disabled={l.qty >= 20 || stockLeft(it, cart.lines) < 1}><Icon name="plus" size={13} /></button>
           </span>)}
         <span className={`lp${l.free ? ' fr' : ''}`}>{l.free ? t('bag.free2') : price(lineTotal(l, data.menu, data.offers))}</span>
         <button type="button" className="x" onClick={() => cart.remove(i)} aria-label={t('bag.remove')}><Icon name="x" size={14} /></button>
@@ -142,6 +144,7 @@ export function BagPage() {
           <div className="tt"><small>{t('bag.total')}</small><b className="script tot">{price(totals.total)}</b></div>
           <button type="button" className="btn checkout" onClick={place} disabled={!cart.lines.length || busy || unavailable || overRewards || (guest && phone.trim().length < 6)}>{t('bag.checkout')} <Icon name="arrowL" size={16} /></button>
         </div>
+        {earn > 0 && <p className="earn sm"><Icon name="heart" size={12} />{t('bag.willEarn', { n: n(earn) })}</p>}
         <p className="muted sm cash">{data.settings.requireDeposit ? t('dep.bagNote') : t('bag.cashNote')}</p>
       </div>
     </article>,
