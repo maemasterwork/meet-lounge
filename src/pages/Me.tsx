@@ -110,7 +110,7 @@ export function MePage() {
     <div className="body">
       <div className="tabsm" role="tablist">{tabs.map(([k, label]) => <button key={k} type="button" role="tab" className="pill" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => setTab(k)}>{t(label)}</button>)}</div>
       {content}
-      {tab === 'coins' && <AuthPanel note={isGuest ? t('auth.guestNote') : undefined} />}
+      {tab === 'coins' && <AuthPanel mode="customer" note={isGuest ? t('auth.guestNote') : undefined} onClose={() => {}} />}
     </div>,
   )
 }
