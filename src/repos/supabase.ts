@@ -1,11 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput } from '../types'
+import type { CafeEvent, EventInput, LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput } from '../types'
 import { OrderError, type AdminItem, type Customer, type LedgerRow, type OrderErrorCode, type Repos, type Settings } from './types'
 
 const CODES: OrderErrorCode[] = [
   'shop-closed', 'empty', 'item-unavailable', 'address-required', 'not-enough-coins', 'not-found',
   'table-required', 'phone-required', 'bad-option', 'reward-not-allowed', 'not-allowed', 'not-authenticated',
-  'deposit-required', 'order-closed', 'out-of-stock',
+  'deposit-required', 'order-closed', 'out-of-stock', 'event-full', 'event-closed', 'event-not-found', 'capacity-too-small',
 ]
 /** Postgres raises our error codes as the message; anything else is a network/unknown failure and is rethrown as is. */
 function mapError(e: unknown): never {
@@ -21,6 +21,14 @@ const readIds = (): number[] => { try { return JSON.parse(localStorage.getItem(R
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const BUCKET = 'menu-images'
+const toEvent = (r: any): CafeEvent => ({
+  id: r.id, icon: r.icon, title: { fa: r.title_fa, en: r.title_en }, desc: { fa: r.description_fa, en: r.description_en }, place: { fa: r.place_fa, en: r.place_en },
+  day: r.day, time: String(r.start_time).slice(0, 5), hours: r.hours, capacity: r.capacity, held: r.held, booked: r.booked, published: r.published,
+})
+const fromEvent = (e: EventInput) => ({
+  icon: e.icon, title_fa: e.title.fa, title_en: e.title.en, description_fa: e.desc.fa, description_en: e.desc.en, place_fa: e.place.fa, place_en: e.place.en,
+  day: e.day, start_time: e.time, hours: e.hours, capacity: e.capacity, held: e.held, published: e.published,
+})
 const toMenu = (r: any, pub: (path: string | null) => string | undefined): MenuItem => ({
   id: r.id, cat: r.category, price: r.base_price, art: r.art, milk: r.milk_options, available: r.available,
   rewardEligible: r.reward_eligible, coinsEarned: r.coins_earned ?? 1, rewardCost: r.reward_cost ?? 6, stock: r.stock ?? null, sizes: r.sizes, tags: r.tags ?? [],
@@ -66,7 +74,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
   const ensureChannel = () => {
     if (channel) return
     channel = sb.channel('meet-lounge')
-    for (const table of ['orders', 'coin_ledger', 'offers', 'menu_items', 'settings']) {
+    for (const table of ['orders', 'coin_ledger', 'offers', 'menu_items', 'settings', 'events']) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, emit)
     }
     channel.subscribe()
@@ -167,6 +175,13 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         emit()
       },
     },
+    events: {
+      subscribe: sub,
+      async list() { return ok(await sb.from('events').select('*').eq('published', true).order('day').order('start_time')).map(toEvent) },
+      async mine() { const uid = getUserId(); if (!uid) return []; return ok(await sb.from('event_seats').select('event_id').eq('customer_id', uid)).map((r: any) => r.event_id as string) },
+      async book(id) { const e = toEvent(ok(await sb.rpc('book_event', { p_event: id }))); emit(); return e },
+      async cancel(id) { const e = toEvent(ok(await sb.rpc('cancel_booking', { p_event: id }))); emit(); return e },
+    },
     settings: {
       subscribe: sub,
       async get(): Promise<Settings> {
@@ -175,6 +190,22 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
     },
     admin: {
       subscribe: sub,
+      async events() { return ok(await sb.from('events').select('*').order('day').order('start_time')).map(toEvent) },
+      async saveEvent(id, input) {
+        if (id) {
+          const r = await sb.from('events').update(fromEvent(input)).eq('id', id).select('id')
+          if (!r.error && !r.data?.length) throw new OrderError('not-allowed')
+          ok(r); emit(); return id
+        }
+        const row: any = ok(await sb.from('events').insert(fromEvent(input)).select('id').single())
+        emit(); return row.id as string
+      },
+      async deleteEvent(id) {
+        const r = await sb.from('events').delete().eq('id', id).select('id')
+        if (!r.error && !r.data?.length) throw new OrderError('not-allowed')
+        ok(r); emit()
+      },
+      async attendees(id) { return ok(await sb.rpc('event_attendees', { p_event: id })).map((r: any) => ({ name: r.name ?? '', phone: r.phone ?? undefined, at: r.at })) },
       async items() { return ok(await sb.from('menu_items').select('*').order('sort')).map((r: any): AdminItem => ({ ...toMenu(r, pub), name: { fa: r.name_fa, en: r.name_en }, desc: { fa: r.description_fa, en: r.description_en }, archived: r.archived })) },
       async saveItem(id, p) {
         const u: Record<string, unknown> = {}

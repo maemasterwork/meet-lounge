@@ -1,4 +1,4 @@
-import type { Category, LedgerEntry, Lang, MenuItem, Offer, Order, PlaceOrderInput } from '../types'
+import type { CafeEvent, Category, EventInput, LedgerEntry, Lang, MenuItem, Offer, Order, PlaceOrderInput } from '../types'
 
 /** Phase 3 replaces the mock implementations with Supabase ones. Pages call only these interfaces. */
 export interface Subscribable { subscribe(cb: () => void): () => void }
@@ -46,7 +46,7 @@ export interface SettingsRepo extends Subscribable {
 export type OrderErrorCode =
   | 'shop-closed' | 'empty' | 'item-unavailable' | 'address-required' | 'not-enough-coins' | 'not-found'
   | 'table-required' | 'phone-required' | 'bad-option' | 'reward-not-allowed' | 'not-allowed' | 'not-authenticated'
-  | 'deposit-required' | 'order-closed' | 'out-of-stock'
+  | 'deposit-required' | 'order-closed' | 'out-of-stock' | 'event-full' | 'event-closed' | 'event-not-found' | 'capacity-too-small'
 export class OrderError extends Error {
   constructor(public code: OrderErrorCode) { super(code) }
 }
@@ -57,7 +57,23 @@ export interface NewItem { name: Record<Lang, string>; desc: Record<Lang, string
 export interface OfferDraft { title: Record<Lang, string>; body: Record<Lang, string>; itemId: string; pct: number; audience: string; endsAt?: string }
 export interface Customer { id: string; name: string; phone?: string; balance: number; orders: number }
 export interface LedgerRow extends LedgerEntry { customer: string }
+export interface EventsRepo extends Subscribable {
+  /** Published events, soonest first. */
+  list(): Promise<CafeEvent[]>
+  /** Ids of the events the signed-in customer has saved a seat for. */
+  mine(): Promise<string[]>
+  /** Saves a seat (safe to repeat). Throws OrderError event-full / event-closed. */
+  book(id: string): Promise<CafeEvent>
+  cancel(id: string): Promise<CafeEvent>
+}
+export interface Attendee { name: string; phone?: string; at: string }
+
 export interface AdminRepo extends Subscribable {
+  /** All events, drafts included. */
+  events(): Promise<CafeEvent[]>
+  saveEvent(id: string | null, input: EventInput): Promise<string>
+  deleteEvent(id: string): Promise<void>
+  attendees(id: string): Promise<Attendee[]>
   items(): Promise<AdminItem[]>
   saveItem(id: string, patch: Partial<Pick<AdminItem, 'price' | 'available' | 'rewardEligible' | 'coinsEarned' | 'rewardCost' | 'stock' | 'archived' | 'name' | 'desc'>>): Promise<void>
   addItem(i: NewItem): Promise<string>
@@ -73,4 +89,4 @@ export interface AdminRepo extends Subscribable {
   ledgerAll(): Promise<LedgerRow[]>
 }
 
-export interface Repos { menu: MenuRepo; orders: OrderRepo; coins: CoinRepo; offers: OfferRepo; settings: SettingsRepo; admin: AdminRepo }
+export interface Repos { menu: MenuRepo; orders: OrderRepo; coins: CoinRepo; offers: OfferRepo; settings: SettingsRepo; events: EventsRepo; admin: AdminRepo }

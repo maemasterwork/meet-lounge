@@ -418,3 +418,58 @@ describe('per-item coins and stock', () => {
     await expect(setItem('latte', 'reward_cost=0')).rejects.toThrow(/check/)
   })
 })
+
+describe('events', () => {
+  const mk = async (extra = '') => (await as(db, owner, `insert into public.events (title_fa, title_en, day, start_time, capacity ${extra ? ', ' + extra.split('|')[0] : ''}) values ('ت', 'T', public.cafe_today() + 2, '18:00', 3 ${extra ? ', ' + extra.split('|')[1] : ''}) returning id, booked`))[0]
+  const book = (u: any, id: string) => as(db, u, 'select (public.book_event($1)).booked b', [id])
+  it('everyone reads published events; drafts are staff-only; only the owner writes', async () => {
+    const pub = await mk(); const draft = (await as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity, published) values ('پ','D', public.cafe_today()+1, '10:00', 5, false) returning id"))[0]
+    const seen = (await as(db, 'anon', 'select id from public.events')).map((r: any) => r.id)
+    expect(seen).toContain(pub.id); expect(seen).not.toContain(draft.id)
+    expect((await as(db, staff, 'select id from public.events')).map((r: any) => r.id)).toContain(draft.id)
+    await expect(as(db, staff, "insert into public.events (title_fa, title_en, day, start_time, capacity) values ('x','x', current_date, '10:00', 1)")).rejects.toThrow(/row-level security/)
+    await expect(as(db, alice, 'delete from public.events where id=$1', [pub.id])).resolves.toEqual([])
+    await expect(as(db, 'anon', 'select public.book_event($1)', [pub.id])).rejects.toThrow(/permission denied/)
+  })
+  it('a customer saves one seat; saving twice does nothing; cancelling frees it', async () => {
+    const e = await mk()
+    expect((await book(alice, e.id))[0].b).toBe(1)
+    expect((await book(alice, e.id))[0].b).toBe(1)
+    expect((await book(bob, e.id))[0].b).toBe(2)
+    expect((await as(db, alice, 'select (public.cancel_booking($1)).booked b', [e.id]))[0].b).toBe(1)
+    expect((await as(db, alice, 'select (public.cancel_booking($1)).booked b', [e.id]))[0].b).toBe(1)
+    expect((await as(db, alice, 'select count(*)::int c from public.event_seats')).map((r: any) => r.c)[0]).toBe(0)   // alice sees only her own rows
+  })
+  it('is full at capacity minus held seats, and cancelling reopens a seat', async () => {
+    const e = (await as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity, held) values ('ت','T', public.cafe_today()+1, '18:00', 3, 1) returning id"))[0]
+    await book(alice, e.id); await book(bob, e.id)
+    const c = await addUser(db)
+    await expect(book(c, e.id)).rejects.toThrow(/event-full/)
+    await as(db, bob, 'select public.cancel_booking($1)', [e.id])
+    expect((await book(c, e.id))[0].b).toBe(2)
+  })
+  it('past or hidden events cannot be booked', async () => {
+    const past = (await as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity) values ('ت','T', public.cafe_today()-1, '18:00', 3) returning id"))[0]
+    await expect(book(alice, past.id)).rejects.toThrow(/event-closed/)
+    const hid = (await as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity, published) values ('ت','T', public.cafe_today()+1, '18:00', 3, false) returning id"))[0]
+    await expect(book(alice, hid.id)).rejects.toThrow(/event-not-found/)
+  })
+  it('seat counts cannot be edited directly, and capacity cannot drop below taken seats', async () => {
+    const e = await mk(); await book(alice, e.id)
+    await as(db, owner, 'update public.events set booked = 0 where id=$1', [e.id])
+    expect((await as(db, null, 'select booked from public.events where id=$1', [e.id]))[0].booked).toBe(1)
+    await expect(as(db, owner, 'update public.events set capacity = 0 where id=$1', [e.id])).rejects.toThrow(/capacity-too-small/)
+    await expect(as(db, owner, 'update public.events set held = 3 where id=$1', [e.id])).rejects.toThrow(/capacity-too-small|check/)
+  })
+  it('staff see who saved a seat; customers do not; deleting an event removes its seats', async () => {
+    const e = await mk(); await book(alice, e.id)
+    expect((await as(db, staff, 'select * from public.event_attendees($1)', [e.id])).length).toBe(1)
+    await expect(as(db, alice, 'select * from public.event_attendees($1)', [e.id])).rejects.toThrow(/not-allowed/)
+    await as(db, owner, 'delete from public.events where id=$1', [e.id])
+    expect((await as(db, null, 'select count(*)::int c from public.event_seats where event_id=$1', [e.id]))[0].c).toBe(0)
+  })
+  it('input is range-checked', async () => {
+    await expect(as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity) values ('ت','T', current_date, '25:00', 3)")).rejects.toThrow(/check/)
+    await expect(as(db, owner, "insert into public.events (title_fa, title_en, day, start_time, capacity, icon) values ('ت','T', current_date, '10:00', 3, 'x')")).rejects.toThrow(/check/)
+  })
+})

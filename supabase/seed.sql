@@ -28,3 +28,13 @@ on conflict (id) do update set category = excluded.category, name_fa = excluded.
 insert into public.offers (title_fa, title_en, body_fa, body_en, item_id, discount_pct, audience)
 select 'لاتهٔ امروز دلش می‌خواد ببینتت ☕', 'Today''s latte misses you ☕', 'لاته با ۱۵٪ تخفیف تا آخر امروز.', 'Latte, 15% off until closing today.', 'latte', 15, 'all'
 where not exists (select 1 from public.offers);
+
+-- A few gatherings to start with (dates are relative to today; edit or delete them in Dashboard -> Events).
+insert into public.events (icon, title_fa, title_en, description_fa, description_en, place_fa, place_en, day, start_time, hours, capacity, held)
+select * from (values
+  ('cake',  'شب تزئین کیک', 'Cake Decorating Night', 'کیک کوچک خودتان را کرم بزنید، لایه کنید و تاج‌گذاری کنید.', 'Pipe, layer and crown your own little cake. Aprons on, sprinkles out.', 'آشپزخانهٔ شیرینی‌پزی', 'Our pastry kitchen', public.cafe_today() + 3, '18:00', 2, 10, 3),
+  ('music', 'شب آکوستیک', 'Acoustic Evening', 'گیتار، صداهای آرام و فنجان‌های گرم.', 'Guitar, soft voices and warm cups. Request a song if you dare.', 'کنار پنجره', 'By the window', public.cafe_today() + 6, '19:00', 2, 24, 8),
+  ('cup',   'لاته‌آرت برای شروع‌کننده‌ها', 'Latte Art for Beginners', 'قلب و برگ را با دست خودتان روی فوم بریزید.', 'Pour a heart and a leaf on the foam yourself. Spills are encouraged.', 'بار قهوه', 'The coffee bar', public.cafe_today() + 10, '16:00', 2, 8, 2),
+  ('book',  'حلقهٔ کتاب‌خوان‌ها', 'Little Readers'' Circle', 'صفحه‌ای را که دوست دارید بیاورید و بلند بخوانید.', 'Bring a page you love, read it aloud, and swap books over tea.', 'گوشهٔ کتاب', 'The reading nook', public.cafe_today() + 14, '17:00', 2, 14, 4)
+) as v(icon, title_fa, title_en, description_fa, description_en, place_fa, place_en, day, start_time, hours, capacity, held)
+where not exists (select 1 from public.events);

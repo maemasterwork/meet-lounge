@@ -10,12 +10,13 @@ import { useAuth } from '../lib/auth'
 import type { Order, OrderStatus } from '../types'
 import { MenuTab } from './MenuTab'
 import { CoinsTab } from './CoinsTab'
+import { EventsTab } from './EventsTab'
 import { OffersTab } from './OffersTab'
 import { StatsTab } from './StatsTab'
 import { BrandTab } from './BrandTab'
 
-type Tab = 'orders' | 'menu' | 'coins' | 'offers' | 'stats' | 'brand'
-const TABS: [Tab, string][] = [['orders', 'admin.tabOrders'], ['menu', 'admin.tabMenu'], ['coins', 'admin.tabCoins'], ['offers', 'admin.tabOffers'], ['stats', 'admin.tabStats'], ['brand', 'admin.tabBrand']]
+type Tab = 'orders' | 'menu' | 'coins' | 'events' | 'offers' | 'stats' | 'brand'
+const TABS: [Tab, string][] = [['orders', 'admin.tabOrders'], ['menu', 'admin.tabMenu'], ['coins', 'admin.tabCoins'], ['events', 'admin.tabEvents'], ['offers', 'admin.tabOffers'], ['stats', 'admin.tabStats'], ['brand', 'admin.tabBrand']]
 
 const COLS: OrderStatus[] = ['new', 'prep', 'ready', 'out', 'done']
 const NEXT: Record<string, string> = { new: 'admin.startPrep', prep: 'admin.markReady', ready: 'admin.markDone', out: 'admin.markDone' }
@@ -41,7 +42,7 @@ export default function Admin() {
         <button type="button" className="btn ghost sm" style={{ marginInlineStart: 'auto' }} onClick={() => go('home')}>{t('admin.back')} <Icon name="x" size={16} /></button>
       </div>
       <div style={{ maxWidth: 420, padding: 16 }}>
-        <AuthPanel mode="staff" note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} onClose={() => go('home')} />
+        <AuthPanel note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} />
       </div>
     </section>)
   const fresh = list.filter((o) => o.status === 'new').length
@@ -60,6 +61,7 @@ export default function Admin() {
       </div>
       {tab === 'menu' && <MenuTab owner={owner} />}
       {tab === 'coins' && <CoinsTab owner={owner} />}
+      {tab === 'events' && <EventsTab owner={owner} />}
       {tab === 'offers' && <OffersTab owner={owner} />}
       {tab === 'stats' && <StatsTab />}
       {tab === 'brand' && <BrandTab owner={owner} />}

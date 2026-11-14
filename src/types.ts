@@ -75,3 +75,17 @@ export interface Order {
 export interface LedgerEntry { id: number; at: string; delta: number; reason: string; orderN?: number }
 
 export interface PlaceOrderInput { lines: CartLine[]; mode: OrderMode; table?: string; address?: string; /** Required for guests (no account); the cafe calls it if something is wrong. */ phone?: string }
+
+export type EventIcon = 'music' | 'book' | 'cake' | 'bean' | 'cup' | 'lantern' | 'brush' | 'jar' | 'heart'
+export const EVENT_ICONS: EventIcon[] = ['music', 'book', 'cake', 'bean', 'cup', 'lantern', 'brush', 'jar', 'heart']
+/** A little gathering at the cafe. `day` is YYYY-MM-DD and `time` is HH:MM, both at the cafe. */
+export interface CafeEvent {
+  id: string; icon: EventIcon
+  title: Record<Lang, string>; desc: Record<Lang, string>; place: Record<Lang, string>
+  day: string; time: string; hours: number
+  capacity: number
+  /** Seats the cafe keeps for itself. */ held: number
+  /** Seats saved by customers (includes the signed-in customer's own). */ booked: number
+  published: boolean
+}
+export type EventInput = Omit<CafeEvent, 'id' | 'booked'>
