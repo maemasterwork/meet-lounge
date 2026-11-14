@@ -5,7 +5,6 @@ import { useUi } from '../store/ui'
 import { useCart } from '../store/cart'
 import { Frame, LoadState } from '../components/Frame'
 import { ItemArt } from '../art/ItemArt'
-import { EVENTS, EVENT_COPY } from '../data/catalog'
 import { unitPrice } from '../lib/pricing'
 
 export function ShopPage() {
@@ -69,29 +68,3 @@ export function GalleryPage() {
   )
 }
 
-export function EventsPage() {
-  const { t, n, lang } = useI18n()
-  const registered = useUi((s) => s.registered)
-  const toggle = useUi((s) => s.toggleRegistered)
-  const toast = useUi((s) => s.toast)
-  const date = (d: number) => new Date(Date.now() + d * 864e5).toLocaleDateString(lang === 'fa' ? 'fa-IR-u-ca-persian' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })
-  return (
-    <Frame title={t('events.title')} caps={t('events.sub')}>
-      <div className="body"><h2>{t('events.heading')}</h2>
-        {EVENTS.length === 0 ? <p className="muted">{t('events.empty')}</p> : (
-          <div className="list">
-            {EVENTS.map((e) => {
-              const on = registered.includes(e.id), c = EVENT_COPY[e.id][lang]
-              return (
-                <div key={e.id} className="row">
-                  <span className="grow"><b>{c[0]}</b><br />
-                    <span className="muted sm">{date(e.daysAhead)} · {t('events.at', { time: e.time.replace(/\d/g, (d) => n(+d)) })} · {t('events.seatsLeft', { n: n(e.seats - (on ? 1 : 0)) })}</span><br />
-                    <span className="sm">{c[1]}</span></span>
-                  <button type="button" className={`btn sm${on ? ' ghost' : ''}`} aria-pressed={on} onClick={() => { toggle(e.id); toast(t(on ? 'events.toastOff' : 'events.toastOn')) }}>{t(on ? 'events.registered' : 'events.register')}</button>
-                </div>)
-            })}
-          </div>)}
-      </div>
-    </Frame>
-  )
-}

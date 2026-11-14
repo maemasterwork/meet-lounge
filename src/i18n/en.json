@@ -428,5 +428,15 @@
   "dep.require": "Require a deposit before preparing",
   "dep.card": "Card number (16 digits)",
   "dep.cardBad": "Enter exactly 16 digits.",
-  "dep.holder": "Card holder name"
+  "dep.holder": "Card holder name",
+  "events.prev": "Previous month",
+  "events.next": "Next month",
+  "events.gatherings": "Little gatherings at the corner",
+  "events.foot": "Seats are free — the cake is not.",
+  "events.onTheDay": "On the day",
+  "events.hours": "h",
+  "events.seatsOf": "{n} of {total} seats left",
+  "events.saveSeat": "Save a seat",
+  "events.none": "No gathering on this day.",
+  "events.jumpNext": "Show the next one"
 }

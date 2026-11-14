@@ -1,4 +1,12 @@
 const P: Record<string, string> = {
+  music: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+  book: '<path d="M3 6c3-1.5 6-1.5 9 1 3-2.5 6-2.5 9-1v12c-3-1.5-6-1.5-9 1-3-2.5-6-2.5-9-1V6Z"/><path d="M12 7v12"/>',
+  cake: '<path d="M4 20h16M5 20v-6h14v6"/><path d="M5 14c2 2 4 2 7 0 3 2 5 2 7 0"/><path d="M12 11V8M12 6c-1-1 0-2 0-2s1 1 0 2Z"/>',
+  bean: '<ellipse cx="12" cy="12" rx="6" ry="8.5" transform="rotate(30 12 12)"/><path d="M9 6c3 3-1 6 2 9s2 3 4 3"/>',
+  lantern: '<path d="M9 3h6M12 3v2"/><path d="M8 6h8l2 4-2 8H8l-2-8 2-4Z"/><path d="M10 20h4M12 9v6"/>',
+  brush: '<path d="M20 4 10 14"/><path d="M10 14c-3 0-4 2-4 4 0 1-1 2-2 2 4 1 8 0 8-4l-2-2Z"/>',
+  jar: '<rect x="6" y="3" width="12" height="3" rx="1"/><path d="M7 6v13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"/><rect x="9" y="11" width="6" height="5" rx="1"/>',
+  chevR: '<path d="m9 6 6 6-6 6"/>',
   bag: '<path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
   basket: '<path d="M4 10h16l-1.6 9H5.6L4 10Z"/><path d="M8 10l3-5M16 10l-3-5"/>',
   cup: '<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5V9Z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H15"/><path d="M8 4c0 1.5 1 1.5 1 3M12 4c0 1.5 1 1.5 1 3"/>',

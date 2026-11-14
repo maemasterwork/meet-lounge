@@ -428,5 +428,15 @@
   "dep.require": "واریز قبل از آماده‌سازی الزامی باشد",
   "dep.card": "شماره کارت (۱۶ رقم)",
   "dep.cardBad": "دقیقاً ۱۶ رقم وارد کنید.",
-  "dep.holder": "نام صاحب کارت"
+  "dep.holder": "نام صاحب کارت",
+  "events.prev": "ماه قبل",
+  "events.next": "ماه بعد",
+  "events.gatherings": "دورهمی‌های کوچک در کورنر",
+  "events.foot": "صندلی‌ها رایگان است، کیک نه.",
+  "events.onTheDay": "در این روز",
+  "events.hours": "ساعت",
+  "events.seatsOf": "{n} صندلی از {total} خالی است",
+  "events.saveSeat": "رزرو صندلی",
+  "events.none": "در این روز دورهمی‌ای نیست.",
+  "events.jumpNext": "نمایش بعدی"
 }
