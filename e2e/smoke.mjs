@@ -36,13 +36,18 @@ for (const lang of ['fa', 'en']) {
   await page.fill('textarea', 'Valiasr St, No. 1')
   const total = await page.textContent('.btot .tot')
   await page.click('.checkout')
+  await page.waitForSelector('[data-testid=card-number]')
+  const cardNo = (await page.textContent('[data-testid=card-number]')).replace(/\D/g, '')
+  if (cardNo.length !== 16 && !/^[۰-۹]{16}$/.test(cardNo)) { const raw = await page.textContent('[data-testid=card-number]'); if (raw.replace(/\s/g, '').length !== 16) fail(`${lang}: card number missing: ${raw}`) }
+  await page.screenshot({ path: `/tmp/placed-${lang}.png` })
+  await page.click('.pbtn .btn.ghost')
   await page.waitForSelector('.stepper')
   const card = await page.textContent('.row')
   if (!card) fail(`${lang}: order missing in profile`)
   // advance the order in admin and check the coin arrives
   await page.goto(BASE + '#admin')
   await page.waitForSelector('.board')
-  for (let i = 0; i < 4; i++) { const b = await page.$('.ocard.mine .btn:not(.ghost)'); if (!b) break; await b.click(); await page.waitForTimeout(80) }
+  for (let i = 0; i < 5; i++) { const b = await page.$('.ocard.mine .btn:not(.ghost)'); if (!b) break; await b.click(); await page.waitForTimeout(80) }
   await page.goto(BASE + '#me')
   await page.waitForSelector('.stepper')
   const coins = await page.textContent('#coinPill')

@@ -4,7 +4,7 @@ import type { Order } from '../types'
 
 const now = new Date(2026, 10, 13, 15, 0)
 const o = (n: number, h: number, total: number, status: Order['status'] = 'done', items: Order['items'] = [{ itemId: 'latte', qty: 1, free: false }], dayOffset = 0): Order => ({
-  n, mode: 'pickup', items, subtotal: total, fee: 0, total, status, mine: false, who: 'x', at: new Date(2026, 10, 13 - dayOffset, h, 5).toISOString(),
+  n, mode: 'pickup', items, subtotal: total, fee: 0, total, status, paid: true, mine: false, who: 'x', at: new Date(2026, 10, 13 - dayOffset, h, 5).toISOString(),
 })
 
 describe('computeStats', () => {

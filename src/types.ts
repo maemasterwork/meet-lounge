@@ -59,6 +59,8 @@ export interface Order {
   fee: number
   total: number
   status: OrderStatus
+  /** The cafe has confirmed the deposit (or there was nothing to pay). Preparation starts only after this. */
+  paid: boolean
   mine: boolean
   who: string
   at: string

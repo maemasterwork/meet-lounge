@@ -362,3 +362,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .bl .step{grid-column:auto}
   .bh h2{font-size:28px}.btot .tot{font-size:26px}
 }
+
+/* ---- Order placed / deposit ---- */
+.placed{overflow:auto;gap:clamp(6px,1.2vh,10px)}
+.placed .ty{margin:0;font-size:clamp(30px,5vh,44px);line-height:1}
+.placed .lead{margin:0;font-size:14px;line-height:1.55}
+.depbox{display:grid;gap:4px;justify-items:start;border:1.5px dashed var(--ml-accent);border-radius:16px;padding:10px 14px;background:color-mix(in srgb,var(--ml-gold) 14%,var(--ml-surface))}
+.depbox small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.depbox .amt{font-size:26px;line-height:1.1}
+.depbox .cardno{font-size:clamp(19px,3.2vh,25px);font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;user-select:all}
+.depbox .holder{font-size:13px}.depbox .note{margin-top:2px}
+.rcpt{border-top:1px dashed var(--ml-line);padding-top:8px;display:grid;gap:3px;font-size:13px}
+.rcpt .rh{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.08em;opacity:.75}
+.rcpt .rl{display:flex;justify-content:space-between;gap:10px}.rcpt .rl em{font-size:11px;opacity:.7;text-transform:uppercase;font-style:normal}
+.rcpt .fr{color:var(--ml-accent);font-style:italic}
+.rcpt .rt{display:flex;align-items:baseline;gap:10px;border-top:1px solid var(--ml-line);padding-top:6px;margin-top:4px}
+.rcpt .rt b{font-size:26px;margin-inline-end:auto}
+.stamp{border:2px solid var(--ml-accent);color:var(--ml-accent);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transform:rotate(-5deg)}
+.stamp.ok{border-color:var(--ml-sage);color:var(--ml-sage)}
+.pbtn{gap:8px;margin-top:auto;flex-wrap:wrap}
+.pillst.await{background:color-mix(in srgb,var(--ml-gold) 30%,transparent)}

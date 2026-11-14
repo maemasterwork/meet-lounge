@@ -21,16 +21,16 @@ export function createMockRepos(): Repos {
   const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb) } }
 
   let menu: MenuItem[] = initialMenu()
-  let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانج', en: 'Meet Lounge' } }
+  let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانج', en: 'Meet Lounge' }, paymentCard: '6037991234567890', paymentHolder: 'Meet Lounge', requireDeposit: true }
   let offers: Offer[] = [
     { id: 1, title: { fa: 'لاته صبحگاهی', en: 'Morning latte' }, body: { fa: 'یک لاته با ۱۵٪ تخفیف، همین حالا.', en: 'A latte at 15% off, right now.' }, itemId: 'latte', pct: 15, audience: 'all', active: true, read: false },
   ]
   let nextOrder = 104
   let orders: Order[] = [
-    { n: 101, mode: 'table', table: '4', items: [{ itemId: 'latte', qty: 2, free: false }, { itemId: 'croissant', qty: 1, free: false }], subtotal: 380000, fee: 0, total: 380000, status: 'prep', mine: false, who: 'Sara', at: clock() },
-    { n: 102, mode: 'pickup', items: [{ itemId: 'coldbrew', qty: 1, free: false }], subtotal: 160000, fee: 0, total: 160000, status: 'new', mine: false, who: 'Maryam', at: clock() },
-    { n: 103, mode: 'delivery', address: 'Valiasr St.', items: [{ itemId: 'cappuccino', qty: 2, free: false }, { itemId: 'brownie', qty: 1, free: false }], subtotal: 370000, fee: DELIVERY_FEE, total: 400000, status: 'out', mine: false, who: 'Ali', at: clock() },
-    { n: 100, mode: 'pickup', items: [{ itemId: 'icedlatte', qty: 1, free: false }], subtotal: 145000, fee: 0, total: 145000, status: 'done', mine: true, who: 'me', at: clock() },
+    { n: 101, mode: 'table', table: '4', items: [{ itemId: 'latte', qty: 2, free: false }, { itemId: 'croissant', qty: 1, free: false }], subtotal: 380000, fee: 0, total: 380000, status: 'prep', paid: true, mine: false, who: 'Sara', at: clock() },
+    { n: 102, mode: 'pickup', items: [{ itemId: 'coldbrew', qty: 1, free: false }], subtotal: 160000, fee: 0, total: 160000, status: 'new', paid: false, mine: false, who: 'Maryam', at: clock() },
+    { n: 103, mode: 'delivery', address: 'Valiasr St.', items: [{ itemId: 'cappuccino', qty: 2, free: false }, { itemId: 'brownie', qty: 1, free: false }], subtotal: 370000, fee: DELIVERY_FEE, total: 400000, status: 'out', paid: true, mine: false, who: 'Ali', at: clock() },
+    { n: 100, mode: 'pickup', items: [{ itemId: 'icedlatte', qty: 1, free: false }], subtotal: 145000, fee: 0, total: 145000, status: 'done', paid: true, mine: true, who: 'me', at: clock() },
   ]
   // Customer starts with 5 coins: three from a welcome gift and two from earlier orders.
   let ledger: LedgerEntry[] = [
@@ -64,7 +64,7 @@ export function createMockRepos(): Repos {
         const totals = orderTotals(input.lines, menu, offers, input.mode, settings.deliveryFee)
         const order: Order = {
           n, mode: input.mode, table: input.mode === 'table' ? input.table : undefined, address: input.mode === 'delivery' ? input.address?.trim() : undefined,
-          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free })), ...totals, status: 'new', mine: true, who: 'me', at: clock(),
+          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
         }
         orders = [order, ...orders]
         emit()
@@ -75,10 +75,18 @@ export function createMockRepos(): Repos {
         const st = STEPS[o.mode]
         const next = st[st.indexOf(o.status) + 1]
         if (!next) return o
+        if (o.status === 'new' && !o.paid) throw new OrderError('deposit-required')
         const updated = { ...o, status: next }
         replace(updated)
         if (next === 'done' && o.mine) ledger = awardForOrder(ledger, n, clock())
         emit()
+        return updated
+      },
+      markPaid: async (n) => {
+        const o = get(n)
+        if (o.status === 'cancelled') throw new OrderError('order-closed')
+        const updated = { ...o, paid: true }
+        replace(updated); emit()
         return updated
       },
       cancel: async (n) => {

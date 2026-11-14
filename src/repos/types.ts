@@ -18,6 +18,8 @@ export interface OrderRepo extends Subscribable {
   place(input: PlaceOrderInput): Promise<Order>
   /** Moves an order to its next status; completing a customer's order awards the coin. */
   advance(n: number): Promise<Order>
+  /** Staff: the deposit arrived. Preparation can start after this. */
+  markPaid(n: number): Promise<Order>
   cancel(n: number): Promise<Order>
 }
 
@@ -34,6 +36,8 @@ export interface OfferRepo extends Subscribable {
 export interface Settings {
   rewardEvery: number; deliveryFee: number; shopOpen: boolean; tableCount: number
   brand: Record<Lang, string>; accent?: string; gold?: string; heroUrl?: string
+  /** Card-to-card deposit: 16 digits, shown to the customer after checkout. */
+  paymentCard?: string; paymentHolder?: string; requireDeposit: boolean
 }
 export interface SettingsRepo extends Subscribable {
   get(): Promise<Settings>
@@ -42,6 +46,7 @@ export interface SettingsRepo extends Subscribable {
 export type OrderErrorCode =
   | 'shop-closed' | 'empty' | 'item-unavailable' | 'address-required' | 'not-enough-coins' | 'not-found'
   | 'table-required' | 'phone-required' | 'bad-option' | 'reward-not-allowed' | 'not-allowed' | 'not-authenticated'
+  | 'deposit-required' | 'order-closed'
 export class OrderError extends Error {
   constructor(public code: OrderErrorCode) { super(code) }
 }

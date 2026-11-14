@@ -10,6 +10,8 @@ describe('mock repos', () => {
     expect(await r.coins.balance()).toBe(5)
     const o = await r.orders.place({ lines: [latte], mode: 'pickup' })
     expect(o.total).toBe(115000) // active 15% offer on latte
+    await expect(r.orders.advance(o.n)).rejects.toMatchObject({ code: 'deposit-required' })
+    await r.orders.markPaid(o.n)
     for (let i = 0; i < 3; i++) await r.orders.advance(o.n)
     expect((await r.orders.listMine())[0].status).toBe('done')
     expect(await r.coins.balance()).toBe(6)
@@ -19,6 +21,7 @@ describe('mock repos', () => {
   it('spends N coins for a reward line and refunds on cancel', async () => {
     const r = createMockRepos()
     const earn = await r.orders.place({ lines: [latte], mode: 'pickup' })
+    await r.orders.markPaid(earn.n)
     for (let i = 0; i < 3; i++) await r.orders.advance(earn.n)
     const o = await r.orders.place({ lines: [{ ...latte, free: true }], mode: 'pickup' })
     expect(o.total).toBe(0)

@@ -7,6 +7,8 @@ import { Frame, LoadState } from '../components/Frame'
 import { Icon } from '../components/icons'
 import { ItemArt } from '../art/ItemArt'
 import { coinsToNext } from '../lib/coins'
+import { AuthPanel } from '../components/AuthPanel'
+import { useAuth } from '../lib/auth'
 import type { Order } from '../types'
 
 const STEPS: Record<Order['mode'], Order['status'][]> = {
@@ -27,6 +29,7 @@ export function MePage() {
   const { t, n, price, lang } = useI18n()
   const { data, error, loading, reload } = useShop()
   const tab = useUi((s) => s.meTab)
+  const isGuest = useAuth((a) => a.isGuest)
   const setTab = useUi((s) => s.setMeTab)
   const favs = useUi((s) => s.favorites)
   const select = useUi((s) => s.select)
@@ -50,7 +53,7 @@ export function MePage() {
           const st = STEPS[o.mode], ci = st.indexOf(o.status)
           return (
             <div className="row" style={{ display: 'block' }} key={o.n}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{t('me.orderN', { n: n(o.n) })}</b><span className={`pillst${o.status === 'done' ? ' good' : ''}`}>{t(`status.${o.status}`)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{t('me.orderN', { n: n(o.n) })}</b><span className={`pillst${o.status === 'done' ? ' good' : ''}`}>{o.status === 'new' && !o.paid ? t('dep.awaiting') : t(`status.${o.status}`)}</span></div>
               <div className="muted sm">{t(`bag.mode${o.mode[0].toUpperCase()}${o.mode.slice(1)}`)}{o.table ? ` ${n(+o.table)}` : ''}{o.address ? ` · ${o.address}` : ''} · {price(o.total)}</div>
               <div className="sm">{o.items.map((i) => `${n(i.qty)}× ${t(`item.${i.itemId}.name`)}${i.free ? ` (${t('bag.reward')})` : ''}`).join(lang === 'fa' ? '، ' : ', ')}</div>
               {o.status !== 'cancelled' && <div className="stepper">{st.map((s, i) => <div key={s} className={`s${i < ci ? ' on' : ''}${i === ci ? ' cur' : ''}`}>{t(`status.${s}`)}</div>)}</div>}
@@ -105,6 +108,7 @@ export function MePage() {
     <div className="body">
       <div className="tabsm" role="tablist">{tabs.map(([k, label]) => <button key={k} type="button" role="tab" className="pill" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => setTab(k)}>{t(label)}</button>)}</div>
       {content}
+      {tab === 'coins' && <AuthPanel note={isGuest ? t('auth.guestNote') : undefined} />}
     </div>,
   )
 }

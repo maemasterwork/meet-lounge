@@ -12,13 +12,14 @@ import { MILKS, SUGARS, isDrink } from '../data/catalog'
 import { lineTotal, orderTotals } from '../lib/pricing'
 import { OrderError, repos } from '../repos'
 import { useAuth } from '../lib/auth'
-import type { CartLine, OrderMode } from '../types'
+import { Placed, type ReceiptLine } from './Placed'
+import type { CartLine, Order, OrderMode } from '../types'
 
 const MODES: OrderMode[] = ['pickup', 'table', 'delivery']
 const ERR: Record<string, string> = {
   'address-required': 'err.addressRequired', 'shop-closed': 'err.shopClosed', 'item-unavailable': 'err.itemUnavailable', 'not-enough-coins': 'err.notEnoughCoins',
   'table-required': 'err.generic', 'phone-required': 'err.phoneRequired', 'bad-option': 'err.generic', 'reward-not-allowed': 'err.generic',
-  'not-allowed': 'err.notAllowed', 'not-authenticated': 'err.network',
+  'deposit-required': 'err.generic', 'order-closed': 'err.generic', 'not-allowed': 'err.notAllowed', 'not-authenticated': 'err.network',
 }
 
 export function BagPage() {
@@ -26,12 +27,12 @@ export function BagPage() {
   const { data, error, reload } = useShop()
   const cart = useCart()
   const toast = useUi((s) => s.toast)
-  const setMeTab = useUi((s) => s.setMeTab)
   const shopTables = useShop().data?.settings.tableCount ?? 12
   const guest = useAuth((a) => a.configured && a.isGuest)
   const [phone, setPhone] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [placed, setPlaced] = useState<{ order: Order; lines: ReceiptLine[] } | null>(null)
   const scene = (c: React.ReactNode) => <HomeScene active="bag" className="isbag">{c}</HomeScene>
   if (!data) return scene(<article className="card bagc"><LoadState error={error} onRetry={reload} /></article>)
 
@@ -51,8 +52,9 @@ export function BagPage() {
   const place = async () => {
     setBusy(true); setErr('')
     try {
+      const snap: ReceiptLine[] = cart.lines.map((l) => ({ name: t(`item.${l.itemId}.name`), size: t(`size.${l.size}`), qty: l.qty, free: l.free, price: lineTotal(l, data.menu, data.offers) }))
       const o = await repos.orders.place({ lines: cart.lines, mode: cart.mode, table: cart.table, address: cart.address, phone: guest ? phone : undefined })
-      cart.clear(); setMeTab('orders'); go('me'); toast(t('bag.orderPlaced', { n: n(o.n) }))
+      cart.clear(); setPlaced({ order: o, lines: snap }); toast(t('bag.orderPlaced', { n: n(o.n) }))
     } catch (e) {
       setErr(t(e instanceof OrderError ? ERR[e.code] ?? 'err.generic' : 'err.network'))
     } finally { setBusy(false) }
@@ -88,6 +90,10 @@ export function BagPage() {
       </div>)
   })
 
+  if (placed) {
+    const live = data.mine.find((m) => m.n === placed.order.n) ?? placed.order
+    return scene(<Placed order={live} lines={placed.lines} settings={data.settings} onDone={() => setPlaced(null)} />)
+  }
   return scene(
     <article className="card bagc">
       <div className="bhead ltr">
@@ -136,7 +142,7 @@ export function BagPage() {
           <div className="tt"><small>{t('bag.total')}</small><b className="script tot">{price(totals.total)}</b></div>
           <button type="button" className="btn checkout" onClick={place} disabled={!cart.lines.length || busy || unavailable || overRewards || (guest && phone.trim().length < 6)}>{t('bag.checkout')} <Icon name="arrowL" size={16} /></button>
         </div>
-        <p className="muted sm cash">{t('bag.cashNote')}</p>
+        <p className="muted sm cash">{data.settings.requireDeposit ? t('dep.bagNote') : t('bag.cashNote')}</p>
       </div>
     </article>,
   )

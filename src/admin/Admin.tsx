@@ -35,12 +35,14 @@ export default function Admin() {
   const act = async (fn: () => Promise<Order>) => { setBusy(true); try { await fn() } finally { setBusy(false) } }
   const list = orders.data ?? []
   if (!staff) return (
-    <section className="admin" aria-label={t('auth.staffSignIn')}>
+    <section className="admin" aria-label={t('auth.title')}>
       <div className="ahead">
-        <h2>{t('auth.staffSignIn')}</h2>
+        <h2>{t('auth.title')}</h2>
         <button type="button" className="btn ghost sm" style={{ marginInlineStart: 'auto' }} onClick={() => go('home')}>{t('admin.back')} <Icon name="x" size={16} /></button>
       </div>
-      <AuthPanel mode="staff" note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} onClose={() => go('home')} />
+      <div style={{ maxWidth: 420, padding: 16 }}>
+        <AuthPanel note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} />
+      </div>
     </section>)
   const fresh = list.filter((o) => o.status === 'new').length
   return (
@@ -61,13 +63,7 @@ export default function Admin() {
       {tab === 'offers' && <OffersTab owner={owner} />}
       {tab === 'stats' && <StatsTab />}
       {tab === 'brand' && <BrandTab owner={owner} />}
-      {tab === 'orders' && <div className="apane order-pane">
-        <div className="order-tools">
-          {orders.error && <span className="muted sm" role="alert">{t('err.loadFailed')}</span>}
-          <button type="button" className="btn ghost sm" disabled={orders.loading} onClick={orders.reload}>
-            <Icon name="refresh" size={16} />{t('common.refreshOrders')}
-          </button>
-        </div>
+      {tab === 'orders' && <div className="apane">
         <div className="board">
           {COLS.map((c) => {
             const L = list.filter((o) => o.status === c)
@@ -81,7 +77,9 @@ export default function Admin() {
                     <div className="sm">{o.items.map((i) => `${n(i.qty)}× ${t(`item.${i.itemId}.name`)}`).join(', ')}</div>
                     <div className="muted sm">{o.who} · {price(o.total)}</div>
                     {o.address && <div className="muted sm">{o.address}</div>}
-                    {NEXT[c] && <button type="button" className="btn sm" disabled={busy} onClick={() => act(() => repos.orders.advance(o.n))}>{t(NEXT[c])}</button>}
+                    {c === 'new' && !o.paid && <span className="pillst await">{t('dep.awaiting')}</span>}
+                    {c === 'new' && !o.paid && <button type="button" className="btn sm" disabled={busy} onClick={() => act(() => repos.orders.markPaid(o.n))}>{t('dep.received')}</button>}
+                    {NEXT[c] && !(c === 'new' && !o.paid) && <button type="button" className="btn sm" disabled={busy} onClick={() => act(() => repos.orders.advance(o.n))}>{t(NEXT[c])}</button>}
                     {c !== 'done' && <button type="button" className="btn ghost sm" disabled={busy} onClick={() => act(() => repos.orders.cancel(o.n))}>{t('admin.cancelOrder')}</button>}
                   </div>))}
               </div>)

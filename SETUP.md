@@ -14,12 +14,10 @@ Easiest: open **SQL Editor** and paste, run, in this order, each file in full:
 4. `supabase/migrations/20261113000400_realtime_storage.sql`
 4b. `supabase/migrations/20261113000500_admin.sql`
 4c. `supabase/migrations/20261113000600_push.sql`
-4d. `supabase/migrations/20261113000700_customer_registration.sql`
 5. `supabase/seed.sql`
 
 (With the Supabase CLI instead: `supabase link --project-ref <ref>`, `supabase db push`, then run `seed.sql` in the SQL editor.)
 Do not run a file twice; the migrations are meant for a fresh project. `seed.sql` can be re-run safely.
-For an existing project that already applied migrations `00100`–`00600`, apply only `20261113000700_customer_registration.sql` once.
 
 ## 3. Turn on sign-in
 **Authentication → Sign In / Providers**
@@ -28,7 +26,7 @@ For an existing project that already applied migrations `00100`–`00600`, apply
 
 **Authentication → URL Configuration**
 - Site URL: where the app lives, e.g. `https://YOUR-NAME.github.io/meet-lounge/` (or `http://localhost:5173/` while developing).
-- Add the same address under Redirect URLs for account-confirmation redirects, if email confirmation is enabled.
+- Add the same address under Redirect URLs. Magic links return here.
 
 ## 4. Put the keys in the app
 **Project Settings → API**: copy *Project URL* and the **anon / publishable** key.
@@ -77,3 +75,11 @@ iPhone: web push works only after the app is added to the Home Screen (iOS 16.4+
 
 ## Not covered here
 Real delivery of push messages (needs your VAPID keys and the deployed function: step above) was only tested at the logic and service-worker level. Promoting staff is still done in SQL (`promote-owner.sql`, role `staff`). Realtime, email delivery and anonymous sign-in are Supabase services and were not exercised against a live project from this build environment; step 6 is how you confirm them on yours.
+
+## Deposit before preparation (migration 20261113000700)
+Customers pay by card-to-card deposit. After checkout they see the cafe's card number and a note that preparation starts after the deposit.
+1. Run the new migration (`supabase db push`).
+2. Sign in as owner → Dashboard → Brand → "Payment by deposit": enter the 16-digit card number and holder name.
+3. Staff press **Deposit received** on a new order; only then can it move to *Preparing*. Orders with nothing to pay (all rewards) start immediately.
+4. Switch "Require a deposit" off to go back to cash on delivery/pickup.
+Note: the card number is readable by every visitor (it is part of the public `settings` row) — that is intended, it is shown to customers.

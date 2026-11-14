@@ -18,6 +18,7 @@ const give = (id: string, n: number) => as(db, owner, 'select public.adjust_coin
 
 beforeAll(async () => {
   db = await freshDb()
+  await db.exec('update public.settings set require_deposit = false')      // most tests are about other rules; the deposit rule has its own block below
   owner = await addUser(db, 'owner'); staff = await addUser(db, 'staff')
   alice = await addUser(db); bob = await addUser(db); guest = await addUser(db, 'customer', true)
 }, 60_000)
@@ -288,5 +289,57 @@ describe('push registration', () => {
   it('a customer can delete only their own subscription', async () => {
     await as(db, alice, 'delete from public.push_subscriptions')
     expect((await as(db, null, 'select count(*)::int n from public.push_subscriptions'))[0].n).toBeGreaterThan(0)   // bob's is untouched
+  })
+})
+
+describe('deposit before preparation', () => {
+  const on = () => as(db, owner, 'update public.settings set require_deposit = true')
+  const off = () => as(db, owner, 'update public.settings set require_deposit = false')
+  it('an order waits for the deposit: staff cannot start it until it is marked paid', async () => {
+    await on()
+    const o = await order(alice)
+    expect(o.paid_at).toBeNull()
+    await expect(advance(o.id)).rejects.toThrow(/deposit-required/)
+    await expect(as(db, staff, "update public.orders set status='prep' where id=$1", [o.id])).rejects.toThrow(/deposit-required/)
+    expect((await as(db, staff, 'select (public.mark_paid($1)).paid_at is not null p', [o.id]))[0].p).toBe(true)
+    expect((await advance(o.id)).status).toBe('prep')
+    await off()
+  })
+  it('customers cannot mark an order paid or write paid_at', async () => {
+    await on()
+    const o = await order(alice)
+    await expect(as(db, alice, 'select public.mark_paid($1)', [o.id])).rejects.toThrow(/not-allowed/)
+    await expect(as(db, alice, 'update public.orders set paid_at = now() where id=$1', [o.id])).rejects.toThrow(/permission denied/)
+    await expect(as(db, 'anon', 'select public.mark_paid($1)', [o.id])).rejects.toThrow(/permission denied/)
+    await off()
+  })
+  it('marking paid twice is harmless, and a cancelled order cannot be marked paid', async () => {
+    await on()
+    const o = await order(alice)
+    const first = (await as(db, staff, 'select (public.mark_paid($1)).paid_at p', [o.id]))[0].p
+    expect((await as(db, staff, 'select (public.mark_paid($1)).paid_at p', [o.id]))[0].p).toEqual(first)
+    const c = await order(alice)
+    await as(db, alice, 'select public.cancel_order($1)', [c.id])
+    await expect(as(db, staff, 'select public.mark_paid($1)', [c.id])).rejects.toThrow(/order-closed/)
+    await off()
+  })
+  it('an order with nothing to pay (all rewards) starts without a deposit', async () => {
+    await on()
+    const c = await addUser(db); await give(c.id, 6)
+    const o = await order(c, line({ reward: true }))
+    expect(o.total).toBe(0); expect(o.paid_at).not.toBeNull()
+    expect((await advance(o.id)).status).toBe('prep')
+    await off()
+  })
+  it('with deposits switched off, orders are paid on arrival (cash mode)', async () => {
+    const o = await order(alice)
+    expect(o.paid_at).not.toBeNull()
+  })
+  it('only the owner sets the card number, and it must be 16 digits', async () => {
+    await expect(as(db, owner, "update public.settings set payment_card='1234'")).rejects.toThrow(/check/)
+    await as(db, staff, "update public.settings set payment_card='6037991234567890'")           // filtered to 0 rows
+    expect((await as(db, 'anon', 'select payment_card from public.settings'))[0].payment_card).toBeNull()
+    await as(db, owner, "update public.settings set payment_card='6037991234567890', payment_holder='Meet Lounge'")
+    expect((await as(db, 'anon', 'select payment_card from public.settings'))[0].payment_card).toBe('6037991234567890')
   })
 })

@@ -5,6 +5,7 @@ import { OrderError, type AdminItem, type Customer, type LedgerRow, type OrderEr
 const CODES: OrderErrorCode[] = [
   'shop-closed', 'empty', 'item-unavailable', 'address-required', 'not-enough-coins', 'not-found',
   'table-required', 'phone-required', 'bad-option', 'reward-not-allowed', 'not-allowed', 'not-authenticated',
+  'deposit-required', 'order-closed',
 ]
 /** Postgres raises our error codes as the message; anything else is a network/unknown failure and is rethrown as is. */
 function mapError(e: unknown): never {
@@ -28,6 +29,7 @@ const toMenu = (r: any, pub: (path: string | null) => string | undefined): MenuI
 })
 const toSettings = (r: any, pub: (path: string | null) => string | undefined): Settings => ({
   rewardEvery: r.reward_every, deliveryFee: r.delivery_fee, shopOpen: r.shop_open, tableCount: r.table_count,
+  paymentCard: r.payment_card ?? undefined, paymentHolder: r.payment_holder ?? undefined, requireDeposit: r.require_deposit ?? true,
   brand: { fa: r.brand_name_fa, en: r.brand_name_en }, accent: r.theme?.accent, gold: r.theme?.gold, heroUrl: pub(r.hero_image_path),
 })
 const toOffer = (r: any, read: number[]): Offer => ({
@@ -37,7 +39,7 @@ const toOffer = (r: any, read: number[]): Offer => ({
 const toOrder = (r: any, uid: string | null): Order => ({
   n: r.number, mode: r.mode as OrderMode, table: r.table_no ?? undefined, address: r.address ?? undefined,
   items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward })),
-  subtotal: r.subtotal, fee: r.delivery_fee, total: r.total, status: r.status as OrderStatus,
+  subtotal: r.subtotal, fee: r.delivery_fee, total: r.total, status: r.status as OrderStatus, paid: !!r.paid_at,
   mine: r.customer_id === uid, who: r.profiles?.display_name || r.guest_phone || r.profiles?.phone || String(r.customer_id).slice(0, 6), at: r.created_at,
 })
 const ORDER_SELECT = '*, order_items(item_id, qty, is_reward), profiles(display_name, phone)'
@@ -130,6 +132,12 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
           return toOrder(full, getUserId())
         } catch (e) { if (prev) { allCache = prev; emit() }; throw e }
       },
+      async markPaid(n) {
+        const row: any = ok(await sb.rpc('mark_paid', { p_order_id: await orderIdOf(n) }))
+        const full = ok(await sb.from('orders').select(ORDER_SELECT).eq('id', row.id).single())
+        emit()
+        return toOrder(full, getUserId())
+      },
       async cancel(n) {
         const prev = patchAll(n, 'cancelled')
         try {
@@ -205,6 +213,9 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         if (p.deliveryFee !== undefined) u.delivery_fee = p.deliveryFee
         if (p.shopOpen !== undefined) u.shop_open = p.shopOpen
         if (p.tableCount !== undefined) u.table_count = p.tableCount
+        if ('paymentCard' in p) u.payment_card = p.paymentCard || null
+        if ('paymentHolder' in p) u.payment_holder = p.paymentHolder || null
+        if (p.requireDeposit !== undefined) u.require_deposit = p.requireDeposit
         if (p.brand) { u.brand_name_fa = p.brand.fa; u.brand_name_en = p.brand.en }
         if ('accent' in p || 'gold' in p) {
           const cur: any = ok(await sb.from('settings').select('theme').eq('id', 1).single())

@@ -1,3 +1,4 @@
+import { fmtCard } from '../lib/card'
 import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { repos } from '../repos'
@@ -20,6 +21,7 @@ export function BrandTab({ owner }: { owner: boolean }) {
   const dis = act.busy || !owner
   const clear = (...ks: string[]) => setD((p) => Object.fromEntries(Object.entries(p).filter(([k]) => !ks.includes(k))))
   const fee = Math.round(Number(val('fee', s.deliveryFee))), tables = Math.round(Number(val('tables', s.tableCount)))
+  const cardDigits = val('card', s.paymentCard).replace(/[\s-]/g, ''), cardOk = cardDigits === '' || /^[0-9]{16}$/.test(cardDigits), holder = val('holder', s.paymentHolder)
   return (
     <div className="apane" style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
       <Msg msg={act.msg} />
@@ -58,6 +60,16 @@ export function BrandTab({ owner }: { owner: boolean }) {
           <button type="button" className="btn sm" style={{ alignSelf: 'start' }} disabled={dis || !(Number.isFinite(fee) && fee >= 0) || !(tables >= 1 && tables <= 200) || (fee === s.deliveryFee && tables === s.tableCount)}
             onClick={async () => { if (await act.run(() => ok(() => repos.admin.saveSettings({ deliveryFee: fee, tableCount: tables })))) clear('fee', 'tables') }}>{t('common.save')}</button>
         </div>
+      </div>
+      <div className="panel">
+        <h3>{t('dep.title')}</h3>
+        <p className="muted sm" style={{ margin: 0 }}>{t('dep.help')}</p>
+        <div className="row" style={{ gap: 12, alignItems: 'center' }}><Switch on={s.requireDeposit} label={t('dep.require')} disabled={dis} onChange={(v) => void act.run(() => ok(() => repos.admin.saveSettings({ requireDeposit: v })))} /><span>{t('dep.require')}</span></div>
+        <label className="field">{t('dep.card')}<input dir="ltr" inputMode="numeric" maxLength={19} placeholder="6037 9912 3456 7890" value={val('card', fmtCard(s.paymentCard))} disabled={dis} onChange={(e) => setD({ ...d, card: e.target.value })} aria-invalid={!cardOk} /></label>
+        {!cardOk && <span className="err sm" role="alert">{t('dep.cardBad')}</span>}
+        <label className="field">{t('dep.holder')}<input value={val('holder', s.paymentHolder)} maxLength={60} disabled={dis} onChange={(e) => setD({ ...d, holder: e.target.value })} /></label>
+        <button type="button" className="btn sm" style={{ alignSelf: 'start' }} disabled={dis || !cardOk || (!d.card && !d.holder)}
+          onClick={async () => { if (await act.run(() => ok(() => repos.admin.saveSettings({ paymentCard: cardDigits || undefined, paymentHolder: holder.trim() || undefined })))) clear('card', 'holder') }}>{t('common.save')}</button>
       </div>
       <QrSheet tables={s.tableCount} />
     </div>)
