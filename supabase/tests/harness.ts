@@ -34,7 +34,11 @@ export async function as<T = any>(db: PGlite, who: Who, sql: string, params: any
 }
 
 export async function addUser(db: PGlite, role: 'customer' | 'staff' | 'owner' = 'customer', anon = false) {
-  const { rows } = await db.query<{ id: string }>('insert into auth.users (is_anonymous) values ($1) returning id', [anon])
+  const metadata = anon ? '{}' : JSON.stringify({ phone: '09121234567' })
+  const { rows } = await db.query<{ id: string }>(
+    'insert into auth.users (is_anonymous, raw_user_meta_data) values ($1, $2::jsonb) returning id',
+    [anon, metadata],
+  )
   const id = rows[0].id
   if (role !== 'customer') await db.query('update public.profiles set role = $1 where id = $2', [role, id])
   return { id, anon }

@@ -14,10 +14,13 @@ Easiest: open **SQL Editor** and paste, run, in this order, each file in full:
 4. `supabase/migrations/20261113000400_realtime_storage.sql`
 4b. `supabase/migrations/20261113000500_admin.sql`
 4c. `supabase/migrations/20261113000600_push.sql`
+4d. `supabase/migrations/20261113000700_customer_registration.sql`
+4e. `supabase/migrations/20261114000100_required_customer_phone.sql`
 5. `supabase/seed.sql`
 
 (With the Supabase CLI instead: `supabase link --project-ref <ref>`, `supabase db push`, then run `seed.sql` in the SQL editor.)
 Do not run a file twice; the migrations are meant for a fresh project. `seed.sql` can be re-run safely.
+For an existing project, apply any missing migrations in order, through `20261114000100_required_customer_phone.sql`.
 
 ## 3. Turn on sign-in
 **Authentication → Sign In / Providers**

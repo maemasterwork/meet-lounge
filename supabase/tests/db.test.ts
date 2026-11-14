@@ -42,10 +42,20 @@ describe('schema and seed', () => {
     expect(profile[0]).toEqual({ display_name: 'Taylor Namvaran', phone: '+982112345678', seat: 'Building 2, floor 4, design' })
 
     await as(db, null, 'update auth.users set raw_user_meta_data=$1::jsonb where id=$2', [
-      JSON.stringify({ name: 'Taylor Updated', phone: '', seat: 'Building 3, floor 1' }), user.id,
+      JSON.stringify({ name: 'Taylor Updated', phone: '09121112233', seat: 'Building 3, floor 1' }), user.id,
     ])
     const upgraded = await as(db, null, 'select display_name, phone, seat from public.profiles where id=$1', [user.id])
-    expect(upgraded[0]).toEqual({ display_name: 'Taylor Updated', phone: null, seat: 'Building 3, floor 1' })
+    expect(upgraded[0]).toEqual({ display_name: 'Taylor Updated', phone: '09121112233', seat: 'Building 3, floor 1' })
+  })
+  it('requires a phone for registered customers and permits profile edits', async () => {
+    await expect(db.query("insert into auth.users (raw_user_meta_data) values ('{}'::jsonb)")).rejects.toThrow(/phone-required/)
+
+    const updated = await as(db, alice,
+      'update public.profiles set display_name=$1, phone=$2, seat=$3 where id=$4 returning display_name, phone, seat',
+      ['Alice Updated', '09129998877', 'Building 1, floor 2', alice.id],
+    )
+    expect(updated[0]).toEqual({ display_name: 'Alice Updated', phone: '09129998877', seat: 'Building 1, floor 2' })
+    await expect(as(db, alice, 'update public.profiles set phone=null where id=$1', [alice.id])).rejects.toThrow(/phone-required/)
   })
 })
 

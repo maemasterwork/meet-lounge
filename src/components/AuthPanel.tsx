@@ -28,6 +28,12 @@ export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff';
     setMsg(e ? t('auth.error', { msg: e }) : okMsg)
     setBusy(false)
   }
+  useEffect(() => {
+    if (!a.profile) return
+    setFullName(a.profile.fullName)
+    setPhone(a.profile.phone)
+    setSeat(a.profile.seat)
+  }, [a.profile])
   if (!a.configured) return null
   return (
     <dialog
@@ -45,7 +51,28 @@ export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff';
           </div>
           <button type="button" className="auth-close" aria-label={t('common.close')} onClick={onClose}><Icon name="x" /></button>
         </header>
-        {a.email ? (
+        {a.email && !staffMode && a.role === 'customer' ? (
+          <form className="auth-form" onSubmit={(e) => {
+            e.preventDefault()
+            void run(() => a.updateCustomerProfile({ fullName, phone, seat }), t('auth.profileSaved'))
+          }}>
+            <p className="muted sm" style={{ margin: 0 }}>{t('auth.signedInAs', { email: a.email })}</p>
+            <label className="field">{t('auth.fullName')}
+              <input type="text" autoComplete="name" maxLength={60} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </label>
+            <label className="field">{t('auth.phone')}
+              <input type="tel" inputMode="tel" dir="ltr" autoComplete="tel" required maxLength={20} pattern="[+]?[0-9 ()-]{6,20}" placeholder="09123456789" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </label>
+            <label className="field">{t('auth.seat')}
+              <input type="text" autoComplete="organization" maxLength={160} placeholder={t('auth.seatHint')} value={seat} onChange={(e) => setSeat(e.target.value)} />
+            </label>
+            {msg && <p className={msg === t('auth.profileSaved') ? 'muted sm' : 'err'} role="status">{msg}</p>}
+            <div className="auth-actions">
+              <button type="submit" className="btn sm" disabled={busy || !phone.trim()}>{t('common.save')}</button>
+              <button type="button" className="btn ghost sm" disabled={busy} onClick={() => void a.signOut()}>{t('auth.signOut')}</button>
+            </div>
+          </form>
+        ) : a.email ? (
           <div className="auth-content">
             <p className="muted sm">{t('auth.signedInAs', { email: a.email })}</p>
             <button type="button" className="btn ghost sm" style={{ justifySelf: 'start' }} onClick={() => void a.signOut()}>{t('auth.signOut')}</button>
@@ -83,7 +110,7 @@ export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff';
                 <input type="text" autoComplete="organization" maxLength={160} placeholder={t('auth.seatHint')} value={seat} onChange={(e) => setSeat(e.target.value)} />
               </label>
               <label className="field">{t('auth.phone')}
-                <input type="tel" inputMode="tel" dir="ltr" autoComplete="tel" maxLength={20} pattern="[+]?[0-9 ()\\-]{6,20}" placeholder="09123456789" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <input type="tel" inputMode="tel" dir="ltr" autoComplete="tel" required maxLength={20} pattern="[+]?[0-9 ()-]{6,20}" placeholder="09123456789" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </label>
             </>}
             <label className="field">{t('auth.password')}
