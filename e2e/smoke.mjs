@@ -31,11 +31,11 @@ for (const lang of ['fa', 'en']) {
   await page.click('#tabs button:nth-child(4)')
   await page.waitForSelector('.seg')
   await page.click('.seg button:nth-child(3)') // delivery
-  await page.click('.two .btn:not(.ghost):not(.sm)') // place without address
+  await page.click('.checkout') // place without address
   if (!(await page.$('.err[role="alert"]'))) fail(`${lang}: no address error`)
   await page.fill('textarea', 'Valiasr St, No. 1')
-  const total = await page.textContent('.sum .tot')
-  await page.click('.two .btn:not(.ghost):not(.sm)')
+  const total = await page.textContent('.btot .tot')
+  await page.click('.checkout')
   await page.waitForSelector('.stepper')
   const card = await page.textContent('.row')
   if (!card) fail(`${lang}: order missing in profile`)

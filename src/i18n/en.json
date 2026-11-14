@@ -394,5 +394,16 @@
   "menu.chip.sweet": "Sweets",
   "menu.page": "Page {n}",
   "menu.quickAdd": "Add {name} to bag",
-  "menu.openItem": "Options for {name}"
+  "menu.openItem": "Options for {name}",
+  "bag.basketTitle": "Your little basket",
+  "bag.addMore": "Add more",
+  "bag.treats": "{n} treats",
+  "bag.treat1": "1 treat",
+  "bag.onUs": "On us",
+  "bag.rewardSub": "Paid with {n} coins",
+  "bag.giftNote": "{name} is tucked into your bag, on us",
+  "bag.each": "{price} each",
+  "bag.free2": "free",
+  "bag.checkout": "Checkout",
+  "bag.rewardLine": "{name} (reward)"
 }

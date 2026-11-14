@@ -394,5 +394,16 @@
   "menu.chip.sweet": "شیرینی",
   "menu.page": "صفحهٔ {n}",
   "menu.quickAdd": "افزودن {name} به سبد",
-  "menu.openItem": "گزینه‌های {name}"
+  "menu.openItem": "گزینه‌های {name}",
+  "bag.basketTitle": "سبد کوچک شما",
+  "bag.addMore": "افزودن بیشتر",
+  "bag.treats": "{n} مورد",
+  "bag.treat1": "۱ مورد",
+  "bag.onUs": "از طرف ما",
+  "bag.rewardSub": "با {n} سکه",
+  "bag.giftNote": "{name} را از طرف ما توی سبدتان گذاشتیم",
+  "bag.each": "هر عدد {price}",
+  "bag.free2": "رایگان",
+  "bag.checkout": "ثبت سفارش",
+  "bag.rewardLine": "{name} (هدیه)"
 }
