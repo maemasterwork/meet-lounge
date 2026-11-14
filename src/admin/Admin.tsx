@@ -41,7 +41,7 @@ export default function Admin() {
         <button type="button" className="btn ghost sm" style={{ marginInlineStart: 'auto' }} onClick={() => go('home')}>{t('admin.back')} <Icon name="x" size={16} /></button>
       </div>
       <div style={{ maxWidth: 420, padding: 16 }}>
-        <AuthPanel note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} />
+        <AuthPanel mode="staff" note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} onClose={() => go('home')} />
       </div>
     </section>)
   const fresh = list.filter((o) => o.status === 'new').length
