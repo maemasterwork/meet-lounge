@@ -7,6 +7,7 @@ import { useUi } from './store/ui'
 import { useCart } from './store/cart'
 import { timeKey } from './data/catalog'
 import { AuthModalHost, FootBar, Popovers, Toasts, TopBar } from './components/Shell'
+import { Stage3DLoading } from './components/Stage3DLoading'
 import { Home } from './pages/Home'
 import { MenuPage } from './pages/Menu'
 import { GalleryPage, ShopPage, StoryPage } from './pages/Simple'
@@ -39,7 +40,7 @@ function Router() {
   const page = { home: <Home />, menu: <MenuPage />, shop: <ShopPage />, story: <StoryPage />, gallery: <GalleryPage />, events: <EventsPage />, bag: <BagPage />, me: <MePage /> }[view]
   return (
     <>
-    <Suspense fallback={null}><Stage3D /></Suspense>
+    <Suspense fallback={<Stage3DLoading />}><Stage3D /></Suspense>
     <div className="app">
       <TopBar view={view} />
       <main className={`page t-${tk}`} id="page" data-time={tk} key={view}>{page}</main>

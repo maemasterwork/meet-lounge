@@ -463,6 +463,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .stamp.x{border-color:var(--ml-ink-2,#777);color:var(--ml-ink-2,#777)}
 
 /* ---- 3D cafe behind the app (only while it is running: html.has3d) ---- */
+.stage3d-loading{position:fixed;inset:0;z-index:2;display:grid;place-items:center;pointer-events:none}
+.loading-spinner{width:44px;height:44px;border:4px solid color-mix(in srgb,var(--ml-accent) 22%,transparent);border-top-color:var(--ml-accent);border-radius:50%;animation:loading-spin .8s linear infinite}
+@keyframes loading-spin{to{transform:rotate(360deg)}}
+.stage3d-loading~.app :is(.hero-art,.mini,.evart){display:none}
 .stage3d{position:fixed;inset:0;z-index:0;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .5s ease}
 .has3d .stage3d{opacity:1}
 .stage3d .sky{position:absolute;inset:0;transition:opacity .9s ease}
