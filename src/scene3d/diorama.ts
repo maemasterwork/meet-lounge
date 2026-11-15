@@ -1351,8 +1351,11 @@ export function createDiorama(host: HTMLElement): Diorama | null {
   controls.enableDamping = true; controls.dampingFactor = 0.08
   controls.minDistance = 3; controls.maxDistance = 46; controls.maxPolarAngle = 1.52
   controls.autoRotate = !reduce; controls.autoRotateSpeed = 0.6
+  const cornerTgt = new THREE.Vector3(-0.5, 3.2, 1.5)
+  const cornerPos = new THREE.Vector3(-21.4, 10.4, 30.5)
+  if (window.matchMedia('(max-width: 860px)').matches) cornerPos.lerp(cornerTgt, 0.18)
   const views = {
-    corner: { pos: new THREE.Vector3(-21.4, 10.4, 30.5), tgt: new THREE.Vector3(-0.5, 3.2, 1.5) },
+    corner: { pos: cornerPos, tgt: cornerTgt },
     front: { pos: new THREE.Vector3(0.5, 5.2, 26), tgt: new THREE.Vector3(-0.5, 3.4, 2) },
     street: { pos: new THREE.Vector3(10.5, 1.8, 16), tgt: new THREE.Vector3(-1.5, 2.6, 2.5) },
     inside: { pos: new THREE.Vector3(-0.6, 1.7, 7.4), tgt: new THREE.Vector3(1.6, 1.4, -1.0) },
