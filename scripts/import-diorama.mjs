@@ -16,10 +16,12 @@ if (start < 0 || end < 0 || end <= start) {
   process.exit(1)
 }
 const body = lines.slice(start + 1, end).map((l) => (l.trim() ? '  ' + l : '')).join('\n').replace(/\n+$/, '')
+  // the model's own page buttons (logo upload, light/dark panel, ...) are not part of the product: ignore its DOM lookups
+  .replace(/document\.getElementById\(/g, 'byId(').replace(/document\.querySelector\(/g, 'query(')
 
 // names the product's own code (camera loop, controls, settings) relies on
-const need = ['nightGoal', 'seasonGoal', 'winterGoal', 'springGoal', 'yaldaGoal', 'xmasGoal', 'nowruzGoal', 'yaldaDecor', 'xmasDecor', 'nowruzDecor',
-  'applySeason', 'applyLight', 'applyBuilding', 'refreshMenu', 'curSeason', 'movers', 'steam', 'updateLeaves', 'updateSnow', 'updateSpring', 'updateSanta', 'updateNowruz']
+const need = ['nightGoal', 'seasonGoal', 'winterGoal', 'springGoal', 'yaldaGoal', 'xmasGoal', 'nowruzGoal', 'annivGoal', 'vdayGoal', 'oilDayGoal', 'yaldaDecor', 'xmasDecor', 'nowruzDecor', 'annivDecor', 'vDecor', 'oilDecor',
+  'applySeason', 'applyLight', 'applyBuilding', 'refreshMenu', 'curSeason', 'movers', 'steam', 'updateLeaves', 'updateSnow', 'updateSpring', 'updateSanta', 'updateNowruz', 'updateAnniv', 'updateVday', 'updateOilDay']
 const missing = need.filter((n) => !new RegExp('\\b' + n + '\\b').test(body))
 if (missing.length) {
   console.error('The new model no longer defines: ' + missing.join(', ') + '\nNothing was changed. Ask for a matching update of src/scene3d/diorama.ts (the frame loop or the controller uses these names).')
