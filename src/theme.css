@@ -59,8 +59,8 @@
   --ml-sky-2: #E9F5F0;
 
   /* typography */
-  --ml-font-script: 'Aref Ruqaa', 'Vazirmatn', Tahoma, serif;                 /* fa display */
-  --ml-font-serif: 'Noto Naskh Arabic', 'Vazirmatn', Tahoma, serif;           /* fa descriptions */
+  /* --ml-font-script: 'Aref Ruqaa', 'Vazirmatn', Tahoma, serif;                 fa display */
+  /* --ml-font-serif: 'Noto Naskh Arabic', 'Vazirmatn', Tahoma, serif;           fa descriptions */
   --ml-font-body: 'Vazirmatn', Tahoma, 'Segoe UI', sans-serif;                /* fa UI text */
   --ml-font-display-en: 'Fraunces', Georgia, 'Times New Roman', serif;         /* en display */
   --ml-font-body-en: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; /* en UI text */
