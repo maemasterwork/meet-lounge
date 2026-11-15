@@ -7,7 +7,7 @@ import type { Lang, Offer, Order, OrderStatus } from '../types'
 /**
  * Notifications the app shows by itself, with no server: it watches the customer's orders and offers (they update live)
  * and shows a system notification through the service worker. This works while the app is open, in a background tab,
- * or just after the visitor switched away. Messages while the app is fully closed need the server push (SETUP.md).
+ * or just after the visitor switched away (while the app is on screen it also shows an in-app message). Messages while the app is fully closed need the server push (SETUP.md).
  */
 export const NOTIFY_STATUSES: OrderStatus[] = ['ready', 'out', 'done']
 
@@ -75,8 +75,8 @@ export function useLocalNotify() {
     prev.current = next
     if (!enabled) return
     for (const m of notices) {
-      if (document.visibilityState === 'visible') say(m.body ? `${m.title} — ${m.body}` : m.title, { gold: true })
-      else if (canNotify()) void showSystem(m, lg)
+      if (document.visibilityState === 'visible') say(m.body ? `${m.title} — ${m.body}` : m.title, { gold: true })   // in-app message
+      if (canNotify()) void showSystem(m, lg)                                                                       // and the phone/desktop notification
     }
   }, [mine, offers])
 }
