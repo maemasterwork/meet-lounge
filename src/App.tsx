@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { I18nProvider, useI18n } from './i18n'
 import { DataProvider } from './data/context'
-import { useView } from './lib/route'
+import { useView, type View } from './lib/route'
 import { useUi } from './store/ui'
 import { useCart } from './store/cart'
 import { timeKey } from './data/catalog'
@@ -12,14 +12,28 @@ import { GalleryPage, ShopPage, StoryPage } from './pages/Simple'
 import { EventsPage } from './pages/Events'
 import { BagPage } from './pages/Bag'
 import { MePage } from './pages/Me'
+import type { ViewName } from './scene3d/views'
 
 const Admin = lazy(() => import('./admin/Admin'))
 const Stage3D = lazy(() => import('./scene3d/Stage3D'))
 
+const CAMERA_FOR_PAGE: Partial<Record<View, ViewName>> = {
+  home: 'corner',
+  menu: 'street',
+  bag: 'inside',
+  events: 'front',
+  me: 'above',
+}
+
 function Router() {
   const view = useView()
   const { t } = useI18n()
+  const setView3d = useUi((s) => s.setView3d)
   const tk = timeKey()
+  useEffect(() => {
+    const camera = CAMERA_FOR_PAGE[view]
+    if (camera) setView3d(camera)
+  }, [view, setView3d])
   if (view === 'admin') return <Suspense fallback={<p className="muted" style={{ padding: 24 }}>{t('loading')}</p>}><Admin /></Suspense>
   const page = { home: <Home />, menu: <MenuPage />, shop: <ShopPage />, story: <StoryPage />, gallery: <GalleryPage />, events: <EventsPage />, bag: <BagPage />, me: <MePage /> }[view]
   return (

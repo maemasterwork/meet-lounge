@@ -1352,7 +1352,7 @@ export function createDiorama(host: HTMLElement): Diorama | null {
   controls.minDistance = 3; controls.maxDistance = 46; controls.maxPolarAngle = 1.52
   controls.autoRotate = !reduce; controls.autoRotateSpeed = 0.6
   const views = {
-    corner: { pos: new THREE.Vector3(-17, 9.5, 19), tgt: new THREE.Vector3(-0.5, 3.2, 1.5) },
+    corner: { pos: new THREE.Vector3(-21.4, 10.4, 30.5), tgt: new THREE.Vector3(-0.5, 3.2, 1.5) },
     front: { pos: new THREE.Vector3(0.5, 5.2, 26), tgt: new THREE.Vector3(-0.5, 3.4, 2) },
     street: { pos: new THREE.Vector3(10.5, 1.8, 16), tgt: new THREE.Vector3(-1.5, 2.6, 2.5) },
     inside: { pos: new THREE.Vector3(-0.6, 1.7, 7.4), tgt: new THREE.Vector3(1.6, 1.4, -1.0) },
@@ -1424,9 +1424,12 @@ export function createDiorama(host: HTMLElement): Diorama | null {
     }
     applyLight(night, time)
     if (fly) {
-      const kf = 1 - Math.pow(0.004, dt)
-      camera.position.lerp(fly.pos, kf); controls.target.lerp(fly.tgt, kf)
-      if (camera.position.distanceTo(fly.pos) < 0.03 && controls.target.distanceTo(fly.tgt) < 0.03) fly = null
+      fly.elapsed = Math.min(fly.elapsed + dt, fly.duration)
+      const progress = fly.elapsed / fly.duration
+      const eased = progress * progress * (3 - 2 * progress)
+      camera.position.lerpVectors(fly.fromPos, fly.pos, eased)
+      controls.target.lerpVectors(fly.fromTgt, fly.tgt, eased)
+      if (progress === 1) fly = null
     }
     movers.forEach(function (m) {
       if (!reduce) { m.x += m.v * dt; if (m.x > 14) m.x = -14; if (m.x < -14) m.x = 14 }
@@ -1449,7 +1452,11 @@ export function createDiorama(host: HTMLElement): Diorama | null {
     setView(name) {
       const v = views[name]; if (!v) return
       controls.autoRotate = false
-      if (reduce) { camera.position.copy(v.pos); controls.target.copy(v.tgt); fly = null } else fly = v
+      if (reduce) { camera.position.copy(v.pos); controls.target.copy(v.tgt); fly = null }
+      else fly = {
+        fromPos: camera.position.clone(), fromTgt: controls.target.clone(),
+        pos: v.pos, tgt: v.tgt, elapsed: 0, duration: 1.4,
+      }
     },
     setNight(on) { nightGoal = on ? 1 : 0 },
     setSeason(s) {
