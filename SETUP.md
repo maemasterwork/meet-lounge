@@ -104,3 +104,54 @@ Dashboard → Events (owner): add, edit, hide (unpublish) or delete gatherings; 
 - New migration `supabase/migrations/20261113001100_season_event.sql`: seasons are now spring, summer, fall, winter, and `settings.scene_event` is none, yalda, xmas or nowruz.
 - Dashboard > Brand has both groups. Nowruz also sets spring; Yalda and Christmas also set winter. Day/night still follows the light/dark look.
 - `index.html` now also loads the Unbounded and Manrope fonts, which the 3D sign and menu board use.
+
+## Updating the 3D model yourself (from a new HTML file)
+
+Your 3D cafe lives in `src/scene3d/diorama.ts`. The scene-building code in it is a copy of the code in your single-file HTML model (three.js r128). The camera, orbit controls, views, light/dark, season, special event and cleanup are the product's own code around it. A script copies the new model in without touching the product's part.
+
+### Update steps
+
+1. Save the new HTML anywhere, for example `~/Downloads/Meet_Lounge_Modern_9.html`.
+2. In the project folder run:
+   ```
+   node scripts/import-diorama.mjs ~/Downloads/Meet_Lounge_Modern_9.html
+   ```
+   It prints `Imported N lines …`. It replaces only the part of `src/scene3d/diorama.ts` between the lines `MODEL BODY START` and `MODEL BODY END`. Do not edit that part by hand: the next import overwrites it.
+3. Run `npm run verify` (types, tests, build).
+4. Look at it: `npm run dev`, then open the home page. Check:
+   - the footer buttons Corner / Front / Street / Inside / Above all move the camera;
+   - the light/dark button switches day and night;
+   - Dashboard > Brand: each season and each special event looks right.
+5. Deploy as usual (commit, push, GitHub Pages).
+
+No database change is needed for a model update. Customers get the new model on their next visit (the app updates itself).
+
+### What the HTML must look like
+
+The script looks for two lines in your HTML and takes everything between them:
+
+- start: the line `scene.add(world);`
+- end: the comment `/* ---------- camera, controls, views ---------- */`
+
+So everything the model builds (building, trees, people, textures, `applyLight`, `applySeason` and so on) must sit between them, as it does now. The product replaces what is after the end line (camera, controls, buttons, the animation loop), so changes you make there in the HTML are not imported.
+
+The script checks that these names still exist in the new model, because the product's code uses them: `nightGoal, seasonGoal, winterGoal, springGoal, yaldaGoal, xmasGoal, nowruzGoal, yaldaDecor, xmasDecor, nowruzDecor, applySeason, applyLight, applyBuilding, refreshMenu, curSeason, movers, steam, updateLeaves, updateSnow, updateSpring, updateSanta, updateNowruz`. If one is missing or renamed, it stops and changes nothing, and tells you which.
+
+### What the import does not cover (needs a code change)
+
+| New in the HTML | What to change |
+| --- | --- |
+| a new camera view (a sixth button) | the `views` object in the lower part of `diorama.ts`; `src/scene3d/views.ts` (`VIEWS`); `view3d.<name>` in `src/i18n/en.json` and `fa.json` |
+| a new season | `Season` and `SEASONS` in `src/repos/types.ts`; a `season.<name>` label in both i18n files; the `season` check in a new migration (copy `supabase/migrations/20261113001100_season_event.sql`); `setSeason` in `diorama.ts`; a sky gradient `.stage3d .sky.<name>` in `src/app.css` and a `<div className="sky <name>"/>` in `src/scene3d/Stage3D.tsx` |
+| a new special event | `SceneEvent`, `SCENE_EVENTS` and `EVENT_SEASON` in `src/repos/types.ts`; `sceneEvent.<name>` in both i18n files; the `scene_event` check in a new migration; `setEvent` and the frame loop in `diorama.ts` |
+| a new font used in a sign or menu board | add it to the Google Fonts link in `index.html` |
+| a new file the model loads (image, model file) | put it in `public/` and use a relative path; the model must not depend on a CDN other than the app's own files |
+
+Ask me for any of these and I will make the change.
+
+### Troubleshooting
+
+- **The page stays flat (no 3D):** WebGL is off, Data Saver is on, or the debug switch is set. In the browser console run `localStorage.removeItem('ml-flat')` and reload.
+- **Black or empty scene after an update:** open the browser console. A red error usually names a variable from the new model; send it to me.
+- **Slow on an old phone:** in `diorama.ts` change `Math.min(window.devicePixelRatio || 1, 1.75)` to `1.25`.
+- **A change in the HTML does not show:** you changed something outside the two marker lines (see above), or forgot to rerun the import.
