@@ -352,6 +352,28 @@ describe('deposit before preparation', () => {
     await as(db, owner, "update public.settings set payment_card='6037991234567890', payment_holder='Meet Lounge'")
     expect((await as(db, 'anon', 'select payment_card from public.settings'))[0].payment_card).toBe('6037991234567890')
   })
+  it('the season defaults to fall, anyone can read it, only the owner can change it, and only summer or fall are valid', async () => {
+    expect((await as(db, 'anon', 'select season from public.settings'))[0].season).toBe('fall')
+    await as(db, staff, "update public.settings set season='summer'")                          // filtered to 0 rows
+    expect((await as(db, 'anon', 'select season from public.settings'))[0].season).toBe('fall')
+    await expect(as(db, owner, "update public.settings set season='monsoon'")).rejects.toThrow(/check/)
+    await as(db, owner, "update public.settings set season='summer'")
+    expect((await as(db, 'anon', 'select season from public.settings'))[0].season).toBe('summer')
+    await as(db, owner, "update public.settings set season='winter'")
+    expect((await as(db, 'anon', 'select season from public.settings'))[0].season).toBe('winter')
+    await as(db, owner, "update public.settings set season='fall'")
+  })
+  it('the 3D special event defaults to none, only the owner changes it, and only known events are valid', async () => {
+    expect((await as(db, 'anon', 'select scene_event from public.settings'))[0].scene_event).toBe('none')
+    await as(db, staff, "update public.settings set scene_event='yalda'")                      // filtered to 0 rows
+    expect((await as(db, 'anon', 'select scene_event from public.settings'))[0].scene_event).toBe('none')
+    await expect(as(db, owner, "update public.settings set scene_event='halloween'")).rejects.toThrow(/check/)
+    for (const e of ['yalda', 'xmas', 'nowruz']) {
+      await as(db, owner, `update public.settings set scene_event='${e}'`)
+      expect((await as(db, 'anon', 'select scene_event from public.settings'))[0].scene_event).toBe(e)
+    }
+    await as(db, owner, "update public.settings set scene_event='none'")
+  })
 })
 
 describe('per-item coins and stock', () => {
