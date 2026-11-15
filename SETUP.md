@@ -150,7 +150,7 @@ The script looks for two lines in your HTML and takes everything between them:
 
 So everything the model builds (building, trees, people, textures, `applyLight`, `applySeason` and so on) must sit between them, as it does now. The product replaces what is after the end line (camera, controls, buttons, the animation loop), so changes you make there in the HTML are not imported.
 
-The script checks that these names still exist in the new model, because the product's code uses them: `nightGoal, seasonGoal, winterGoal, springGoal, yaldaGoal, xmasGoal, nowruzGoal, yaldaDecor, xmasDecor, nowruzDecor, applySeason, applyLight, applyBuilding, refreshMenu, curSeason, movers, steam, updateLeaves, updateSnow, updateSpring, updateSanta, updateNowruz`. If one is missing or renamed, it stops and changes nothing, and tells you which.
+The script checks that these names still exist in the new model, because the product's code uses them: `nightGoal, seasonGoal, winterGoal, springGoal, yaldaGoal, xmasGoal, nowruzGoal, annivGoal, vdayGoal, oilDayGoal, yaldaDecor, xmasDecor, nowruzDecor, annivDecor, vDecor, oilDecor, applySeason, applyLight, applyBuilding, refreshMenu, curSeason, movers, steam, updateLeaves, updateSnow, updateSpring, updateSanta, updateNowruz, updateAnniv, updateVday, updateOilDay`. If one is missing or renamed, it stops and changes nothing, and tells you which.
 
 ### What the import does not cover (needs a code change)
 
@@ -170,3 +170,9 @@ Ask me for any of these and I will make the change.
 - **Black or empty scene after an update:** open the browser console. A red error usually names a variable from the new model; send it to me.
 - **Slow on an old phone:** in `diorama.ts` change `Math.min(window.devicePixelRatio || 1, 1.75)` to `1.25`.
 - **A change in the HTML does not show:** you changed something outside the two marker lines (see above), or forgot to rerun the import.
+
+### More special events, and what the product leaves out of the model (update)
+
+- New migration `supabase/migrations/20261113001200_more_events.sql`: the special events are now None, Yalda, Christmas, Nowruz, Anniversary, Valentine's and Oil Day (Brand tab, with Persian labels). Oil Day also sets spring, like Nowruz.
+- The model's own page controls are not part of the product and are ignored on import: the "Oil field" camera view, "Upload SVG", the light/dark logo panel and the Reset button, and the model's own day/night, season and event buttons (the product has its own for those). The importer routes the model's `document.getElementById` / `document.querySelector` calls to a harmless stub, so these never break the page.
+- **The company logo on the anniversary billboard:** because there is no upload button, put your logo in the HTML before importing: set the `COMPANY_LOGO_SVG` constant in the model (paste the SVG text between its quotes), then run the import. Until you do, the billboard shows the model's placeholder text.

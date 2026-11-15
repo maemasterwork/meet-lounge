@@ -368,7 +368,7 @@ describe('deposit before preparation', () => {
     await as(db, staff, "update public.settings set scene_event='yalda'")                      // filtered to 0 rows
     expect((await as(db, 'anon', 'select scene_event from public.settings'))[0].scene_event).toBe('none')
     await expect(as(db, owner, "update public.settings set scene_event='halloween'")).rejects.toThrow(/check/)
-    for (const e of ['yalda', 'xmas', 'nowruz']) {
+    for (const e of ['yalda', 'xmas', 'nowruz', 'anniv', 'vday', 'oil']) {
       await as(db, owner, `update public.settings set scene_event='${e}'`)
       expect((await as(db, 'anon', 'select scene_event from public.settings'))[0].scene_event).toBe(e)
     }
