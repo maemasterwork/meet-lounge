@@ -8,13 +8,13 @@ import { OrbitControls } from 'three-r128/examples/jsm/controls/OrbitControls.js
 
 import type { ViewName } from './views'
 export type SeasonName = 'spring' | 'summer' | 'fall' | 'winter'
-export type SceneEvent = 'none' | 'yalda' | 'xmas' | 'nowruz'
+export type SceneEvent = 'none' | 'yalda' | 'xmas' | 'nowruz' | 'anniv' | 'vday' | 'oil'
 
 export interface Diorama {
   setView(v: ViewName): void
   setNight(on: boolean): void
   setSeason(s: SeasonName): void
-  /** Special decorations: Yalda night, Christmas or Nowruz (haft-sin). */
+  /** Special decorations: Yalda night, Christmas, Nowruz (haft-sin), anniversary, Valentine's or Oil Day. */
   setEvent(e: SceneEvent): void
   setAutoRotate(on: boolean): void
   /** Shift the model sideways on screen: fraction of the width, positive = to the right. */
@@ -38,6 +38,11 @@ export function createDiorama(host: HTMLElement): Diorama | null {
   stage.appendChild(renderer.domElement)
   const THREE_OrbitControls = OrbitControls
   const noop = () => {}
+  // The model's own page buttons (logo upload, light/dark panel, ...) do not exist in the product: the model's calls
+  // `document.getElementById(...)` / `document.querySelector(...)` are routed here by the importer and do nothing.
+  const DUMMY_EL = { addEventListener: noop, click: noop, setAttribute: noop, files: null, value: '' }
+  const byId = () => DUMMY_EL
+  const query = () => null
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(38, 1.6, 0.1, 200)
   const world = new THREE.Group()
@@ -213,13 +218,16 @@ export function createDiorama(host: HTMLElement): Diorama | null {
     var MENUS = {
       summer: { t: 'MEET LOUNGE  ·  MENU', l: [['Espresso', '3.5'], ['Flat white', '4.2'], ['Cortado', '4.0']], r: [['V60 pour-over', '5.5'], ['Cold brew', '4.8'], ['Croissant', '3.4']] },
       fall: { t: 'MEET LOUNGE  ·  FALL MENU', l: [['Espresso', '3.5'], ['Flat white', '4.2'], ['Pumpkin latte', '5.2']], r: [['V60 pour-over', '5.5'], ['Maple cortado', '4.6'], ['Cinnamon bun', '3.8']] },
+      oil: { t: 'MEET LOUNGE  ·  OIL DAY', l: [['Espresso', '3.5'], ['Black gold latte', '5.6'], ['Cardamom tea', '3.8']], r: [['Baklava', '4.6'], ['Date cookies', '3.8'], ['Saffron ice cream', '5.2']] },
+      vday: { t: 'MEET LOUNGE  ·  VALENTINE', l: [['Espresso', '3.5'], ['Rose latte', '5.6'], ['Raspberry mocha', '5.4']], r: [['Heart cake', '5.2'], ['Chocolate truffles', '4.2'], ['Strawberry fizz', '4.8']] },
+      anniv: { t: 'MEET LOUNGE  ·  ANNIVERSARY', l: [['Espresso', '3.5'], ['Celebration latte', '5.6'], ['Sparkling brew', '5.2']], r: [['Anniversary cake', '4.8'], ['Gold macaron', '3.6'], ['Sparkling juice', '4.9']] },
       nowruz: { t: 'MEET LOUNGE  ·  NOWRUZ', l: [['Espresso', '3.5'], ['Saffron latte', '5.4'], ['Cardamom tea', '3.8']], r: [['Sholeh zard', '4.2'], ['Chickpea cookies', '3.6'], ['Sohan brittle', '4.0']] },
       xmas: { t: 'MEET LOUNGE  ·  CHRISTMAS', l: [['Espresso', '3.5'], ['Peppermint mocha', '5.4'], ['Eggnog latte', '5.6']], r: [['Mulled cider', '4.8'], ['Gingerbread cookie', '3.2'], ['Yule log slice', '4.4']] },
       yalda: { t: 'MEET LOUNGE  ·  YALDA NIGHT', l: [['Saffron tea', '3.8'], ['Pomegranate juice', '4.5'], ['Rose latte', '5.2']], r: [['Watermelon slice', '3.5'], ['Mixed nuts', '4.0'], ['Baklava', '3.9']] },
       spring: { t: 'MEET LOUNGE  ·  SPRING MENU', l: [['Espresso', '3.5'], ['Flat white', '4.2'], ['Lavender latte', '5.1']], r: [['V60 pour-over', '5.5'], ['Iced matcha', '5.0'], ['Strawberry tart', '4.2']] },
       winter: { t: 'MEET LOUNGE  ·  WINTER MENU', l: [['Espresso', '3.5'], ['Flat white', '4.2'], ['Hot chocolate', '4.9']], r: [['V60 pour-over', '5.5'], ['Gingerbread latte', '5.4'], ['Almond croissant', '3.9']] }
     };
-    var menuSeason = 'nowruz', menuRedraw = function () {};
+    var menuSeason = 'anniv', menuRedraw = function () {};
     function menuTexture() {
       var c = document.createElement('canvas'); c.width = 1024; c.height = 256;
       var x = c.getContext('2d');
@@ -793,13 +801,13 @@ export function createDiorama(host: HTMLElement): Diorama | null {
 
     /* ---------- Yalda night ---------- */
     var yalda = 0, yaldaGoal = 0, curSeason = 'spring';
-    function refreshMenu() { menuSeason = yaldaGoal ? 'yalda' : xmasGoal ? 'xmas' : nowruzGoal ? 'nowruz' : curSeason; menuRedraw(); }
+    function refreshMenu() { menuSeason = yaldaGoal ? 'yalda' : xmasGoal ? 'xmas' : nowruzGoal ? 'nowruz' : vdayGoal ? 'vday' : oilDayGoal ? 'oil' : annivGoal ? 'anniv' : curSeason; menuRedraw(); }
     var yaldaDecor = new THREE.Group(); world.add(yaldaDecor);
     var flameM = new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0xffa030, emissiveIntensity: 1.3, roughness: 0.5 });
     var lanternRed = new THREE.MeshStandardMaterial({ color: 0xc4232f, emissive: 0xff3b2a, emissiveIntensity: 0.4, roughness: 0.6 });
     var yLight = new THREE.PointLight(0xffa24a, 0, 6, 2); yLight.position.set(-2.8, 1.7, -0.7); scene.add(yLight);
     var pomM = M(0xa31d2e, { roughness: 0.5 }), rindM = M(0x3d8a3a, { roughness: 0.6 }), pinkM = M(0xe6405a, { roughness: 0.5 });
-    var rimM = M(0xdff0c8), seedM = M(0x16130f), goldM = M(0xd2a54a, { metalness: 0.6, roughness: 0.35 }), crownM = M(0x6b3a1e);
+    var rimM = M(0xdff0c8), seedM = M(0x16130f), goldM = M(0xd2a54a, { metalness: 0.35, roughness: 0.35, emissive: 0x3d2d0c }), crownM = M(0x6b3a1e);
     var glassTeaM = new THREE.MeshStandardMaterial({ color: 0xd8e8ee, transparent: true, opacity: 0.45, roughness: 0.1, depthWrite: false });
     var teaM = M(0xb5421d, { roughness: 0.3 });
     var nutCols = [0xb98652, 0x9bbf5a, 0xd98b3a, 0x7a4a2a];
@@ -1054,14 +1062,14 @@ export function createDiorama(host: HTMLElement): Diorama | null {
     xmasDecor.visible = xmas > 0.5;
 
     /* ---------- Nowruz ---------- */
-    var nowruz = 1, nowruzGoal = 1;
+    var nowruz = 0, nowruzGoal = 0, anniv = 1, annivGoal = 1, vday = 0, vdayGoal = 0, oilDay = 0, oilDayGoal = 0;
     var nowruzDecor = new THREE.Group(); world.add(nowruzDecor);
     var nLight = new THREE.PointLight(0xffc27a, 0, 6, 2); nLight.position.set(-2.8, 1.9, -0.8); scene.add(nLight);
     var grassG = M(0x58b24a), dishBlue = M(0x2f6fa8, { roughness: 0.3 }), samanuM = M(0x6b3d1f), senjedM = M(0xc9a15a);
     var garlicM = M(0xf2ecdc), appleM = M(0xd62839, { roughness: 0.3 }), sumacM = M(0x8e1f2b), fishM = M(0xf08a24), redRib = M(0xd62839);
     var vinegarM = new THREE.MeshStandardMaterial({ color: 0xb86a2a, transparent: true, opacity: 0.85, roughness: 0.2 });
     var waterM = new THREE.MeshStandardMaterial({ color: 0x6fb7e6, transparent: true, opacity: 0.35, roughness: 0.1, depthWrite: false });
-    var mirrorM = new THREE.MeshStandardMaterial({ color: 0xe3ecf2, metalness: 1, roughness: 0.05 });
+    var mirrorM = new THREE.MeshStandardMaterial({ color: 0xdbe6ee, metalness: 0.35, roughness: 0.12, emissive: 0x6f7f8c, emissiveIntensity: 0.45 });
     var eggCols = [0xd62839, 0xf2c14e, 0x3a7bd5, 0x2fa56b, 0xe8e8e8, 0xb48cf0];
 
     function Nitem(x, y, z, s) { var g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s || 1); nowruzDecor.add(g); return g; }
@@ -1301,16 +1309,19 @@ export function createDiorama(host: HTMLElement): Diorama | null {
     var bodyY = new THREE.Color(0x3a1218), slatY = new THREE.Color(0x8a2a36), canY = new THREE.Color(0x5a1522);
     var bodyX = new THREE.Color(0x1c3d2c), slatX = new THREE.Color(0xd8c9a8), canX = new THREE.Color(0x1f4a35);
     var bodyN = new THREE.Color(0x16615c), slatN = new THREE.Color(0xdccfae), canN = new THREE.Color(0x1fa6a0);
+    var bodyA = new THREE.Color(0x1b2230), slatA = new THREE.Color(0xd9b46a), canA = new THREE.Color(0xb8924a);
+    var bodyV = new THREE.Color(0x4a1230), slatV = new THREE.Color(0xf3b6c6), canV = new THREE.Color(0xd81b60);
+    var bodyO = new THREE.Color(0x15171a), slatO = new THREE.Color(0xe08a2b), canO = new THREE.Color(0x1e8a4a);
     var white3 = new THREE.Color(0xffffff);
-    var scrC = [0xffb3a8, 0xffeab8, 0xbfffdc].map(function (h) { return new THREE.Color(h); });
-    var scrE = [0xff5a48, 0xffe2a0, 0x7dffb8].map(function (h) { return new THREE.Color(h); });
+    var scrC = [0xffb3a8, 0xffeab8, 0xbfffdc, 0xfff0c8, 0xffc4d6, 0xffd9a8].map(function (h) { return new THREE.Color(h); });
+    var scrE = [0xff5a48, 0xffe2a0, 0x7dffb8, 0xffd88a, 0xff4f84, 0xff9a30].map(function (h) { return new THREE.Color(h); });
     function applyBuilding() {
-      bodyM.color.copy(bodyBase).lerp(bodyY, yalda).lerp(bodyX, xmas).lerp(bodyN, nowruz);
-      slatM.color.copy(slatBase).lerp(slatY, yalda).lerp(slatX, xmas).lerp(slatN, nowruz);
-      canopyM.color.copy(bodyBase).lerp(canY, yalda).lerp(canX, xmas).lerp(canN, nowruz);
+      bodyM.color.copy(bodyBase).lerp(bodyY, yalda).lerp(bodyX, xmas).lerp(bodyN, nowruz).lerp(bodyA, anniv).lerp(bodyV, vday).lerp(bodyO, oilDay);
+      slatM.color.copy(slatBase).lerp(slatY, yalda).lerp(slatX, xmas).lerp(slatN, nowruz).lerp(slatA, anniv).lerp(slatV, vday).lerp(slatO, oilDay);
+      canopyM.color.copy(bodyBase).lerp(canY, yalda).lerp(canX, xmas).lerp(canN, nowruz).lerp(canA, anniv).lerp(canV, vday).lerp(canO, oilDay);
       screenMats.forEach(function (m) {
-        m.color.copy(white3).lerp(scrC[0], yalda).lerp(scrC[1], xmas).lerp(scrC[2], nowruz);
-        m.emissive.copy(white3).lerp(scrE[0], yalda).lerp(scrE[1], xmas).lerp(scrE[2], nowruz);
+        m.color.copy(white3).lerp(scrC[0], yalda).lerp(scrC[1], xmas).lerp(scrC[2], nowruz).lerp(scrC[3], anniv).lerp(scrC[4], vday).lerp(scrC[5], oilDay);
+        m.emissive.copy(white3).lerp(scrE[0], yalda).lerp(scrE[1], xmas).lerp(scrE[2], nowruz).lerp(scrE[3], anniv).lerp(scrE[4], vday).lerp(scrE[5], oilDay);
       });
     }
 
@@ -1390,6 +1401,681 @@ export function createDiorama(host: HTMLElement): Diorama | null {
         bm.rotation.z = -Math.cos(ba) * 0.22; bm.rotation.x = Math.sin(ba) * 0.22; nowruzDecor.add(bm);
       }
     }
+
+    /* ---------- Valentine's Day ---------- */
+    // Rose and blush cladding, a neon heart on the facade, a beating heart pierced by an arrow on the roof,
+    // a rose arch over a petal-strewn carpet, heart balloons, a heart garland and hearts drifting upward.
+    var vLight = new THREE.PointLight(0xff5a8a, 0, 6, 2); vLight.position.set(-1.6, 2.0, -0.8); scene.add(vLight);
+    var vLight2 = new THREE.PointLight(0xff7aa0, 0, 8, 2); vLight2.position.set(0, 3.2, 8.0); scene.add(vLight2);
+    var vDecor = new THREE.Group(); world.add(vDecor);
+    var roseMats = [M(0xc4163a, { roughness: 0.35 }), M(0xf06a8c, { roughness: 0.35 }), M(0xffc2d4, { roughness: 0.4 }), M(0xe0204a, { roughness: 0.35 })];
+    var leafM = M(0x2f7a45, { flatShading: true });
+    var heartPink = new THREE.MeshStandardMaterial({ color: 0xff4d7a, emissive: 0xff2d6f, emissiveIntensity: 0.3, metalness: 0.15, roughness: 0.25 });
+    var valNeon = new THREE.MeshStandardMaterial({ color: 0xff8fb0, emissive: 0xff2d6f, emissiveIntensity: 0.5, roughness: 0.4 });
+    function heartPts(s, n) {
+      var p = [], k = s / 16;
+      for (var i = 0; i < n; i++) {
+        var t = i / n * Math.PI * 2;
+        p.push(new THREE.Vector2(16 * Math.pow(Math.sin(t), 3) * k, (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t) + 2.65) * k));
+      }
+      return p;
+    }
+    function heartGeo(s, depth) {
+      var g = new THREE.ExtrudeGeometry(new THREE.Shape(heartPts(s, 48)), { depth: depth, bevelEnabled: true, bevelThickness: depth * 0.3, bevelSize: s * 0.04, bevelSegments: 2 });
+      g.translate(0, 0, -depth / 2); return g;
+    }
+    var vDummy = new THREE.Object3D();
+    var vCols = [0xff4d6d, 0xff8fa3, 0xffc2d1, 0xd6264a, 0xfff0f3].map(function (h) { return new THREE.Color(h); });
+
+    // neon heart on the facade
+    var hn = heartPts(0.85, 64).map(function (p) { return new THREE.Vector3(p.x, p.y, 0); });
+    var neonHeart = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hn, true), 120, 0.04, 8, true), valNeon);
+    neonHeart.position.set(-0.6, 5.2, 5.33); vDecor.add(neonHeart);
+    var glowHeart = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(heartPts(0.85, 48))), new THREE.MeshBasicMaterial({ color: 0xff2d6f, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }));
+    glowHeart.position.set(-0.6, 5.2, 5.315); vDecor.add(glowHeart);
+
+    // door banner
+    function vBannerTexture() {
+      var c = document.createElement('canvas'); c.width = 1440; c.height = 320; var x = c.getContext('2d');
+      function draw() {
+        x.fillStyle = '#3a0f26'; x.fillRect(0, 0, 1440, 320);
+        x.strokeStyle = '#ff8fb0'; x.lineWidth = 8; x.strokeRect(14, 14, 1412, 292);
+        x.textBaseline = 'middle'; x.textAlign = 'center';
+        x.fillStyle = '#ffc2d4'; x.direction = 'rtl'; x.font = '800 140px Vazirmatn, Tahoma, Arial, sans-serif'; x.fillText('ولنتاین مبارک', 430, 160);
+        x.direction = 'ltr'; x.fillStyle = '#f4efe3'; x.font = '700 62px Unbounded, Arial, sans-serif'; x.fillText('HAPPY', 1030, 112);
+        x.fillStyle = '#ff6f9c'; x.font = '800 56px Unbounded, Arial, sans-serif'; x.fillText("VALENTINE'S DAY", 1030, 208);
+      }
+      draw();
+      var t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('800 140px Vazirmatn', 'ولنتاین مبارک').then(function () { draw(); t.needsUpdate = true; }).catch(function () {});
+      }
+      return t;
+    }
+    var vBanner = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.73, 0.04), [mat.charcoal, mat.charcoal, mat.charcoal, mat.charcoal, signMat(vBannerTexture()), mat.charcoal]);
+    vBanner.position.set(0, 3.16, 3.11); vDecor.add(vBanner);
+
+    // blush carpet with gold stanchion rope lines and scattered petals
+    var blushM = M(0xe96a8d, { roughness: 0.95 });
+    box(1.6, 0.012, 1.9, blushM, 0, 0.084, 8.5, vDecor);
+    box(1.6, 0.012, 4.3, blushM, 0, 0.222, 5.45, vDecor);
+    [-0.8, 0.8].forEach(function (ex) { box(0.04, 0.014, 4.3, goldM, ex, 0.224, 5.45, vDecor); box(0.04, 0.014, 1.9, goldM, ex, 0.086, 8.5, vDecor); });
+    var PET = 70, petalIM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.06, 5, 4), M(0xffffff, { roughness: 0.6 }), PET);
+    for (var pi = 0; pi < PET; pi++) {
+      var pz = 3.4 + rnd(pi * 4 + 901) * 6.0, px = (rnd(pi * 4 + 902) - 0.5) * 1.9;
+      vDummy.position.set(px, pz < 7.6 ? 0.245 : 0.105, pz); vDummy.rotation.set(0, rnd(pi * 4 + 903) * 6.28, (rnd(pi * 4 + 904) - 0.5) * 0.6);
+      vDummy.scale.set(1.4, 0.25, 0.8); vDummy.updateMatrix(); petalIM.setMatrixAt(pi, vDummy.matrix); petalIM.setColorAt(pi, vCols[pi % 5]);
+    }
+    petalIM.instanceColor.needsUpdate = true; petalIM.receiveShadow = true; vDecor.add(petalIM); extraInstances += PET;
+
+    // heart balloons tethered at the entrance
+    var vBalloons = [];
+    [[-2.4, 8.0, 3.0, 0], [-1.95, 8.3, 3.6, 1], [-2.9, 7.8, 2.7, 2], [2.4, 8.0, 3.0, 1], [1.95, 8.3, 3.6, 0], [2.9, 7.8, 2.7, 3]].forEach(function (b, bi) {
+      var g = new THREE.Group(); g.position.set(b[0], 0.1, b[1]); vDecor.add(g);
+      cyl(0.004, 0.004, b[2] - 0.25, mat.charcoal, 0, (b[2] - 0.25) / 2, 0, 3, g);
+      var hm = new THREE.Mesh(heartGeo(0.3, 0.2), M([0xc4163a, 0xf06a8c, 0xffc2d4, 0xe0204a][b[3]], { roughness: 0.2, metalness: 0.1 }));
+      hm.position.y = b[2]; hm.castShadow = true; g.add(hm); vBalloons.push({ g: g, ph: bi * 1.3 });
+    });
+
+    // heart garland swagged along the upper volume
+    var GAR = 40, garIM = new THREE.InstancedMesh(heartGeo(0.07, 0.03), new THREE.MeshBasicMaterial({ color: 0xffffff }), GAR);
+    for (var gi = 0; gi < GAR; gi++) {
+      var gf = (gi % 10) / 9;
+      vDummy.position.set(-6.4 + gi * 0.25, 3.75 - 0.25 * Math.sin(Math.PI * gf), 5.36); vDummy.rotation.set(0, 0, 0); vDummy.scale.setScalar(1);
+      vDummy.updateMatrix(); garIM.setMatrixAt(gi, vDummy.matrix); garIM.setColorAt(gi, vCols[gi % 5]);
+    }
+    garIM.instanceColor.needsUpdate = true; vDecor.add(garIM); extraInstances += GAR;
+
+    // roses and candles on the tables, heart cake on the counter
+    tableSpots.forEach(function (p) {
+      candle(p[0], 0.98, p[1], vDecor);
+      cyl(0.035, 0.03, 0.12, glassTeaM, p[0] + 0.2, 0.98 + 0.06, p[1] - 0.1, 10, vDecor).castShadow = false;
+      cyl(0.007, 0.007, 0.16, leafM, p[0] + 0.2, 0.98 + 0.18, p[1] - 0.1, 5, vDecor);
+      sph(0.045, roseMats[(p[0] > 0 ? 0 : 3)], p[0] + 0.2, 0.98 + 0.28, p[1] - 0.1, vDecor, 8);
+    });
+    cyl(0.34, 0.34, 0.02, mat.white, 0.2, 1.37, -0.95, 24, vDecor);
+    var cakeHeart = new THREE.Mesh(heartGeo(0.26, 0.2), M(0xf59ab4, { roughness: 0.5 })); cakeHeart.rotation.x = -Math.PI / 2; cakeHeart.position.set(0.2, 1.49, -0.95); cakeHeart.castShadow = true; vDecor.add(cakeHeart);
+    for (var rb = 0; rb < 6; rb++) sph(0.035, roseMats[0], 0.2 + Math.cos(rb * 1.05) * 0.1, 1.62, -0.95 + Math.sin(rb * 1.05) * 0.1, vDecor, 6);
+
+    // hearts drifting upward around the building
+    var FH = 56, floatIM = new THREE.InstancedMesh(heartGeo(0.14, 0.06), new THREE.MeshBasicMaterial({ color: 0xffffff }), FH), floatData = [];
+    for (var fi = 0; fi < FH; fi++) {
+      var front = rnd(fi * 7 + 801) < 0.7;
+      floatData.push({
+        x: front ? -9 + rnd(fi * 7 + 802) * 17 : (rnd(fi * 7 + 802) < 0.5 ? -7.6 - rnd(fi * 7 + 803) * 2.6 : 6.2 + rnd(fi * 7 + 803) * 2.6),
+        z: front ? 5.9 + rnd(fi * 7 + 804) * 5.0 : -3 + rnd(fi * 7 + 804) * 11,
+        y: rnd(fi * 7 + 805) * 10.5, sp: 0.3 + rnd(fi * 7 + 806) * 0.35, sc: 0.7 + rnd(fi * 7 + 807) * 1.1, ph: rnd(fi * 7 + 808) * 6.28
+      });
+      floatIM.setColorAt(fi, vCols[fi % 5]);
+    }
+    floatIM.instanceColor.needsUpdate = true; floatIM.frustumCulled = false; vDecor.add(floatIM); extraInstances += FH;
+
+    function updateVday(time, dt) {
+      if (!vDecor.visible) return;
+      vBalloons.forEach(function (b) {
+        b.g.rotation.z = reduce ? 0 : Math.sin(time * 0.9 + b.ph) * 0.05; b.g.rotation.x = reduce ? 0 : Math.cos(time * 0.7 + b.ph) * 0.04;
+      });
+      floatData.forEach(function (f, i) {
+        if (!reduce) { f.y += f.sp * dt; if (f.y > 11) f.y = 0.3; }
+        vDummy.position.set(f.x + Math.sin(time * 0.8 + f.ph) * 0.3, f.y, f.z); vDummy.rotation.set(0, reduce ? f.ph : time * 0.9 + f.ph, 0);
+        vDummy.scale.setScalar(f.sc * vday * Math.min(1, (11 - f.y) / 2)); vDummy.updateMatrix(); floatIM.setMatrixAt(i, vDummy.matrix);
+      });
+      floatIM.instanceMatrix.needsUpdate = true;
+    }
+    vDecor.visible = vday > 0.5;
+
+    /* ---------- Oil Industry Nationalization Day ---------- */
+    // An onshore oil and gas field on the back lawn (nodding pumpjacks, drilling derrick, storage tanks, gas spheres,
+    // pipeline, flare stack), tricolor flags and a drop-shaped neon sign on the building.
+    var oLight = new THREE.PointLight(0xffa040, 0, 6, 2); oLight.position.set(0.4, 2.0, -0.8); scene.add(oLight);
+    var oLight2 = new THREE.PointLight(0xffa850, 0, 12, 2); oLight2.position.set(1.0, 3.2, -6.0); scene.add(oLight2);
+    var flareLight = new THREE.PointLight(0xff8a2a, 0, 16, 2); flareLight.position.set(-11.5, 9.0, -6.5); scene.add(flareLight);
+    var oilDecor = new THREE.Group(); world.add(oilDecor);
+    var oilNeon = new THREE.MeshStandardMaterial({ color: 0xffb25a, emissive: 0xff8a1f, emissiveIntensity: 0.5, roughness: 0.4 });
+    var oilPaint = M(0xe0702f, { roughness: 0.5, metalness: 0.2 }), oilYellow = M(0xf2b705, { roughness: 0.5, metalness: 0.2 });
+    var oilSteel = M(0x7d848b, { metalness: 0.5, roughness: 0.4 }), oilBlack = M(0x15171a, { roughness: 0.45, metalness: 0.3 });
+    var oilTank = M(0xe6e9ec, { roughness: 0.5, metalness: 0.15 }), oilRed = M(0xc4232f, { roughness: 0.5 });
+    var UPV = new THREE.Vector3(0, 1, 0);
+    function v3o(x, y, z) { return new THREE.Vector3(x, y, z); }
+    function strut(a, b, r, m, p) {
+      var d = new THREE.Vector3().subVectors(b, a), len = d.length();
+      var o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 6), m);
+      o.position.copy(a).addScaledVector(d, 0.5); o.quaternion.setFromUnitVectors(UPV, d.normalize()); o.castShadow = true;
+      (p || world).add(o); return o;
+    }
+
+    var oilBulbs = [0xffa21f, 0xffe6a8].map(function (c) { return new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.6, roughness: 0.4 }); });
+    // drop-shaped neon on the facade, with amber bulbs along the edge
+    var dropPts = [];
+    for (var dpi = 0; dpi < 64; dpi++) { var dt2 = dpi / 64 * Math.PI * 2; dropPts.push(new THREE.Vector3(Math.sin(dt2) * Math.sin(dt2 / 2) * 0.62, Math.cos(dt2) * 0.85 + 0.05, 0)); }
+    var dropNeon = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(dropPts, true), 120, 0.04, 8, true), oilNeon);
+    dropNeon.position.set(-0.6, 5.2, 5.33); oilDecor.add(dropNeon);
+    var dropFill = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(dropPts.map(function (p) { return new THREE.Vector2(p.x, p.y); }))), new THREE.MeshBasicMaterial({ color: 0x0a0a0a, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }));
+    dropFill.position.set(-0.6, 5.2, 5.315); oilDecor.add(dropFill);
+    for (var otl = 0; otl < 40; otl++) sph(0.04, oilBulbs[otl % 2], -6.4 + otl * 0.25, 3.72, 5.3, oilDecor, 6);
+
+    // door banner
+    function oilBannerTexture() {
+      var c = document.createElement('canvas'); c.width = 1440; c.height = 320; var x = c.getContext('2d');
+      function draw() {
+        x.fillStyle = '#14110d'; x.fillRect(0, 0, 1440, 320);
+        x.strokeStyle = '#e08a2b'; x.lineWidth = 8; x.strokeRect(14, 14, 1412, 292);
+        x.textBaseline = 'middle'; x.textAlign = 'center';
+        x.fillStyle = '#ffb25a'; x.direction = 'rtl'; x.font = '800 118px Vazirmatn, Tahoma, Arial, sans-serif'; x.fillText('ملی شدن صنعت نفت', 430, 160);
+        x.direction = 'ltr'; x.fillStyle = '#f4efe3'; x.font = '700 42px Unbounded, Arial, sans-serif';
+        x.fillText('NATIONALIZATION OF', 1030, 96); x.fillText('THE OIL INDUSTRY', 1030, 156);
+        x.fillStyle = '#e08a2b'; x.font = '700 34px Unbounded, Arial, sans-serif'; x.fillText('29 ESFAND · 20 MARCH', 1030, 228);
+      }
+      draw();
+      var t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('800 118px Vazirmatn', 'ملی شدن صنعت نفت').then(function () { draw(); t.needsUpdate = true; }).catch(function () {});
+      }
+      return t;
+    }
+    var oBanner = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.73, 0.04), [mat.charcoal, mat.charcoal, mat.charcoal, mat.charcoal, signMat(oilBannerTexture()), mat.charcoal]);
+    oBanner.position.set(0, 3.16, 3.11); oilDecor.add(oBanner);
+
+    // entrance carpet and oil drums
+    // black "crude" runner with amber borders, oil-drop and lattice inlays
+    function oilCarpetTexture(w, h) {
+      var c = document.createElement('canvas'); c.width = w; c.height = h; var x = c.getContext('2d');
+      x.fillStyle = '#0e0e10'; x.fillRect(0, 0, w, h);
+      x.strokeStyle = '#e08a2b'; x.lineWidth = 8; x.strokeRect(10, 10, w - 20, h - 20);
+      x.strokeStyle = '#7a4a16'; x.lineWidth = 3; x.strokeRect(26, 26, w - 52, h - 52);
+      function drop(cx, cy, r, fill) {
+        x.fillStyle = fill; x.beginPath(); x.moveTo(cx, cy - r * 1.5);
+        x.bezierCurveTo(cx + r * 0.2, cy - r * 0.9, cx + r, cy - r * 0.2, cx + r, cy + r * 0.3);
+        x.arc(cx, cy + r * 0.3, r, 0, Math.PI, false);
+        x.bezierCurveTo(cx - r, cy - r * 0.2, cx - r * 0.2, cy - r * 0.9, cx, cy - r * 1.5); x.fill();
+      }
+      var step = w * 0.62, n = Math.max(1, Math.floor((h - 90) / step));
+      for (var i = 0; i < n; i++) {
+        var cy = 45 + (i + 0.5) * (h - 90) / n;
+        x.save(); x.translate(w / 2, cy); x.rotate(Math.PI / 4); x.strokeStyle = '#e08a2b'; x.lineWidth = 4; x.strokeRect(-w * 0.27, -w * 0.27, w * 0.54, w * 0.54);
+        x.strokeStyle = '#7a4a16'; x.strokeRect(-w * 0.19, -w * 0.19, w * 0.38, w * 0.38); x.restore();
+        drop(w / 2, cy + w * 0.03, w * 0.11, '#ffb25a');
+        drop(w * 0.16, cy, w * 0.035, '#e08a2b'); drop(w * 0.84, cy, w * 0.035, '#e08a2b');
+      }
+      var t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+    }
+    function oilCarpet(w, d, y, z, tx) {
+      var top = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.9 }), side = M(0x0e0e10, { roughness: 0.9 });
+      var o = new THREE.Mesh(new THREE.BoxGeometry(w, 0.012, d), [side, side, top, side, side, side]);
+      o.position.set(0, y, z); o.receiveShadow = true; oilDecor.add(o);
+    }
+    oilCarpet(1.6, 1.9, 0.084, 8.5, oilCarpetTexture(256, 304));
+    oilCarpet(1.6, 4.3, 0.222, 5.45, oilCarpetTexture(256, 688));
+    [-0.8, 0.8].forEach(function (ex) { box(0.04, 0.014, 4.3, goldM, ex, 0.224, 5.45, oilDecor); box(0.04, 0.014, 1.9, goldM, ex, 0.086, 8.5, oilDecor); });
+    var drumM = M(0x1a1a1a, { roughness: 0.45, metalness: 0.4 }), drumBand = M(0xe08a2b, { roughness: 0.5 });
+    [-1, 1].forEach(function (sd) {
+      [[2.2, 8.0, 0.1], [2.68, 8.2, 0.1], [2.4, 7.62, 0.1], [2.42, 8.1, 0.72]].forEach(function (d) {
+        cyl(0.22, 0.22, 0.6, drumM, sd * d[0], d[2] + 0.3, d[1], 14, oilDecor);
+        cyl(0.225, 0.225, 0.06, drumBand, sd * d[0], d[2] + 0.2, d[1], 14, oilDecor); cyl(0.225, 0.225, 0.06, drumBand, sd * d[0], d[2] + 0.42, d[1], 14, oilDecor);
+      });
+    });
+
+    var flags = [];
+
+    // pumpjack (nodding donkey)
+    var oilPumps = [];
+    function makePump(x, y, z, ry, s, phase) {
+      var g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; g.scale.setScalar(s); oilDecor.add(g);
+      box(4.0, 0.16, 1.2, oilSteel, 0, 0.08, 0, g);
+      cyl(0.1, 0.13, 1.0, oilSteel, 1.7, 0.6, 0, 10, g); box(0.3, 0.1, 0.3, oilRed, 1.7, 0.2, 0, g);
+      box(1.0, 0.8, 0.6, oilSteel, -1.5, 0.55, 0, g);
+      [-0.4, 0.4].forEach(function (zz) {
+        strut(v3o(-0.8, 0.16, zz), v3o(0, 2.95, zz * 0.35), 0.07, oilPaint, g); strut(v3o(0.8, 0.16, zz), v3o(0, 2.95, zz * 0.35), 0.07, oilPaint, g);
+      });
+      box(0.3, 0.2, 0.9, oilSteel, 0, 3.0, 0, g);
+      var beam = new THREE.Group(); beam.position.set(0, 3.0, 0); g.add(beam);
+      box(3.4, 0.2, 0.34, oilYellow, 0.2, 0, 0, beam);
+      var horse = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.12, 6, 22, 0.68), oilYellow); horse.rotation.z = -0.56; horse.scale.z = 1.7; horse.castShadow = true; beam.add(horse);
+      box(0.5, 0.5, 0.3, oilPaint, -1.5, -0.1, 0, beam);
+      var cranks = [], pits = [];
+      [-0.45, 0.45].forEach(function (zz) {
+        var cg = new THREE.Group(); cg.position.set(-1.5, 0.9, zz); g.add(cg);
+        var disc = cyl(0.42, 0.42, 0.08, oilPaint, 0, 0, 0, 16, cg); disc.rotation.x = Math.PI / 2;
+        box(0.5, 0.34, 0.12, oilBlack, -0.3, 0, 0, cg); sph(0.06, oilSteel, 0.45 * 0.65, 0, 0.04, cg, 6);
+        cranks.push(cg);
+        pits.push(box(0.07, 1, 0.07, oilSteel, 0, 2, zz * 0.9, g));
+      });
+      var rod = cyl(0.03, 0.03, 1, oilSteel, 1.7, 1.5, 0, 6, g);
+      var p = { beam: beam, cranks: cranks, pits: pits, rod: rod, ph: phase };
+      oilPumps.push(p); return g;
+    }
+    function updatePump(p, time) {
+      var ph = (time * 1.3 + p.ph), th = -Math.asin(0.3 * Math.sin(ph)), ct = Math.cos(th), st = Math.sin(th);
+      p.beam.rotation.z = th;
+      p.cranks.forEach(function (c) { c.rotation.z = ph; });
+      var bx = ct * -1.5 - st * -0.05, by = 3.0 + st * -1.5 + ct * -0.05;
+      var px = -1.5 + 0.3 * Math.cos(ph), py = 0.9 + 0.3 * Math.sin(ph);
+      p.pits.forEach(function (m) {
+        var dx = bx - px, dy = by - py, len = Math.sqrt(dx * dx + dy * dy);
+        m.position.set((bx + px) / 2, (by + py) / 2, m.position.z); m.rotation.z = Math.atan2(-dx, dy); m.scale.y = len;
+      });
+      var tx = ct * 1.755 + st * 0.96, ty = 3.0 + st * 1.755 - ct * 0.96, ex = 1.7, ey = 1.0;
+      var rdx = ex - tx, rdy = ey - ty, rl = Math.sqrt(rdx * rdx + rdy * rdy);
+      p.rod.position.set((tx + ex) / 2, (ty + ey) / 2, 0); p.rod.rotation.z = Math.atan2(-rdx, rdy); p.rod.scale.y = rl;
+    }
+    makePump(-9.0, 0.05, -5.2, 0, 0.8, 0);
+    makePump(-1.4, 0.05, -5.0, 0, 0.8, 2.1);
+    makePump(11.6, 0.05, -0.5, Math.PI / 2, 0.8, 4.0);
+    makePump(0.2, 1.43, -0.95, 0, 0.1, 1.0);
+
+    // drilling derrick
+    var DX = 9.8, DZ = -4.2, DH = 9.6;
+    var corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+    corners.forEach(function (c, i) {
+      strut(v3o(DX + c[0] * 0.95, 0, DZ + c[1] * 0.95), v3o(DX + c[0] * 0.25, DH, DZ + c[1] * 0.25), 0.05, oilYellow, oilDecor);
+    });
+    for (var lv = 0; lv < 6; lv++) {
+      var h0 = lv * DH / 6, h1 = (lv + 1) * DH / 6, w0 = 0.95 - 0.7 * h0 / DH, w1 = 0.95 - 0.7 * h1 / DH;
+      corners.forEach(function (c, i) {
+        var n = corners[(i + 1) % 4];
+        strut(v3o(DX + c[0] * w1, h1, DZ + c[1] * w1), v3o(DX + n[0] * w1, h1, DZ + n[1] * w1), 0.03, oilSteel, oilDecor);
+        strut(v3o(DX + c[0] * w0, h0, DZ + c[1] * w0), v3o(DX + n[0] * w1, h1, DZ + n[1] * w1), 0.022, oilSteel, oilDecor);
+      });
+    }
+    box(0.9, 0.35, 0.9, oilRed, DX, DH + 0.18, DZ, oilDecor);
+    cyl(0.03, 0.03, DH - 1.2, oilSteel, DX, (DH - 1.2) / 2 + 0.2, DZ, 6, oilDecor);
+    box(2.6, 0.4, 1.8, oilSteel, DX, 0.2, DZ + 2.0, oilDecor);
+    box(0.9, 0.9, 0.9, oilBlack, DX, 0.45, DZ, oilDecor);
+    sph(0.12, new THREE.MeshStandardMaterial({ color: 0xffe0a0, emissive: 0xffa030, emissiveIntensity: 1.2 }), DX, DH + 0.45, DZ, oilDecor, 8);
+
+    // storage tanks, gas spheres, pipeline and valves
+    [1.8, 4.5, 7.2].forEach(function (tx2, ti) {
+      cyl(1.3, 1.3, 1.7, oilTank, tx2, 0.9, -7.0, 28, oilDecor);
+      var cone = new THREE.Mesh(new THREE.ConeGeometry(1.34, 0.35, 28), oilSteel); cone.position.set(tx2, 1.92, -7.0); cone.castShadow = true; oilDecor.add(cone);
+      cyl(1.33, 1.33, 0.06, oilRed, tx2, 0.5, -7.0, 28, oilDecor); cyl(1.33, 1.33, 0.06, oilRed, tx2, 1.3, -7.0, 28, oilDecor);
+      strut(v3o(tx2 + 1.3, 0.1, -6.3), v3o(tx2 + 1.3, 1.8, -7.0), 0.04, oilSteel, oilDecor);
+    });
+    [-5.7, -3.3].forEach(function (sx) {
+      sph(1.0, M(0xdfe3e6, { metalness: 0.5, roughness: 0.3 }), sx, 2.0, -7.1, oilDecor, 20);
+      for (var ls = 0; ls < 6; ls++) { var la = ls / 6 * 6.283; strut(v3o(sx + Math.cos(la) * 0.9, 0.1, -7.1 + Math.sin(la) * 0.9), v3o(sx + Math.cos(la) * 0.6, 1.5, -7.1 + Math.sin(la) * 0.6), 0.05, oilSteel, oilDecor); }
+      var ring = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.03, 6, 28), oilRed); ring.rotation.x = Math.PI / 2; ring.position.set(sx, 2.0, -7.1); oilDecor.add(ring);
+    });
+    strut(v3o(-10.2, 0.4, -3.9), v3o(8.8, 0.4, -3.9), 0.1, oilSteel, oilDecor);
+    for (var ps = -10; ps <= 8; ps += 2) box(0.12, 0.4, 0.12, oilBlack, ps, 0.2, -3.9, oilDecor);
+    [-7.35, 0.3, 4.2].forEach(function (vx) {
+      var vw = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.03, 6, 14), oilRed); vw.position.set(vx, 0.9, -3.9); oilDecor.add(vw);
+      cyl(0.03, 0.03, 0.5, oilRed, vx, 0.65, -3.9, 6, oilDecor);
+    });
+    strut(v3o(-7.3, 0.8, -5.2), v3o(-7.3, 0.4, -3.9), 0.06, oilSteel, oilDecor);
+    strut(v3o(0.3, 0.8, -5.0), v3o(0.3, 0.4, -3.9), 0.06, oilSteel, oilDecor);
+    strut(v3o(2.6, 0.4, -3.9), v3o(2.6, 0.4, -6.2), 0.08, oilSteel, oilDecor);
+    strut(v3o(5.3, 0.4, -3.9), v3o(5.3, 0.4, -6.2), 0.08, oilSteel, oilDecor);
+
+    // gas flare stack with a flickering flame
+    var FX = -11.5, FZ = -6.5;
+    cyl(0.14, 0.2, 8.4, oilSteel, FX, 4.2, FZ, 10, oilDecor);
+    [2.5, 4.5, 6.5].forEach(function (fy) { strut(v3o(FX, fy, FZ), v3o(FX + 1.4, 0.1, FZ + 0.6), 0.025, oilSteel, oilDecor); strut(v3o(FX, fy, FZ), v3o(FX - 1.2, 0.1, FZ + 0.9), 0.025, oilSteel, oilDecor); });
+    var flame = new THREE.Group(); flame.position.set(FX, 8.4, FZ); oilDecor.add(flame);
+    var fOut = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.6, 10), new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.9 })); fOut.position.y = 0.8; flame.add(fOut);
+    var fIn = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.0, 10), new THREE.MeshBasicMaterial({ color: 0xffe08a })); fIn.position.y = 0.5; flame.add(fIn);
+
+    // candles and small brass drops on the tables
+    tableSpots.forEach(function (p) {
+      candle(p[0], 0.98, p[1], oilDecor);
+      cyl(0.02, 0.02, 0.12, mat.steel, p[0] + 0.22, 1.04, p[1] - 0.1, 5, oilDecor);
+      var tdrop = sph(0.045, goldM, p[0] + 0.22, 1.2, p[1] - 0.1, oilDecor, 8); tdrop.scale.y = 1.4;
+    });
+
+    function updateOilDay(time, dt) {
+      if (!oilDecor.visible) return;
+      oilPumps.forEach(function (p) { updatePump(p, reduce ? 0.6 + p.ph : time); });
+      var fl = reduce ? 1 : 1 + Math.sin(time * 13) * 0.18 + Math.sin(time * 21.7) * 0.1;
+      flame.scale.set(1 + (reduce ? 0 : Math.sin(time * 17) * 0.08), fl, 1);
+      flags.forEach(function (f) {
+        var pa = f.g.attributes.position.array, b = f.base;
+        for (var i = 0; i < pa.length; i += 3) {
+          var fx = b[i], fy = b[i + 1];
+          pa[i + 2] = reduce ? 0 : Math.sin(fx * 4 - time * 5 + fy * 2) * 0.08 * (fx / 1.5);
+        }
+        f.g.attributes.position.needsUpdate = true;
+      });
+    }
+    oilDecor.visible = oilDay > 0.5;
+
+    /* ---------- rooftop company logo ---------- */
+    // To embed your logo permanently, paste the SVG markup between the backticks below.
+    // Leave it empty to use the Upload SVG button, or to keep the placeholder mark.
+    var COMPANY_LOGO_SVG = ``;
+    // Company age shown on the anniversary numeral and banner.
+    var ANNIVERSARY_YEARS = 5;
+
+    var annivDecor = new THREE.Group(); world.add(annivDecor);
+    var logoCanvas = document.createElement('canvas'); logoCanvas.width = 1024; logoCanvas.height = 536;
+    var logoCtx = logoCanvas.getContext('2d');
+    var logoTex = new THREE.CanvasTexture(logoCanvas); logoTex.anisotropy = 4;
+    var logoPanel = 'light', logoImg = null, logoRatio = 1;
+    function drawLogo() {
+      var x = logoCtx, W = 1024, H = 536, light = logoPanel === 'light';
+      x.fillStyle = light ? '#f6f3ea' : '#17191b'; x.fillRect(0, 0, W, H);
+      x.strokeStyle = light ? '#cfc8b6' : '#3a3f44'; x.lineWidth = 6; x.strokeRect(14, 14, W - 28, H - 28);
+      if (logoImg) {
+        var maxW = W - 160, maxH = H - 120, w = maxW, h = w / logoRatio;
+        if (h > maxH) { h = maxH; w = h * logoRatio; }
+        x.drawImage(logoImg, (W - w) / 2, (H - h) / 2, w, h);
+      } else {
+        var ink = light ? '#24272a' : '#f4efe3', fam = '"Unbounded", "Helvetica Neue", Arial, sans-serif';
+        x.lineWidth = 22; x.strokeStyle = ink; x.beginPath(); x.arc(250, 250, 116, 0, 6.28); x.stroke();
+        x.strokeStyle = '#e0702f'; x.beginPath(); x.arc(364, 250, 116, 0, 6.28); x.stroke();
+        x.textAlign = 'left'; x.textBaseline = 'alphabetic'; x.fillStyle = ink;
+        fitFont(x, 'LOUNGE', 700, fam, 330, 104); x.fillText('MEET', 540, 238);
+        fitFont(x, 'LOUNGE', 700, fam, 330, 104); x.fillText('LOUNGE', 540, 340);
+        x.fillStyle = '#8a8f94'; x.font = '600 30px "Manrope", Arial, sans-serif'; x.fillText('PLACEHOLDER  ·  UPLOAD YOUR SVG LOGO', 150, 462);
+      }
+      logoTex.needsUpdate = true;
+    }
+    function setLogoSvg(svg) {
+      var im = new Image();
+      im.onload = function () {
+        var w = im.naturalWidth, h = im.naturalHeight;
+        var vb = /viewBox\s*=\s*"([^"]+)"/i.exec(svg);
+        if (vb) { var p = vb[1].trim().split(/[\s,]+/).map(Number); if (p.length === 4 && p[2] > 0 && p[3] > 0) { w = p[2]; h = p[3]; } }
+        logoRatio = (w && h) ? w / h : 1; logoImg = im; drawLogo();
+      };
+      im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+    function loadStartLogo() {
+      var saved = null;
+      try { saved = localStorage.getItem('meetLoungeLogoSvg'); } catch (e) { saved = null; }
+      if (COMPANY_LOGO_SVG.trim()) setLogoSvg(COMPANY_LOGO_SVG); else if (saved) setLogoSvg(saved);
+    }
+    drawLogo();
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('700 104px "Unbounded"').then(function () { if (!logoImg) drawLogo(); }).catch(function () {});
+    }
+    loadStartLogo();
+
+    var logoFile = byId('logoFile');
+    byId('logoUpload').addEventListener('click', function () { logoFile.click(); });
+    logoFile.addEventListener('change', function () {
+      var f = logoFile.files && logoFile.files[0]; if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        var s = String(rd.result || ''); if (s.indexOf('<svg') < 0) return;
+        setLogoSvg(s);
+        try { localStorage.setItem('meetLoungeLogoSvg', s); } catch (e) { /* storage unavailable */ }
+        var ab = query('#events button[data-event="anniv"]'); if (ab) ab.click();
+      };
+      rd.readAsText(f); logoFile.value = '';
+    });
+    byId('logoReset').addEventListener('click', function () {
+      try { localStorage.removeItem('meetLoungeLogoSvg'); } catch (e) { /* storage unavailable */ }
+      logoImg = null; drawLogo();
+      if (COMPANY_LOGO_SVG.trim()) setLogoSvg(COMPANY_LOGO_SVG);
+    });
+    ['logoLight', 'logoDark'].forEach(function (id) {
+      var b = byId(id);
+      b.addEventListener('click', function () {
+        logoPanel = id === 'logoLight' ? 'light' : 'dark';
+        byId('logoLight').setAttribute('aria-pressed', String(logoPanel === 'light'));
+        byId('logoDark').setAttribute('aria-pressed', String(logoPanel === 'dark'));
+        drawLogo();
+      });
+    });
+
+    var logoMat = new THREE.MeshStandardMaterial({ map: logoTex, emissive: 0xffffff, emissiveMap: logoTex, emissiveIntensity: 0.15, roughness: 0.6 });
+    var LGX = -2.4, LGY = 9.05, LGZ = 3.3;
+    var logoBoard = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.3, 0.1), [mat.charcoal, mat.charcoal, mat.charcoal, mat.charcoal, logoMat, logoMat]);
+    logoBoard.position.set(LGX, LGY, LGZ); logoBoard.castShadow = true; annivDecor.add(logoBoard);
+    box(4.64, 0.12, 0.2, mat.charcoal, LGX, LGY + 1.21, LGZ, annivDecor); box(4.64, 0.12, 0.2, mat.charcoal, LGX, LGY - 1.21, LGZ, annivDecor);
+    box(0.12, 2.54, 0.2, mat.charcoal, LGX - 2.26, LGY, LGZ, annivDecor); box(0.12, 2.54, 0.2, mat.charcoal, LGX + 2.26, LGY, LGZ, annivDecor);
+    [-1.6, 1.6].forEach(function (lx) { box(0.14, 0.95, 0.14, mat.charcoal, LGX + lx, 7.48, LGZ, annivDecor); });
+    box(3.4, 0.08, 0.08, mat.charcoal, LGX, 7.62, LGZ, annivDecor);
+    [-1.5, 0, 1.5].forEach(function (fx) { box(0.3, 0.1, 0.2, ledM, LGX + fx, 7.12, LGZ + 0.55, annivDecor); });
+    var logoBulbMats = [];
+    for (var lb = 0; lb < 6; lb++) logoBulbMats.push(new THREE.MeshStandardMaterial({ color: 0xfff1c9, emissive: 0xffb347, emissiveIntensity: 0.3, roughness: 0.4 }));
+    var lbi = 0;
+    function logoBulb(bx, by) { sph(0.04, logoBulbMats[lbi++ % 6], bx, by, LGZ + 0.12, annivDecor, 6); }
+    for (var lx2 = -2.2; lx2 <= 2.21; lx2 += 0.275) { logoBulb(LGX + lx2, LGY + 1.21); logoBulb(LGX + lx2, LGY - 1.21); }
+    for (var ly = -0.9; ly <= 0.91; ly += 0.3) { logoBulb(LGX - 2.26, LGY + ly); logoBulb(LGX + 2.26, LGY + ly); }
+
+    /* ---------- company anniversary ---------- */
+    var aLight = new THREE.PointLight(0xffd08a, 0, 6, 2); aLight.position.set(0.4, 2.0, -0.8); scene.add(aLight);
+    var ropeM = M(0x9c1c2c, { roughness: 0.6 }), carpetM = M(0x9c1c2c, { roughness: 0.95 });
+    var champM = new THREE.MeshStandardMaterial({ color: 0xe9c46a, emissive: 0xc99a2e, emissiveIntensity: 0.25, transparent: true, opacity: 0.85, roughness: 0.2 });
+    var balCols = [0xe0702f, 0xf4efe3, 0x24272a, 0xd2a54a, 0x2f5d62].map(function (c) { return M(c, { roughness: 0.25 }); });
+
+    // facade numeral and door banner
+    function numTexture() {
+      var c = document.createElement('canvas'); c.width = 480; c.height = 120; var x = c.getContext('2d');
+      var fam = '"Unbounded", "Helvetica Neue", Arial, sans-serif', txt = String(ANNIVERSARY_YEARS);
+      function draw() {
+        x.fillStyle = '#15181c'; x.fillRect(0, 0, 480, 120); x.strokeStyle = '#d2a54a'; x.lineWidth = 6; x.strokeRect(4, 4, 472, 112);
+        x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+        x.fillStyle = '#e6bb4a'; x.font = '700 62px ' + fam; x.textBaseline = 'middle'; x.fillText(txt === '1' ? 'YEAR' : 'YEARS', 240, 64);
+      }
+      draw();
+      var t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('700 62px "Unbounded"').then(function () { draw(); t.needsUpdate = true; }).catch(function () {});
+      }
+      return t;
+    }
+    var numMat = signMat(numTexture());
+    var numPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.24), numMat); numPlane.position.set(-5.6, 7.17, 4.72); annivDecor.add(numPlane);
+    function annivBannerTexture() {
+      var c = document.createElement('canvas'); c.width = 1440; c.height = 320; var x = c.getContext('2d');
+      function draw() {
+        x.fillStyle = '#15181c'; x.fillRect(0, 0, 1440, 320);
+        x.strokeStyle = '#d2a54a'; x.lineWidth = 8; x.strokeRect(14, 14, 1412, 292);
+        x.textBaseline = 'middle'; x.textAlign = 'center';
+        x.fillStyle = '#d2a54a'; x.direction = 'rtl'; x.font = '800 150px Vazirmatn, Tahoma, Arial, sans-serif'; x.fillText('سالگرد تأسیس', 430, 160);
+        x.direction = 'ltr'; x.fillStyle = '#f4efe3'; x.font = '700 62px Unbounded, Arial, sans-serif'; x.fillText('CELEBRATING', 1030, 112);
+        x.fillStyle = '#e6bb4a'; x.font = '800 90px Unbounded, Arial, sans-serif'; x.fillText(ANNIVERSARY_YEARS + (ANNIVERSARY_YEARS === 1 ? ' YEAR' : ' YEARS'), 1030, 208);
+      }
+      draw();
+      var t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('800 150px Vazirmatn', 'سالگرد تأسیس').then(function () { draw(); t.needsUpdate = true; }).catch(function () {});
+      }
+      return t;
+    }
+    var aBanner = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.73, 0.04), [mat.charcoal, mat.charcoal, mat.charcoal, mat.charcoal, signMat(annivBannerTexture()), mat.charcoal]);
+    aBanner.position.set(0, 3.16, 3.11); annivDecor.add(aBanner);
+
+    // spinning gold numeral on a rooftop pedestal: seven-segment digits
+    var NUMX = -5.6, NUMZ = 3.7;
+    var numGold = new THREE.MeshStandardMaterial({ color: 0xe6bb4a, metalness: 0.4, roughness: 0.28, emissive: 0xb07a10, emissiveIntensity: 0.3 });
+    function segGeo(len) {
+      var w = 0.17, sh = new THREE.Shape();
+      sh.moveTo(-len / 2, 0); sh.lineTo(-len / 2 + w / 2, w / 2); sh.lineTo(len / 2 - w / 2, w / 2); sh.lineTo(len / 2, 0);
+      sh.lineTo(len / 2 - w / 2, -w / 2); sh.lineTo(-len / 2 + w / 2, -w / 2); sh.lineTo(-len / 2, 0);
+      var g = new THREE.ExtrudeGeometry(sh, { depth: 0.2, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.02, bevelSegments: 2 });
+      g.translate(0, 0, -0.1); return g;
+    }
+    var segH = segGeo(0.72), segV = segGeo(0.66);
+    var SEG = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg' };
+    var SEGPOS = { a: [0, 0.75, 0], b: [0.4, 0.375, 1], c: [0.4, -0.375, 1], d: [0, -0.75, 0], e: [-0.4, -0.375, 1], f: [-0.4, 0.375, 1], g: [0, 0, 0] };
+    var numStr = String(ANNIVERSARY_YEARS), numSpan = (numStr.length - 1) * 1.08 + 0.97, numScale = Math.min(1, 1.9 / numSpan);
+    var numSpin = new THREE.Group(); numSpin.position.set(NUMX, 7.32 + 0.86 * numScale + 0.05, NUMZ); numSpin.scale.setScalar(numScale); annivDecor.add(numSpin);
+    numStr.split('').forEach(function (ch, di) {
+      var dg = new THREE.Group(); dg.position.x = (di - (numStr.length - 1) / 2) * 1.08; numSpin.add(dg);
+      (SEG[ch] || '').split('').forEach(function (s) {
+        var p = SEGPOS[s], m = new THREE.Mesh(p[2] ? segV : segH, numGold);
+        m.position.set(p[0], p[1], 0); if (p[2]) m.rotation.z = Math.PI / 2; m.castShadow = true; dg.add(m);
+      });
+    });
+    cyl(1.0, 1.05, 0.3, mat.charcoal, NUMX, 7.17, NUMZ, 32, annivDecor);
+    var numRing = new THREE.Mesh(new THREE.TorusGeometry(0.98, 0.025, 8, 48), ledM); numRing.rotation.x = Math.PI / 2; numRing.position.set(NUMX, 7.33, NUMZ); annivDecor.add(numRing);
+
+    // red carpet, stanchions and ribbon cutting
+    box(1.6, 0.012, 1.9, carpetM, 0, 0.084, 8.5, annivDecor);
+    box(1.6, 0.012, 4.3, carpetM, 0, 0.222, 5.45, annivDecor);
+    [-0.8, 0.8].forEach(function (ex) { box(0.04, 0.014, 4.3, goldM, ex, 0.224, 5.45, annivDecor); box(0.04, 0.014, 1.9, goldM, ex, 0.086, 8.5, annivDecor); });
+    function stanchion(x, z, base) {
+      cyl(0.1, 0.1, 0.02, goldM, x, base + 0.01, z, 14, annivDecor);
+      cyl(0.025, 0.025, 0.85, goldM, x, base + 0.44, z, 10, annivDecor);
+      sph(0.05, goldM, x, base + 0.9, z, annivDecor, 10);
+    }
+    function rope(x, y, z1, z2) { box(0.03, 0.03, Math.abs(z2 - z1), ropeM, x, y, (z1 + z2) / 2, annivDecor); }
+    [-1, 1].forEach(function (sx) {
+      var px = sx * 1.0;
+      stanchion(px, 9.1, 0.07); stanchion(px, 8.0, 0.07); rope(px, 0.82, 8.0, 9.1);
+      stanchion(px, 6.9, 0.2); stanchion(px, 5.8, 0.2); stanchion(px, 5.0, 0.2); rope(px, 0.95, 5.8, 6.9); rope(px, 0.95, 5.0, 5.8);
+    });
+    box(2.5, 0.14, 0.02, goldM, 0, 1.1, 4.5, annivDecor);
+    var rb1 = sph(0.2, goldM, -0.2, 1.1, 4.52, annivDecor, 12); rb1.scale.set(1.3, 0.8, 0.4); rb1.rotation.z = 0.4;
+    var rb2 = sph(0.2, goldM, 0.2, 1.1, 4.52, annivDecor, 12); rb2.scale.set(1.3, 0.8, 0.4); rb2.rotation.z = -0.4;
+    sph(0.07, goldM, 0, 1.1, 4.54, annivDecor, 8);
+    box(0.1, 0.35, 0.02, goldM, -0.08, 0.88, 4.52, annivDecor).rotation.z = 0.2; box(0.1, 0.35, 0.02, goldM, 0.08, 0.88, 4.52, annivDecor).rotation.z = -0.2;
+
+    // balloon arch and clusters
+    for (var bk = 0; bk < 60; bk++) {
+      var ba2 = Math.PI * (bk % 36) / 35, rr2 = 1.85 + (bk >= 36 ? 0.18 : 0) + (bk % 3) * 0.06;
+      var brd = 0.13 + rnd(bk * 7 + 601) * 0.1;
+      var bln = sph(brd, balCols[(bk + (bk >> 2)) % 5], Math.cos(ba2) * rr2, 0.2 + Math.sin(ba2) * 2.5, 8.3 + (bk >= 36 ? 0.18 : 0) + (rnd(bk * 3 + 602) - 0.5) * 0.25, annivDecor, 12);
+      bln.scale.y = 1.15;
+    }
+    [-2.7, 2.7].forEach(function (cx, ci) {
+      box(0.16, 0.1, 0.16, mat.charcoal, cx, 0.12, 8.2, annivDecor);
+      for (var j = 0; j < 7; j++) {
+        var bx = cx + ((j % 3) - 1) * 0.24, bz = 8.2 + (rnd(j * 5 + ci * 9 + 611) - 0.5) * 0.3, by = 1.8 + (j % 2) * 0.35 + (j >> 1) * 0.14, brr = 0.2;
+        var bl = sph(brr, balCols[(j + ci * 2) % 5], bx, by, bz, annivDecor, 12); bl.scale.y = 1.15;
+        var sh = by - brr * 1.15 - 0.17;
+        cyl(0.004, 0.004, sh, mat.charcoal, bx, 0.17 + sh / 2, bz, 3, annivDecor);
+      }
+    });
+
+    // searchlights
+    var beamGeo = new THREE.ConeGeometry(1.2, 18, 20, 1, true); beamGeo.rotateX(Math.PI); beamGeo.translate(0, 9, 0);
+    var beamMat = new THREE.MeshBasicMaterial({ color: 0xfff1c9, transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+    var beams = [[-3.4, 9.3, 1], [3.4, 9.3, -1]].map(function (b) {
+      var g = new THREE.Group(); g.position.set(b[0], 0.1, b[1]); annivDecor.add(g);
+      g.add(new THREE.Mesh(beamGeo, beamMat));
+      box(0.4, 0.25, 0.4, mat.charcoal, 0, 0.12, 0, g); cyl(0.16, 0.2, 0.2, ledM, 0, 0.3, 0, 12, g);
+      return { g: g, dir: b[2] };
+    });
+
+    // inside: cake, sparkling tower, mirror ball
+    var cakeG = new THREE.Group(); cakeG.position.set(0.2, 1.36, -0.95); annivDecor.add(cakeG);
+    cyl(0.32, 0.32, 0.14, M(0xf4efe3), 0, 0.07, 0, 24, cakeG); cyl(0.325, 0.325, 0.015, goldM, 0, 0.14, 0, 24, cakeG);
+    cyl(0.23, 0.23, 0.13, M(0xe0702f), 0, 0.205, 0, 24, cakeG); cyl(0.235, 0.235, 0.015, goldM, 0, 0.27, 0, 24, cakeG);
+    cyl(0.15, 0.15, 0.12, M(0xf4efe3), 0, 0.33, 0, 24, cakeG);
+    for (var cb = 0; cb < 12; cb++) { var ca = cb / 12 * 6.28; sph(0.03, M(0xc4232f), Math.cos(ca) * 0.27, 0.17, Math.sin(ca) * 0.27, cakeG, 6); }
+    for (var cc = 0; cc < 5; cc++) {
+      var cca = cc / 5 * 6.28;
+      cyl(0.012, 0.012, 0.09, mat.cream, Math.cos(cca) * 0.08, 0.435, Math.sin(cca) * 0.08, 6, cakeG);
+      var cf = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.045, 6), flameM); cf.position.set(Math.cos(cca) * 0.08, 0.5, Math.sin(cca) * 0.08); cakeG.add(cf);
+    }
+    function coupe(x, y, z) {
+      cyl(0.008, 0.008, 0.05, glassTeaM, x, y + 0.025, z, 6, annivDecor);
+      cyl(0.04, 0.04, 0.008, glassTeaM, x, y + 0.004, z, 10, annivDecor);
+      cyl(0.075, 0.02, 0.06, glassTeaM, x, y + 0.08, z, 12, annivDecor).castShadow = false;
+      cyl(0.065, 0.02, 0.045, champM, x, y + 0.075, z, 12, annivDecor);
+    }
+    var TX = -2.8, TZ = -0.8, T0 = FL + 0.76;
+    cyl(0.72, 0.78, 0.74, M(0xf6f2e8), TX, FL + 0.37, TZ, 28, annivDecor);
+    cyl(0.74, 0.74, 0.03, goldM, TX, T0 - 0.015, TZ, 28, annivDecor);
+    for (var t1 = 0; t1 < 6; t1++) { var a1 = t1 / 6 * 6.28; coupe(TX + Math.cos(a1) * 0.26, T0, TZ + Math.sin(a1) * 0.26); }
+    for (var t2 = 0; t2 < 3; t2++) { var a2 = t2 / 3 * 6.28 + 0.5; coupe(TX + Math.cos(a2) * 0.13, T0 + 0.13, TZ + Math.sin(a2) * 0.13); }
+    coupe(TX, T0 + 0.26, TZ);
+    for (var t3 = 0; t3 < 8; t3++) { var a3 = t3 / 8 * 6.28 + 0.2; coupe(TX + Math.cos(a3) * 0.55, T0, TZ + Math.sin(a3) * 0.55); }
+    var discoM = new THREE.MeshStandardMaterial({ color: 0xdfe6ee, metalness: 0.4, roughness: 0.15, emissive: 0x777f8c, emissiveIntensity: 0.5, flatShading: true });
+    cyl(0.004, 0.004, 0.55, mat.charcoal, -2.0, 3.3, 1.5, 4, annivDecor);
+    var discoBall = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 2), discoM); discoBall.position.set(-2.0, 2.8, 1.5); annivDecor.add(discoBall);
+
+    // confetti
+    var NC = 220;
+    var confIM = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.12, 0.08), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, side: THREE.DoubleSide }), NC);
+    var confCols = [0xe0702f, 0xf4efe3, 0xd2a54a, 0x2f5d62, 0xf06fa0, 0x6fb7ff, 0xffd23f], confData = [], confDummy = new THREE.Object3D(), confTmp = new THREE.Color();
+    for (var ci2 = 0; ci2 < NC; ci2++) {
+      confData.push({ x: (rnd(ci2 * 3 + 701) - 0.5) * 26, y: rnd(ci2 * 3 + 702) * 11, z: -6 + rnd(ci2 * 3 + 703) * 18, sp: 0.8 + rnd(ci2 * 7 + 704) * 0.8, ph: rnd(ci2 * 5 + 709) * 6.28, rs: (rnd(ci2 * 11 + 702) - 0.5) * 7, sc: 0.7 + rnd(ci2 * 13 + 705) * 0.9 });
+      confIM.setColorAt(ci2, confTmp.setHex(confCols[ci2 % 7]));
+    }
+    confIM.instanceColor.needsUpdate = true; confIM.frustumCulled = false; annivDecor.add(confIM);
+    extraInstances += NC - 1;
+
+    // fireworks
+    var FWN = 6, FWP = 90, fwList = [];
+    var fwCols = [[1, 0.82, 0.3], [1, 0.35, 0.55], [0.35, 0.9, 1], [1, 1, 1], [1, 0.55, 0.2], [0.6, 0.5, 1]];
+    var fwSpawn = [[-9, -10], [-3, -12], [4, -11], [10, -8], [-12, 7], [12, 8]];
+    for (var fi = 0; fi < FWN; fi++) {
+      var fgeo = new THREE.BufferGeometry(), fpos = new Float32Array(FWP * 3), fcol = new Float32Array(FWP * 3);
+      fgeo.setAttribute('position', new THREE.BufferAttribute(fpos, 3)); fgeo.setAttribute('color', new THREE.BufferAttribute(fcol, 3));
+      var fpm = new THREE.PointsMaterial({ size: 0.5, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+      var fpts = new THREE.Points(fgeo, fpm); fpts.frustumCulled = false; annivDecor.add(fpts);
+      var frk = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 5), new THREE.MeshBasicMaterial({ color: 0xfff2c0 })); frk.visible = false; annivDecor.add(frk);
+      fwList.push({ pts: fpts, pos: fpos, col: fcol, vel: new Float32Array(FWP * 3), pm: fpm, rk: frk, state: 0, t: 0, wait: fi * 0.9 + 0.4, x: 0, z: 0, top: 14 });
+    }
+    function fwLaunch(f, k) {
+      var s = fwSpawn[k % 6];
+      f.x = s[0] + (Math.random() - 0.5) * 3; f.z = s[1] + (Math.random() - 0.5) * 3; f.top = 12 + Math.random() * 7; f.state = 1; f.t = 0;
+      f.rk.visible = true; f.rk.position.set(f.x, 0.3, f.z);
+      var c = fwCols[(Math.random() * 6) | 0];
+      for (var i = 0; i < FWP; i++) { var sh = 0.65 + Math.random() * 0.35; f.col[i * 3] = c[0] * sh; f.col[i * 3 + 1] = c[1] * sh; f.col[i * 3 + 2] = c[2] * sh; }
+      f.pts.geometry.attributes.color.needsUpdate = true;
+    }
+    function fwExplode(f) {
+      f.state = 2; f.t = 0; f.rk.visible = false;
+      for (var i = 0; i < FWP; i++) {
+        var th = Math.random() * 6.283, ph = Math.acos(2 * Math.random() - 1), sp = 3 + Math.random() * 2.5;
+        f.pos[i * 3] = f.x; f.pos[i * 3 + 1] = f.top; f.pos[i * 3 + 2] = f.z;
+        f.vel[i * 3] = Math.sin(ph) * Math.cos(th) * sp; f.vel[i * 3 + 1] = Math.cos(ph) * sp; f.vel[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * sp;
+      }
+    }
+    function fwStep(f, dt) {
+      var drag = Math.exp(-0.9 * dt);
+      for (var i = 0; i < FWP; i++) {
+        f.vel[i * 3] *= drag; f.vel[i * 3 + 1] = f.vel[i * 3 + 1] * drag - 2.2 * dt; f.vel[i * 3 + 2] *= drag;
+        f.pos[i * 3] += f.vel[i * 3] * dt; f.pos[i * 3 + 1] += f.vel[i * 3 + 1] * dt; f.pos[i * 3 + 2] += f.vel[i * 3 + 2] * dt;
+      }
+      f.pts.geometry.attributes.position.needsUpdate = true;
+    }
+    var fwStatic = false;
+    function updateAnniv(time, dt) {
+      // rooftop sign bulbs chase while the anniversary is on
+      logoBulbMats.forEach(function (m, k) {
+        m.emissiveIntensity = 0.4 + night * 1.0 + (reduce ? 0 : anniv * (0.4 + 1.6 * Math.max(0, Math.sin(time * 5 - k * 1.05))));
+      });
+      numGold.emissiveIntensity = 0.25 + night * 0.9;
+      if (!annivDecor.visible) return;
+      numSpin.rotation.y = reduce ? 0.6 : time * 0.9;
+      var vis = 0.4 + 0.6 * night;
+      beamMat.opacity = 0.03 + night * 0.12;
+      beams.forEach(function (b, i) {
+        var ph = reduce ? i * 1.5 : time;
+        b.g.rotation.z = Math.sin(ph * 0.5 + i * 3.1) * 0.5 * b.dir; b.g.rotation.x = Math.cos(ph * 0.37 + i) * 0.3;
+      });
+      if (!reduce) { discoBall.rotation.y = time * 0.8; discoBall.rotation.x = Math.sin(time * 0.5) * 0.15; }
+      confIM.visible = anniv > 0.02;
+      confData.forEach(function (c, i) {
+        if (!reduce) {
+          c.y -= c.sp * dt; c.x += Math.sin(time * 1.1 + c.ph) * dt * 0.8;
+          var onRoof = c.y < 7.2 && c.x > -6.8 && c.x < 5.4 && c.z > -3.4 && c.z < 5.5;
+          if (c.y < 0.1 || onRoof) { c.y = 11; c.x = (Math.random() - 0.5) * 26; }
+        }
+        confDummy.position.set(c.x, c.y, c.z); confDummy.rotation.set(time * c.rs + c.ph, time * c.rs * 0.8, c.ph + time * c.rs * 0.5);
+        confDummy.scale.setScalar(c.sc * anniv); confDummy.updateMatrix(); confIM.setMatrixAt(i, confDummy.matrix);
+      });
+      confIM.instanceMatrix.needsUpdate = true;
+      if (reduce) {
+        if (!fwStatic) {
+          fwStatic = true;
+          for (var s = 0; s < 3; s++) { var g0 = fwList[s]; fwLaunch(g0, s); fwExplode(g0); for (var q = 0; q < 28; q++) fwStep(g0, 0.03); g0.pm.opacity = 0.8; }
+        }
+        return;
+      }
+      fwList.forEach(function (f, i) {
+        if (f.state === 0) {
+          f.pm.opacity = 0; f.wait -= dt;
+          if (f.wait <= 0) fwLaunch(f, i + ((time * 3) | 0));
+        } else if (f.state === 1) {
+          f.t += dt; var k = Math.min(1, f.t / 1.2);
+          f.rk.position.y = 0.3 + (f.top - 0.3) * (1 - (1 - k) * (1 - k));
+          if (k >= 1) fwExplode(f);
+        } else {
+          f.t += dt; fwStep(f, dt);
+          var r = f.t / 2.6; f.pm.opacity = Math.max(0, 1 - r * r) * vis;
+          if (f.t > 2.6) { f.state = 0; f.pm.opacity = 0; f.wait = 0.4 + Math.random() * 1.6; }
+        }
+      });
+    }
+    annivDecor.visible = anniv > 0.5;
+
     applyBuilding();
     var puffs = [];
     for (var s = 0; s < 8; s++) {
@@ -1422,7 +2108,7 @@ export function createDiorama(host: HTMLElement): Diorama | null {
     var gDay = new THREE.Color(0x6b7a6a), gNight = new THREE.Color(0x1e2433);
     var sDay = new THREE.Color(0xfff0d6), sNight = new THREE.Color(0x8fa6ff);
     var pDay = new THREE.Vector3(9, 16, 12), pNight = new THREE.Vector3(-8, 14, 8);
-    var night = 0, nightGoal = 0;
+    var night = 1, nightGoal = 1;
     function applyLight(t, time) {
       hemi.color.copy(hDay).lerp(hFallC, season).lerp(hWinC, winter).lerp(hSprC, spring).lerp(hNight, t); hemi.groundColor.copy(gDay).lerp(gNight, t); hemi.intensity = 0.8 + (0.38 - 0.8) * t;
       sun.color.copy(sDay).lerp(sFallC, season).lerp(sWinC, winter).lerp(sSprC, spring).lerp(sNight, t); sun.intensity = 0.95 + (0.34 - 0.95) * t; sun.position.lerpVectors(pDay, pNight, t);
@@ -1440,6 +2126,15 @@ export function createDiorama(host: HTMLElement): Diorama | null {
       xLight.intensity = xmas * (0.5 + t * 1.3); xLight2.intensity = xmas * t * 1.4;
       nLight.intensity = nowruz * (0.35 + t * 1.0);
       triMats.forEach(function (m) { m.emissiveIntensity = 0.5 + t * 2.0; });
+      aLight.intensity = anniv * (0.4 + t * 1.0);
+      vLight.intensity = vday * (0.5 + t * 1.2); vLight2.intensity = vday * t * 1.3;
+      valNeon.emissiveIntensity = 0.5 + t * 2.2 + (reduce ? 0 : Math.sin(time * 3) * 0.25 * t);
+      heartPink.emissiveIntensity = 0.25 + t * 0.9;
+      oLight.intensity = oilDay * (0.5 + t * 1.2); oLight2.intensity = oilDay * t * 1.6;
+      flareLight.intensity = oilDay * (0.6 + t * 1.8) * (reduce ? 1 : 1 + Math.sin(time * 13) * 0.08);
+      oilBulbs.forEach(function (m) { m.emissiveIntensity = 0.5 + t * 2.0; });
+      oilNeon.emissiveIntensity = 0.5 + t * 2.2 + (reduce ? 0 : Math.sin(time * 3) * 0.2 * t);
+      logoMat.emissiveIntensity = 0.12 + t * 0.5;
       starM.emissiveIntensity = 0.7 + t * 1.8 + (reduce ? 0 : Math.sin(time * 2.5) * 0.2 * (0.4 + t));
       backlit.forEach(function (m) { m.emissiveIntensity = t * 0.9; });
       intA.intensity = 0.35 + t * 1.0; intB.intensity = 0.3 + t * 0.9; canopyL.intensity = t * 1.0;
@@ -1527,6 +2222,21 @@ export function createDiorama(host: HTMLElement): Diorama | null {
       if (Math.abs(offsetGoal - offset) < 0.0005) offset = offsetGoal
       applyOffset()
     }
+    if (anniv !== annivGoal) {
+      anniv = reduce ? annivGoal : anniv + (annivGoal - anniv) * (1 - Math.pow(0.01, dt))
+      if (Math.abs(annivGoal - anniv) < 0.004) anniv = annivGoal
+      annivDecor.visible = anniv > 0.5
+    }
+    if (vday !== vdayGoal) {
+      vday = reduce ? vdayGoal : vday + (vdayGoal - vday) * (1 - Math.pow(0.01, dt))
+      if (Math.abs(vdayGoal - vday) < 0.004) vday = vdayGoal
+      vDecor.visible = vday > 0.5
+    }
+    if (oilDay !== oilDayGoal) {
+      oilDay = reduce ? oilDayGoal : oilDay + (oilDayGoal - oilDay) * (1 - Math.pow(0.01, dt))
+      if (Math.abs(oilDayGoal - oilDay) < 0.004) oilDay = oilDayGoal
+      oilDecor.visible = oilDay > 0.5
+    }
     applyBuilding()
     applyLight(night, time)
     if (fly) {
@@ -1549,6 +2259,9 @@ export function createDiorama(host: HTMLElement): Diorama | null {
     updateSpring(time, dt)
     updateSanta(time)
     updateNowruz(time)
+    updateAnniv(time, dt)
+    updateVday(time, dt)
+    updateOilDay(time, dt)
     controls.update()
     renderer.render(scene, camera)
   }
@@ -1571,14 +2284,16 @@ export function createDiorama(host: HTMLElement): Diorama | null {
     },
     setEvent(e) {
       yaldaGoal = e === 'yalda' ? 1 : 0; xmasGoal = e === 'xmas' ? 1 : 0; nowruzGoal = e === 'nowruz' ? 1 : 0
+      annivGoal = e === 'anniv' ? 1 : 0; vdayGoal = e === 'vday' ? 1 : 0; oilDayGoal = e === 'oil' ? 1 : 0
       refreshMenu()
     },
     setAutoRotate(on) { controls.autoRotate = on && !reduce },
     setOffset(f) { offsetGoal = f },
     snap() {
       night = nightGoal; season = seasonGoal; winter = winterGoal; spring = springGoal
-      yalda = yaldaGoal; xmas = xmasGoal; nowruz = nowruzGoal
+      yalda = yaldaGoal; xmas = xmasGoal; nowruz = nowruzGoal; anniv = annivGoal; vday = vdayGoal; oilDay = oilDayGoal
       yaldaDecor.visible = yalda > 0.5; xmasDecor.visible = xmas > 0.5; nowruzDecor.visible = nowruz > 0.5
+      annivDecor.visible = anniv > 0.5; vDecor.visible = vday > 0.5; oilDecor.visible = oilDay > 0.5
       applySeason(season, winter, spring); applyBuilding(); offset = offsetGoal; applyOffset()
     },
     onUserMove(cb) { userCb = cb },

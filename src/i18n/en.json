@@ -525,7 +525,7 @@
   "season.spring": "Spring",
   "season.winter": "Winter",
   "sceneEvent.title": "Special event",
-  "sceneEvent.help": "Adds festive decorations to the 3D cafe for every customer. Nowruz sets spring; Yalda and Christmas set winter.",
+  "sceneEvent.help": "Adds festive decorations to the 3D cafe for every customer. Nowruz and Oil Day set spring; Yalda and Christmas set winter.",
   "sceneEvent.none": "None",
   "sceneEvent.yalda": "Yalda",
   "sceneEvent.xmas": "Christmas",
@@ -542,5 +542,8 @@
   "notify.testBody": "Notifications work on this device.",
   "notify.sent": "Test sent. If you did not see it, check the phone's notification and Focus settings.",
   "notify.off": "Turn the switch on first.",
-  "push.localOnly": "Notifications are on while the app is open. To get them when the app is closed, the cafe must finish the server setup."
+  "push.localOnly": "Notifications are on while the app is open. To get them when the app is closed, the cafe must finish the server setup.",
+  "sceneEvent.anniv": "Anniversary",
+  "sceneEvent.vday": "Valentine's",
+  "sceneEvent.oil": "Oil Day"
 }

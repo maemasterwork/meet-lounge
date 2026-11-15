@@ -34,11 +34,11 @@ export interface OfferRepo extends Subscribable {
 }
 
 export type Season = 'spring' | 'summer' | 'fall' | 'winter'
-export type SceneEvent = 'none' | 'yalda' | 'xmas' | 'nowruz'
+export type SceneEvent = 'none' | 'yalda' | 'xmas' | 'nowruz' | 'anniv' | 'vday' | 'oil'
 export const SEASONS: Season[] = ['spring', 'summer', 'fall', 'winter']
-export const SCENE_EVENTS: SceneEvent[] = ['none', 'yalda', 'xmas', 'nowruz']
-/** Picking a special event also sets the matching season (Nowruz = spring, Yalda and Christmas = winter). */
-export const EVENT_SEASON: Partial<Record<SceneEvent, Season>> = { nowruz: 'spring', yalda: 'winter', xmas: 'winter' }
+export const SCENE_EVENTS: SceneEvent[] = ['none', 'yalda', 'xmas', 'nowruz', 'anniv', 'vday', 'oil']
+/** Picking a special event also sets the matching season (Nowruz and Oil Day = spring, Yalda and Christmas = winter). */
+export const EVENT_SEASON: Partial<Record<SceneEvent, Season>> = { nowruz: 'spring', oil: 'spring', yalda: 'winter', xmas: 'winter' }
 export interface Settings {
   rewardEvery: number; deliveryFee: number; shopOpen: boolean; tableCount: number
   brand: Record<Lang, string>; accent?: string; gold?: string; heroUrl?: string
