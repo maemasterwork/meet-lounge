@@ -14,13 +14,10 @@ Easiest: open **SQL Editor** and paste, run, in this order, each file in full:
 4. `supabase/migrations/20261113000400_realtime_storage.sql`
 4b. `supabase/migrations/20261113000500_admin.sql`
 4c. `supabase/migrations/20261113000600_push.sql`
-4d. `supabase/migrations/20261113000700_customer_registration.sql`
-4e. `supabase/migrations/20261114000100_required_customer_phone.sql`
 5. `supabase/seed.sql`
 
 (With the Supabase CLI instead: `supabase link --project-ref <ref>`, `supabase db push`, then run `seed.sql` in the SQL editor.)
 Do not run a file twice; the migrations are meant for a fresh project. `seed.sql` can be re-run safely.
-For an existing project, apply any missing migrations in order, through `20261114000100_required_customer_phone.sql`.
 
 ## 3. Turn on sign-in
 **Authentication → Sign In / Providers**
@@ -93,3 +90,17 @@ Run the migration after 0700. Existing items get reward price = your current glo
 
 ## Events (migration 20261113000900)
 Dashboard → Events (owner): add, edit, hide (unpublish) or delete gatherings; set date, time, place, icon, total seats and "seats you keep" (walk-ins). Customers save a seat on the Events page; the server stops bookings when the event is full or already past (cafe time = Asia/Tehran, change `cafe_today()` if needed). Staff can see each event's guests. `seed.sql` adds four example events relative to today — delete or edit them in the dashboard.
+
+
+## 3D cafe background and seasons
+
+- Run `npm install` (adds `three-r128`, the pinned three.js r128 the model was built with; it sits next to the three version used by `model-viewer`).
+- Run the new migration `supabase/migrations/20261113001000_season.sql` (adds `settings.season`, `summer` or `fall`, default `fall`).
+- The 3D scene loads lazily after the first screen. If WebGL is missing, or the visitor has Data Saver on, the flat artwork stays.
+- Day/night follows the product's light/dark look. Camera views are in the footer. The owner picks the season in Dashboard > Brand.
+
+### Seasons and special events (update)
+
+- New migration `supabase/migrations/20261113001100_season_event.sql`: seasons are now spring, summer, fall, winter, and `settings.scene_event` is none, yalda, xmas or nowruz.
+- Dashboard > Brand has both groups. Nowruz also sets spring; Yalda and Christmas also set winter. Day/night still follows the light/dark look.
+- `index.html` now also loads the Unbounded and Manrope fonts, which the 3D sign and menu board use.
