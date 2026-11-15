@@ -60,7 +60,20 @@ Pictures go to the `menu-images` bucket (JPG, PNG, WebP or AVIF, up to 2.5 MB; p
 - **Table QR codes:** Dashboard → Brand → Table QR sheet → Print. Each code opens the shop set to "at the table" for that table.
 - **3D models:** see `public/models/README.md`. Drop `latte.glb` there and list it in `index.json`; no code change. Items without a model keep their picture.
 
-## Push notifications (optional, needs a computer with Node)
+## Notifications: what the app does by itself, and what needs the server
+
+Two layers:
+
+1. **By itself (no setup):** while the app is open, in a background tab or just after the customer switched away, the app watches the customer's orders and offers (they update live) and shows a phone or desktop notification when an order becomes Ready, On the way or Done, or when a new offer arrives. If the app is on screen, it shows an in-app message instead. The customer turns it on with the "Offer notifications" switch in the settings popup and allows the browser's permission. The same popup has **Send a test notification**: use it to check this device.
+2. **From the server (needs the steps below):** a notification when the app is completely closed. A web page cannot do this alone, because the phone only accepts these messages from a server that holds your private VAPID key. That is why the app cannot do it by itself: the Supabase function `send-push` is the server part.
+
+If notifications "do not work", check in this order:
+- Press **Send a test notification**. If it shows a notification, the device is fine and only the closed-app part (below) is missing. If it says notifications are blocked, allow them in the browser or phone settings for the site.
+- iPhone: add the app to the Home Screen first (iOS 16.4+), open it from the icon, then turn the switch on.
+- Phone settings: Focus / Do not disturb, and "Notifications" for the browser or the installed app.
+- Closed-app messages: all steps below must be done (the VAPID public key in the build, the secrets, `supabase functions deploy send-push`). Without them the app only notifies while it is open.
+
+## Push notifications for a closed app (optional, needs a computer with Node)
 1. `npx web-push generate-vapid-keys`. Put the **public** key in `.env.local` / the GitHub secret `VITE_VAPID_PUBLIC_KEY`.
 2. `npm i -g supabase`, then `supabase login` and `supabase link --project-ref <ref>`.
 3. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com`

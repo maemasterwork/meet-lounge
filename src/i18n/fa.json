@@ -529,5 +529,18 @@
   "sceneEvent.none": "هیچ",
   "sceneEvent.yalda": "یلدا",
   "sceneEvent.xmas": "کریسمس",
-  "sceneEvent.nowruz": "نوروز"
+  "sceneEvent.nowruz": "نوروز",
+  "notify.order.ready": "سفارش {n} آماده است ☕",
+  "notify.order.ready.body": "می‌توانید تحویل بگیرید.",
+  "notify.order.out": "سفارش {n} در راه است 🛵",
+  "notify.order.out.body": "پیک از کافه راه افتاد.",
+  "notify.order.done": "نوش جان! سفارش {n} تحویل شد",
+  "notify.order.done.body": "یک سکه به حساب شما اضافه شد.",
+  "notify.offer": "پیشنهاد تازه",
+  "notify.test": "ارسال اعلان آزمایشی",
+  "notify.testTitle": "میت لانج",
+  "notify.testBody": "اعلان‌ها روی این دستگاه کار می‌کنند.",
+  "notify.sent": "اعلان آزمایشی فرستاده شد. اگر ندیدید، تنظیمات اعلان و حالت «مزاحم نشوید» گوشی را بررسی کنید.",
+  "notify.off": "ابتدا کلید را روشن کنید.",
+  "push.localOnly": "تا وقتی برنامه باز است اعلان می‌رسد. برای دریافت اعلان وقتی برنامه بسته است، کافه باید راه‌اندازی سرور را کامل کند."
 }

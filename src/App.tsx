@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { I18nProvider, useI18n } from './i18n'
 import { DataProvider } from './data/context'
+import { useLocalNotify } from './lib/localNotify'
 import { useView, type View } from './lib/route'
 import { useUi } from './store/ui'
 import { useCart } from './store/cart'
@@ -49,6 +50,9 @@ function Router() {
   )
 }
 
+/** Shows system notifications for order progress and new offers while the app is open (no server needed). */
+function Notifier() { useLocalNotify(); return null }
+
 export default function App() {
   const theme = useUi((s) => s.theme)
   useEffect(() => {
@@ -64,6 +68,7 @@ export default function App() {
   return (
     <I18nProvider>
       <DataProvider>
+        <Notifier />
         <Router />
         <AuthModalHost />
         <Toasts />

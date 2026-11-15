@@ -529,5 +529,18 @@
   "sceneEvent.none": "None",
   "sceneEvent.yalda": "Yalda",
   "sceneEvent.xmas": "Christmas",
-  "sceneEvent.nowruz": "Nowruz"
+  "sceneEvent.nowruz": "Nowruz",
+  "notify.order.ready": "Order {n} is ready ☕",
+  "notify.order.ready.body": "Come and get it.",
+  "notify.order.out": "Order {n} is on the way 🛵",
+  "notify.order.out.body": "Your courier has left the cafe.",
+  "notify.order.done": "Enjoy! Order {n} is complete",
+  "notify.order.done.body": "One coin was added to your balance.",
+  "notify.offer": "New offer",
+  "notify.test": "Send a test notification",
+  "notify.testTitle": "Meet Lounge",
+  "notify.testBody": "Notifications work on this device.",
+  "notify.sent": "Test sent. If you did not see it, check the phone's notification and Focus settings.",
+  "notify.off": "Turn the switch on first.",
+  "push.localOnly": "Notifications are on while the app is open. To get them when the app is closed, the cafe must finish the server setup."
 }

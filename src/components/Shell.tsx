@@ -11,6 +11,7 @@ import { useInstall } from '../lib/pwa'
 import { disablePush, enablePush, pushSupported } from '../lib/push'
 import { useAuth } from '../lib/auth'
 import { AuthPanel } from './AuthPanel'
+import { sendTest } from '../lib/localNotify'
 
 const TOP: View[] = ['home', 'menu', 'shop', 'story', 'gallery']
 
@@ -151,7 +152,12 @@ export function Popovers() {
               const on = !s.notifyOn
               s.setNotify(on)
               if (!on) { void disablePush(); return }
-              if (!pushSupported()) return
+              if (!pushSupported()) {                       // no server push set up: the app still notifies itself while it is open
+                if (typeof Notification === 'undefined') { s.toast(t('push.unavailable')); return }
+                const perm = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission
+                s.toast(t(perm === 'granted' ? 'push.localOnly' : 'push.denied'))
+                return
+              }
               const r = await enablePush()
               s.toast(t(r === 'ok' ? 'push.on' : r === 'denied' ? 'push.denied' : r === 'unavailable' ? 'push.unavailable' : 'push.error'))
             }} />
@@ -161,6 +167,12 @@ export function Popovers() {
               <Icon name="user" /><span style={{ flex: 1 }}>{t(auth.email ? 'auth.customerAccount' : 'auth.customerSignIn')}</span>
             </button>
           )}
+          <button type="button" className="it" onClick={async () => {
+            const r = await sendTest(lang, t('notify.testTitle'), t('notify.testBody'), s.notifyOn)
+            s.toast(t(r === 'sent' ? 'notify.sent' : r === 'denied' ? 'push.denied' : r === 'off' ? 'notify.off' : r === 'unavailable' ? 'push.unavailable' : 'push.error'))
+          }}>
+            <Icon name="bell" /><span style={{ flex: 1 }}>{t('notify.test')}</span>
+          </button>
           {install.canInstall && (
             <button type="button" className="it" onClick={() => void install.install()}>
               <Icon name="plus" /><span style={{ flex: 1 }}>{t('pwa.install')}</span>
