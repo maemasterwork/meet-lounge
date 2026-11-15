@@ -33,7 +33,7 @@ export function createMockRepos(): Repos {
   ]
   const mySeats = new Set<string>()
   const stockTaken = new Map<number, Record<string, number>>()
-  let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانج', en: 'Meet Lounge' }, paymentCard: '6037991234567890', paymentHolder: 'Meet Lounge', requireDeposit: true, season: 'fall', sceneEvent: 'none' }
+  let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانژ', en: 'Meet Lounge' }, paymentCard: '6037991234567890', paymentHolder: 'Meet Lounge', requireDeposit: true, season: 'fall', sceneEvent: 'none' }
   let offers: Offer[] = [
     { id: 1, title: { fa: 'لاته صبحگاهی', en: 'Morning latte' }, body: { fa: 'یک لاته با ۱۵٪ تخفیف، همین حالا.', en: 'A latte at 15% off, right now.' }, itemId: 'latte', pct: 15, audience: 'all', active: true, read: false },
   ]
@@ -179,8 +179,8 @@ export function createMockRepos(): Repos {
       saveSettings: async (p) => { settings = { ...settings, ...p }; emit() },
       setHero: async (file) => { settings = { ...settings, heroUrl: file ? URL.createObjectURL(file) : undefined }; emit() },
       customers: async (): Promise<Customer[]> => [
-        { id: 'me', name: 'Me', balance: balanceOf(ledger), orders: orders.filter((o) => o.mine).length },
-        { id: 'c2', name: 'Sara', phone: '09121110000', balance: 5, orders: 9 }, { id: 'c3', name: 'Ali', phone: '09351112233', balance: 2, orders: 4 },
+        { id: 'me', name: 'Me', email: 'me@example.test', balance: balanceOf(ledger), orders: orders.filter((o) => o.mine).length },
+        { id: 'c2', name: 'Sara', email: 'sara@example.test', phone: '09121110000', balance: 5, orders: 9 }, { id: 'c3', name: 'Ali', email: 'ali@example.test', phone: '09351112233', balance: 2, orders: 4 },
       ],
       adjustCoins: async (_id, delta) => { ledger = [{ id: ledger.length + 1, at: clock(), delta, reason: 'adjust' }, ...ledger]; emit(); return balanceOf(ledger) },
       ledgerAll: async (): Promise<LedgerRow[]> => ledger.map((l) => ({ ...l, customer: 'Me' })),

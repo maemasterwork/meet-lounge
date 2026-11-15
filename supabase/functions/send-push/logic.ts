@@ -4,7 +4,7 @@ export type Audience = 'all' | 'repeat' | 'near_reward'
 
 export interface Msg { title: string; body: string; url: string; tag: string; lang: Lang; dir: 'rtl' | 'ltr' }
 
-const BRAND = { fa: 'میت لانج', en: 'Meet Lounge' }
+const BRAND = { fa: 'میت لانژ', en: 'Meet Lounge' }
 const digits = (n: number, lang: Lang) => n.toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-US', { useGrouping: false })
 
 export function offerMessage(o: { id: number; title_fa: string; title_en: string; body_fa: string; body_en: string }, lang: Lang): Msg {

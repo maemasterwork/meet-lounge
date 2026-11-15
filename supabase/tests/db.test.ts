@@ -247,12 +247,18 @@ describe('walkthrough', () => {
 describe('dashboard (owner tools)', () => {
   it('owner_customers is owner-only and reports balance and order counts', async () => {
     const c = await addUser(db); await give(c.id, 3)
+    const noEmail = await addUser(db, 'customer', false, null); await give(noEmail.id, 1)
+    const guestWithCoins = await addUser(db, 'customer', true); await give(guestWithCoins.id, 1)
     await order(c); const o = await order(c); await as(db, owner, 'select public.cancel_order($1)', [o.id])
     await expect(as(db, staff, 'select * from public.owner_customers()')).rejects.toThrow(/not-allowed/)
     await expect(as(db, c, 'select * from public.owner_customers()')).rejects.toThrow(/not-allowed/)
     await expect(as(db, 'anon', 'select * from public.owner_customers()')).rejects.toThrow(/permission denied/)
-    const row = (await as(db, owner, 'select * from public.owner_customers()')).find((r: any) => r.id === c.id)
-    expect(row.balance).toBe(3); expect(row.orders).toBe(1)
+    const customers = await as(db, owner, 'select * from public.owner_customers()')
+    const row = customers.find((r: any) => r.id === c.id)
+    expect(row.email).toBeTruthy(); expect(row.balance).toBe(3); expect(row.orders).toBe(1)
+    expect(customers.some((r: any) => r.id === owner.id)).toBe(true)
+    expect(customers.some((r: any) => r.id === noEmail.id)).toBe(false)
+    expect(customers.some((r: any) => r.id === guestWithCoins.id)).toBe(false)
   })
   it('the owner can add, edit, archive menu items and set a picture path; staff cannot', async () => {
     const ins = "insert into public.menu_items (id,category,name_fa,name_en,base_price,sizes) values ('x-new','hot','جدید','New',99000,'[{\"key\":\"small\",\"mult\":1,\"scale\":1}]')"

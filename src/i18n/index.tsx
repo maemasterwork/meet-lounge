@@ -30,7 +30,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const r = document.documentElement
     r.lang = lang
     r.dir = lang === 'fa' ? 'rtl' : 'ltr'
-    document.title = lang === 'fa' ? 'میت لانج | Meet Lounge' : 'Meet Lounge | میت لانج'
+    document.title = lang === 'fa' ? 'میت لانژ | Meet Lounge' : 'Meet Lounge | میت لانژ'
   }, [lang])
   const value = useMemo<I18n>(() => {
     const d = dict[lang]

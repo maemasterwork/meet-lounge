@@ -265,7 +265,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         const path = file ? await upload('hero', 'hero', file) : null
         ok(await sb.from('settings').update({ hero_image_path: path }).eq('id', 1).select('id')); emit()
       },
-      async customers() { return ok(await sb.rpc('owner_customers')).map((r: any): Customer => ({ id: r.id, name: r.name ?? '', phone: r.phone ?? undefined, balance: r.balance, orders: r.orders })) },
+      async customers() { return ok(await sb.rpc('owner_customers')).map((r: any): Customer => ({ id: r.id, name: r.name ?? '', email: r.email, phone: r.phone ?? undefined, balance: r.balance, orders: r.orders })) },
       async adjustCoins(customerId, delta, note) { const b = ok(await sb.rpc('adjust_coins', { p_customer: customerId, p_delta: delta, p_note: note })); emit(); return Number(b) },
       async ledgerAll() {
         const rows = ok(await sb.from('coin_ledger').select('id, created_at, delta, reason, orders(number), profiles(display_name, phone)').order('id', { ascending: false }).limit(200))

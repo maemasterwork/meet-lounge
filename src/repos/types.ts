@@ -65,7 +65,7 @@ export class OrderError extends Error {
 export interface AdminItem extends MenuItem { name: Record<Lang, string>; desc: Record<Lang, string>; archived: boolean }
 export interface NewItem { name: Record<Lang, string>; desc: Record<Lang, string>; cat: Category; price: number; milk: boolean; rewardEligible: boolean; coinsEarned?: number; rewardCost?: number; stock?: number | null }
 export interface OfferDraft { title: Record<Lang, string>; body: Record<Lang, string>; itemId: string; pct: number; audience: string; endsAt?: string }
-export interface Customer { id: string; name: string; phone?: string; balance: number; orders: number }
+export interface Customer { id: string; name: string; email: string; phone?: string; balance: number; orders: number }
 export interface LedgerRow extends LedgerEntry { customer: string }
 export interface EventsRepo extends Subscribable {
   /** Published events, soonest first. */

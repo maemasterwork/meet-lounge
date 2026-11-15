@@ -27,7 +27,7 @@ export function BrandTab({ owner }: { owner: boolean }) {
     <div className="apane" style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
       <Msg msg={act.msg} />
       {!owner && <p className="muted sm" style={{ margin: 0 }}>{t('a2.ownerOnly')}</p>}
-      <div className="twocol">
+      <div className="twocol" style={{ display: 'none'}}>
         <div className="panel">
           <h3>{t('admin.brandTitle')}</h3>
           <label className="field">{t('admin.nameFa')}<input value={val('nfa', s.brand.fa)} maxLength={40} disabled={dis} onChange={(e) => setD({ ...d, nfa: e.target.value })} /></label>
@@ -50,11 +50,7 @@ export function BrandTab({ owner }: { owner: boolean }) {
           </div>
         </div>
       </div>
-      <div className="twocol">
-        <div className="panel">
-          <h3>{t('admin.shopOpen')}</h3>
-          <div className="row" style={{ gap: 12, alignItems: 'center' }}><Switch on={s.shopOpen} label={t('admin.shopOpen')} disabled={dis} onChange={(v) => void act.run(() => ok(() => repos.admin.saveSettings({ shopOpen: v })))} />{!s.shopOpen && <span className="muted sm">{t('a2.shopClosedNote')}</span>}</div>
-        </div>
+      <div className="twocol" style={{ display: 'none'}}>
         <div className="panel">
           <label className="field">{t('admin.deliveryFee')}<input type="number" dir="ltr" min={0} step={1000} value={val('fee', s.deliveryFee)} disabled={dis} onChange={(e) => setD({ ...d, fee: e.target.value })} /><span className="muted sm">{t('a2.deliveryHelp')}</span></label>
           <label className="field">{t('admin.tables')}<input type="number" dir="ltr" min={1} max={200} value={val('tables', s.tableCount)} disabled={dis} onChange={(e) => setD({ ...d, tables: e.target.value })} /><span className="muted sm">{t('a2.tablesHelp')}</span></label>
@@ -62,28 +58,30 @@ export function BrandTab({ owner }: { owner: boolean }) {
             onClick={async () => { if (await act.run(() => ok(() => repos.admin.saveSettings({ deliveryFee: fee, tableCount: tables })))) clear('fee', 'tables') }}>{t('common.save')}</button>
         </div>
       </div>
-      <div className="panel">
-        <h3>{t('season.title')}</h3>
-        <p className="muted sm" style={{ margin: 0 }}>{t('season.help')}</p>
-        <div className="row" style={{ gap: 8 }} role="group" aria-label={t('season.title')}>
-          {SEASONS.map((x) => (
-            <button key={x} type="button" className={`btn sm${s.season === x ? '' : ' ghost'}`} aria-pressed={s.season === x} disabled={dis}
-              onClick={() => { if (s.season !== x) void act.run(() => ok(() => repos.admin.saveSettings({ season: x }))) }}>{t(`season.${x}`)}</button>
-          ))}
+      <div className="twocol">
+        <div className="panel">
+          <h3>{t('season.title')}</h3>
+          <p className="muted sm" style={{ margin: 0 }}>{t('season.help')}</p>
+          <div className="row" style={{ gap: 8 }} role="group" aria-label={t('season.title')}>
+            {SEASONS.map((x) => (
+              <button key={x} type="button" className={`btn sm${s.season === x ? '' : ' ghost'}`} aria-pressed={s.season === x} disabled={dis}
+                onClick={() => { if (s.season !== x) void act.run(() => ok(() => repos.admin.saveSettings({ season: x }))) }}>{t(`season.${x}`)}</button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="panel">
-        <h3>{t('sceneEvent.title')}</h3>
-        <p className="muted sm" style={{ margin: 0 }}>{t('sceneEvent.help')}</p>
-        <div className="row" style={{ gap: 8 }} role="group" aria-label={t('sceneEvent.title')}>
-          {SCENE_EVENTS.map((x) => (
-            <button key={x} type="button" className={`btn sm${s.sceneEvent === x ? '' : ' ghost'}`} aria-pressed={s.sceneEvent === x} disabled={dis}
-              onClick={() => {
-                if (s.sceneEvent === x) return
-                const season = EVENT_SEASON[x]
-                void act.run(() => ok(() => repos.admin.saveSettings(season ? { sceneEvent: x, season } : { sceneEvent: x })))
-              }}>{t(`sceneEvent.${x}`)}</button>
-          ))}
+        <div className="panel">
+          <h3>{t('sceneEvent.title')}</h3>
+          <p className="muted sm" style={{ margin: 0 }}>{t('sceneEvent.help')}</p>
+          <div className="row" style={{ gap: 8 }} role="group" aria-label={t('sceneEvent.title')}>
+            {SCENE_EVENTS.map((x) => (
+              <button key={x} type="button" className={`btn sm${s.sceneEvent === x ? '' : ' ghost'}`} aria-pressed={s.sceneEvent === x} disabled={dis}
+                onClick={() => {
+                  if (s.sceneEvent === x) return
+                  const season = EVENT_SEASON[x]
+                  void act.run(() => ok(() => repos.admin.saveSettings(season ? { sceneEvent: x, season } : { sceneEvent: x })))
+                }}>{t(`sceneEvent.${x}`)}</button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="panel">

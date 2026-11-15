@@ -23,8 +23,8 @@ const CAMERA_FOR_PAGE: Partial<Record<View, ViewName>> = {
   home: 'corner',
   menu: 'street',
   bag: 'inside',
-  events: 'front',
-  me: 'above',
+  events: 'above',
+  me: 'front',
 }
 
 function Router() {

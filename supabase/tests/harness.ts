@@ -1,4 +1,5 @@
 import { PGlite } from '@electric-sql/pglite'
+import { randomUUID } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -8,7 +9,7 @@ const root = join(__dirname, '..')
 const AUTH_STUB = `
 create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
 create schema auth;
-create table auth.users (id uuid primary key default gen_random_uuid(), raw_user_meta_data jsonb default '{}', is_anonymous boolean default false);
+create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}', is_anonymous boolean default false);
 create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
 create function auth.uid() returns uuid language sql stable as $$ select nullif(auth.jwt() ->> 'sub', '')::uuid $$;
 grant usage on schema auth to anon, authenticated;
@@ -33,11 +34,11 @@ export async function as<T = any>(db: PGlite, who: Who, sql: string, params: any
   try { return (await db.query<T>(sql, params)).rows } finally { await db.exec('reset role; select set_config(\'request.jwt.claims\', \'\', false);') }
 }
 
-export async function addUser(db: PGlite, role: 'customer' | 'staff' | 'owner' = 'customer', anon = false) {
+export async function addUser(db: PGlite, role: 'customer' | 'staff' | 'owner' = 'customer', anon = false, email: string | null = anon ? null : `${randomUUID()}@example.test`) {
   const metadata = anon ? '{}' : JSON.stringify({ phone: '09121234567' })
   const { rows } = await db.query<{ id: string }>(
-    'insert into auth.users (is_anonymous, raw_user_meta_data) values ($1, $2::jsonb) returning id',
-    [anon, metadata],
+    'insert into auth.users (email, is_anonymous, raw_user_meta_data) values ($1, $2, $3::jsonb) returning id',
+    [email, anon, metadata],
   )
   const id = rows[0].id
   if (role !== 'customer') await db.query('update public.profiles set role = $1 where id = $2', [role, id])

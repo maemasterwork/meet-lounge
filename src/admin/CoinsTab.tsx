@@ -103,7 +103,7 @@ export function CoinsTab({ owner }: { owner: boolean }) {
                 const can = rewards.filter((i) => i.rewardCost <= c.balance && (i.stock === null || i.stock > 0) && i.available)
                 return (
                   <tr key={c.id}>
-                    <td><b>{c.name || '—'}</b>{c.phone && <><br /><span className="muted sm" dir="ltr">{c.phone}</span></>}</td>
+                    <td><b>{c.name || '—'}</b><br /><span className="muted sm" dir="ltr">{c.email}</span>{c.phone && <><br /><span className="muted sm" dir="ltr">{c.phone}</span></>}</td>
                     <td><b>{n(c.balance)}</b></td>
                     <td>{can.length ? <span title={can.map((i) => i.name[lang]).join('، ')}>{t('a2.cn.nItems', { n: n(can.length) })}</span> : <span className="muted sm">{t('a2.cn.nextIn', { n: n(Math.max(0, cheapest - c.balance)) })}</span>}</td>
                     <td>{n(c.orders)}</td>

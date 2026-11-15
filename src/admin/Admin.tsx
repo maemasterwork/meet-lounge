@@ -8,6 +8,7 @@ import { Icon } from '../components/icons'
 import { AuthPanel } from '../components/AuthPanel'
 import { useAuth } from '../lib/auth'
 import type { Order, OrderStatus } from '../types'
+import { Msg, Switch, useAct } from './common'
 import { MenuTab } from './MenuTab'
 import { CoinsTab } from './CoinsTab'
 import { EventsTab } from './EventsTab'
@@ -30,9 +31,11 @@ export default function Admin() {
   const auth = useAuth()
   const staff = !auth.configured || auth.role === 'staff' || auth.role === 'owner'
   const orders = useRepo(() => (staff ? repos.orders.listAll() : Promise.resolve([])), [repos.orders])
+  const settings = useRepo(() => repos.settings.get(), [repos.settings])
   const [busy, setBusy] = useState(false)
   const [tab, setTab] = useState<Tab>('orders')
   const owner = !auth.configured || auth.role === 'owner'
+  const shopAct = useAct()
   const act = async (fn: () => Promise<Order>) => { setBusy(true); try { await fn() } finally { setBusy(false) } }
   const list = orders.data ?? []
   if (!staff) return (
@@ -51,6 +54,12 @@ export default function Admin() {
       <div className="ahead">
         <h2>{t('admin.title', { brand: t('brand.name') })}</h2>
         <span className="role">{t(owner ? 'admin.role' : 'a2.roleStaff')}</span>
+        {settings.data && <div className="row" style={{ gap: 12, alignItems: 'center' }}>
+          <Switch on={settings.data.shopOpen} label={t('admin.shopOpen')} disabled={!owner || shopAct.busy}
+            onChange={(v) => void shopAct.run(async () => { await repos.admin.saveSettings({ shopOpen: v }); return true })} />
+          {!settings.data.shopOpen && <span className="muted sm">{t('a2.shopClosedNote')}</span>}
+          <Msg msg={shopAct.msg} />
+        </div>}
         <button type="button" className="btn ghost sm" style={{ marginInlineStart: 'auto' }} onClick={() => go('home')}>{t('admin.back')} <Icon name="x" size={16} /></button>
       </div>
       <div className="atabs" role="tablist">

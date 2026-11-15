@@ -61,7 +61,7 @@ create table public.settings (
   milk_surcharges  integer[] not null default '{0,15000,20000}',
   shop_open        boolean not null default true,
   table_count      integer not null default 12 check (table_count between 1 and 200),
-  brand_name_fa    text not null default 'میت لانج',
+  brand_name_fa    text not null default 'میت لانژ',
   brand_name_en    text not null default 'Meet Lounge',
   theme            jsonb not null default '{}',
   hero_image_path  text
