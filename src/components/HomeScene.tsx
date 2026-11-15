@@ -21,7 +21,8 @@ export function HomeScene({ active, className = '', children }: { active: View; 
       <div className="hero-art" data-slot="hero" aria-hidden="true"><SceneArt kind="hero" time={timeKey()} /></div>
       <div className="hl">
         <h1 className="hl-h script">
-          <span className="ln">{t('brand.heroLine1')}</span><span className="ln b">{t('brand.heroLine2')}</span><span className="ln c">{t('brand.heroLine3')}</span>
+          <span className="ln">{t('brand.heroLine1')}</span><span className="ln b">{t('brand.heroLine2')}</span>
+          {/* <span className="ln c">{t('brand.heroLine3')}</span> */}
         </h1>
         <p className="caps">{t('brand.heroSub')}</p>
         <svg className="squig" viewBox="0 0 70 14" aria-hidden="true"><path d="M2 9 C14 2 24 13 36 7 S58 4 68 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
