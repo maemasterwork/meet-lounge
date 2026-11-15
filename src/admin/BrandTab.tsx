@@ -2,6 +2,7 @@ import { fmtCard } from '../lib/card'
 import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { repos } from '../repos'
+import { EVENT_SEASON, SCENE_EVENTS, SEASONS } from '../repos/types'
 import { useRepo } from '../lib/useRepo'
 import { QrSheet } from './QrSheet'
 import { IMAGE_ACCEPT, Msg, Switch, contrast, useAct } from './common'
@@ -59,6 +60,30 @@ export function BrandTab({ owner }: { owner: boolean }) {
           <label className="field">{t('admin.tables')}<input type="number" dir="ltr" min={1} max={200} value={val('tables', s.tableCount)} disabled={dis} onChange={(e) => setD({ ...d, tables: e.target.value })} /><span className="muted sm">{t('a2.tablesHelp')}</span></label>
           <button type="button" className="btn sm" style={{ alignSelf: 'start' }} disabled={dis || !(Number.isFinite(fee) && fee >= 0) || !(tables >= 1 && tables <= 200) || (fee === s.deliveryFee && tables === s.tableCount)}
             onClick={async () => { if (await act.run(() => ok(() => repos.admin.saveSettings({ deliveryFee: fee, tableCount: tables })))) clear('fee', 'tables') }}>{t('common.save')}</button>
+        </div>
+      </div>
+      <div className="panel">
+        <h3>{t('season.title')}</h3>
+        <p className="muted sm" style={{ margin: 0 }}>{t('season.help')}</p>
+        <div className="row" style={{ gap: 8 }} role="group" aria-label={t('season.title')}>
+          {SEASONS.map((x) => (
+            <button key={x} type="button" className={`btn sm${s.season === x ? '' : ' ghost'}`} aria-pressed={s.season === x} disabled={dis}
+              onClick={() => { if (s.season !== x) void act.run(() => ok(() => repos.admin.saveSettings({ season: x }))) }}>{t(`season.${x}`)}</button>
+          ))}
+        </div>
+      </div>
+      <div className="panel">
+        <h3>{t('sceneEvent.title')}</h3>
+        <p className="muted sm" style={{ margin: 0 }}>{t('sceneEvent.help')}</p>
+        <div className="row" style={{ gap: 8 }} role="group" aria-label={t('sceneEvent.title')}>
+          {SCENE_EVENTS.map((x) => (
+            <button key={x} type="button" className={`btn sm${s.sceneEvent === x ? '' : ' ghost'}`} aria-pressed={s.sceneEvent === x} disabled={dis}
+              onClick={() => {
+                if (s.sceneEvent === x) return
+                const season = EVENT_SEASON[x]
+                void act.run(() => ok(() => repos.admin.saveSettings(season ? { sceneEvent: x, season } : { sceneEvent: x })))
+              }}>{t(`sceneEvent.${x}`)}</button>
+          ))}
         </div>
       </div>
       <div className="panel">

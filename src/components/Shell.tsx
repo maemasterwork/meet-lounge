@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { VIEWS } from '../scene3d/views'
 import { useI18n } from '../i18n'
 import { useUi } from '../store/ui'
 import { useCart } from '../store/cart'
@@ -62,6 +63,10 @@ const TABS: { v: View; icon: string }[] = [
 export function FootBar({ view }: { view: View }) {
   const { t, n } = useI18n()
   const count = useCart((s) => s.lines.reduce((a, l) => a + l.qty, 0))
+  const ready3d = useUi((s) => s.ready3d)
+  const view3d = useUi((s) => s.view3d)
+  const setView3d = useUi((s) => s.setView3d)
+  const nextView = VIEWS[(VIEWS.indexOf(view3d ?? 'above') + 1) % VIEWS.length]
   return (
     <footer className="foot ltr" id="foot">
       <div className="fb ltr">
@@ -69,6 +74,16 @@ export function FootBar({ view }: { view: View }) {
         <span><b>{t('brand.name')}</b><small>{t('brand.tagline')}</small></span>
       </div>
       <div className="ftag">{t('brand.footerLine')} <i>♥</i></div>
+      {ready3d && (
+        <div className="views3d ltr" role="group" aria-label={t('view3d.label')}>
+          <div className="seg3">
+            {VIEWS.map((v) => <button key={v} type="button" aria-pressed={view3d === v} onClick={() => setView3d(v)}>{t(`view3d.${v}`)}</button>)}
+          </div>
+          <button type="button" className="cyc3" aria-label={`${t('view3d.label')}: ${t(`view3d.${nextView}`)}`} onClick={() => setView3d(nextView)}>
+            <Icon name="eye" size={18} /><span>{t(`view3d.${view3d ?? 'corner'}`)}</span>
+          </button>
+        </div>
+      )}
       <div className="credit ltr"><span className="x"><Icon name="cup" size={20} /></span><span><small>{t('foot.credit')}</small><b>{t('foot.creditValue')}</b></span></div>
       <i className="vsep" />
       <nav className="tabs ltr" id="tabs" aria-label={t('nav.main')}>

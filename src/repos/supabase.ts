@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { CafeEvent, EventInput, LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput } from '../types'
-import { OrderError, type AdminItem, type Customer, type LedgerRow, type OrderErrorCode, type Repos, type Settings } from './types'
+import { OrderError, SCENE_EVENTS, SEASONS, type AdminItem, type Customer, type LedgerRow, type OrderErrorCode, type Repos, type Settings } from './types'
 
 const CODES: OrderErrorCode[] = [
   'shop-closed', 'empty', 'item-unavailable', 'address-required', 'not-enough-coins', 'not-found',
@@ -37,7 +37,7 @@ const toMenu = (r: any, pub: (path: string | null) => string | undefined): MenuI
 })
 const toSettings = (r: any, pub: (path: string | null) => string | undefined): Settings => ({
   rewardEvery: r.reward_every, deliveryFee: r.delivery_fee, shopOpen: r.shop_open, tableCount: r.table_count,
-  paymentCard: r.payment_card ?? undefined, paymentHolder: r.payment_holder ?? undefined, requireDeposit: r.require_deposit ?? true,
+  paymentCard: r.payment_card ?? undefined, paymentHolder: r.payment_holder ?? undefined, requireDeposit: r.require_deposit ?? true, season: (SEASONS as string[]).includes(r.season) ? r.season : 'fall', sceneEvent: (SCENE_EVENTS as string[]).includes(r.scene_event) ? r.scene_event : 'none',
   brand: { fa: r.brand_name_fa, en: r.brand_name_en }, accent: r.theme?.accent, gold: r.theme?.gold, heroUrl: pub(r.hero_image_path),
 })
 const toOffer = (r: any, read: number[]): Offer => ({
@@ -250,6 +250,8 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         if ('paymentCard' in p) u.payment_card = p.paymentCard || null
         if ('paymentHolder' in p) u.payment_holder = p.paymentHolder || null
         if (p.requireDeposit !== undefined) u.require_deposit = p.requireDeposit
+        if (p.season !== undefined) u.season = p.season
+        if (p.sceneEvent !== undefined) u.scene_event = p.sceneEvent
         if (p.brand) { u.brand_name_fa = p.brand.fa; u.brand_name_en = p.brand.en }
         if ('accent' in p || 'gold' in p) {
           const cur: any = ok(await sb.from('settings').select('theme').eq('id', 1).single())

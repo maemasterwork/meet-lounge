@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Lang } from '../types'
+import type { ViewName } from '../scene3d/views'
 
 export interface Toast { id: number; text: string; gold?: boolean; action?: { label: string; run: () => void } }
 export type Pop = 'offers' | 'settings' | null
@@ -29,6 +30,11 @@ interface UiState {
   /** True when the Menu page shows one item's options instead of the grid. Reset when the page is left. */
   menuDetail: boolean
   setMenuDetail: (v: boolean) => void
+  /** The 3D cafe behind the app: set once it is running; `view3d` is the chosen camera view (null after the visitor drags it). */
+  ready3d: boolean
+  setReady3d: (v: boolean) => void
+  view3d: ViewName | null
+  setView3d: (v: ViewName | null) => void
   toasts: Toast[]
   toast: (text: string, o?: { gold?: boolean; action?: Toast['action']; ms?: number }) => void
   dismissToast: (id: number) => void
@@ -58,6 +64,10 @@ export const useUi = create<UiState>()(
       select: (selectedId) => set({ selectedId, menuDetail: true }),
       menuDetail: false,
       setMenuDetail: (menuDetail) => set({ menuDetail }),
+      ready3d: false,
+      setReady3d: (ready3d) => set({ ready3d }),
+      view3d: 'corner',
+      setView3d: (view3d) => set({ view3d }),
       toasts: [],
       toast: (text, o) => {
         const id = ++tid

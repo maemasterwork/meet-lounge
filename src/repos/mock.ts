@@ -33,7 +33,7 @@ export function createMockRepos(): Repos {
   ]
   const mySeats = new Set<string>()
   const stockTaken = new Map<number, Record<string, number>>()
-  let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانج', en: 'Meet Lounge' }, paymentCard: '6037991234567890', paymentHolder: 'Meet Lounge', requireDeposit: true }
+  let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانج', en: 'Meet Lounge' }, paymentCard: '6037991234567890', paymentHolder: 'Meet Lounge', requireDeposit: true, season: 'fall', sceneEvent: 'none' }
   let offers: Offer[] = [
     { id: 1, title: { fa: 'لاته صبحگاهی', en: 'Morning latte' }, body: { fa: 'یک لاته با ۱۵٪ تخفیف، همین حالا.', en: 'A latte at 15% off, right now.' }, itemId: 'latte', pct: 15, audience: 'all', active: true, read: false },
   ]

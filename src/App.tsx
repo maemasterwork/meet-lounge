@@ -14,6 +14,7 @@ import { BagPage } from './pages/Bag'
 import { MePage } from './pages/Me'
 
 const Admin = lazy(() => import('./admin/Admin'))
+const Stage3D = lazy(() => import('./scene3d/Stage3D'))
 
 function Router() {
   const view = useView()
@@ -22,12 +23,15 @@ function Router() {
   if (view === 'admin') return <Suspense fallback={<p className="muted" style={{ padding: 24 }}>{t('loading')}</p>}><Admin /></Suspense>
   const page = { home: <Home />, menu: <MenuPage />, shop: <ShopPage />, story: <StoryPage />, gallery: <GalleryPage />, events: <EventsPage />, bag: <BagPage />, me: <MePage /> }[view]
   return (
+    <>
+    <Suspense fallback={null}><Stage3D /></Suspense>
     <div className="app">
       <TopBar view={view} />
       <main className={`page t-${tk}`} id="page" data-time={tk} key={view}>{page}</main>
       <FootBar view={view} />
       <Popovers />
     </div>
+    </>
   )
 }
 

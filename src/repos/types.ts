@@ -33,11 +33,21 @@ export interface OfferRepo extends Subscribable {
   markAllRead(): Promise<void>
 }
 
+export type Season = 'spring' | 'summer' | 'fall' | 'winter'
+export type SceneEvent = 'none' | 'yalda' | 'xmas' | 'nowruz'
+export const SEASONS: Season[] = ['spring', 'summer', 'fall', 'winter']
+export const SCENE_EVENTS: SceneEvent[] = ['none', 'yalda', 'xmas', 'nowruz']
+/** Picking a special event also sets the matching season (Nowruz = spring, Yalda and Christmas = winter). */
+export const EVENT_SEASON: Partial<Record<SceneEvent, Season>> = { nowruz: 'spring', yalda: 'winter', xmas: 'winter' }
 export interface Settings {
   rewardEvery: number; deliveryFee: number; shopOpen: boolean; tableCount: number
   brand: Record<Lang, string>; accent?: string; gold?: string; heroUrl?: string
   /** Card-to-card deposit: 16 digits, shown to the customer after checkout. */
   paymentCard?: string; paymentHolder?: string; requireDeposit: boolean
+  /** Look of the 3D cafe behind the app; the owner picks it and every customer sees it. */
+  season: Season
+  /** Special decorations in the 3D cafe (not the cafe's calendar events). */
+  sceneEvent: SceneEvent
 }
 export interface SettingsRepo extends Subscribable {
   get(): Promise<Settings>

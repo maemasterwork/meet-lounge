@@ -451,3 +451,41 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .cancelask{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;border:1px dashed var(--ml-accent);border-radius:12px;background:color-mix(in srgb,var(--ml-accent) 7%,transparent)}
 .btn.danger{background:#b3261e;color:#fff;border-color:#b3261e}
 .stamp.x{border-color:var(--ml-ink-2,#777);color:var(--ml-ink-2,#777)}
+
+/* ---- 3D cafe behind the app (only while it is running: html.has3d) ---- */
+.stage3d{position:fixed;inset:0;z-index:0;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .5s ease}
+.has3d .stage3d{opacity:1}
+.stage3d .sky{position:absolute;inset:0;transition:opacity .9s ease}
+.stage3d .sky.day{background:linear-gradient(180deg,#a9d3e6 0%,#dcebe6 58%,#f3e9d2 100%)}
+.stage3d .sky.fall{opacity:0;background:linear-gradient(180deg,#b6cfdc 0%,#efdcc2 56%,#f6cd9b 100%)}
+.stage3d[data-season="fall"] .sky.fall{opacity:1}
+.stage3d .sky.winter{opacity:0;background:linear-gradient(180deg,#b9cbdc 0%,#dfe7ef 58%,#f3f6f8 100%)}
+.stage3d[data-season="winter"] .sky.winter{opacity:1}
+.stage3d .sky.spring{opacity:0;background:linear-gradient(180deg,#9fd0ee 0%,#d9ecf2 55%,#fde9e6 100%)}
+.stage3d[data-season="spring"] .sky.spring{opacity:1}
+.stage3d .sky.night{opacity:0;background:radial-gradient(circle at 86% 16%,#f5f1da 0 18px,rgba(245,241,218,.16) 20px 42px,transparent 44px),linear-gradient(180deg,#080f22 0%,#1a2142 56%,#3c3050 100%)}
+.stage3d[data-mode="night"] .sky.night{opacity:1}
+.stage3d-host{position:absolute;inset:0}
+.stage3d-host canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none;pointer-events:none}
+.stage3d-host canvas:active{cursor:grabbing}
+.has3d .stage3d-host canvas{pointer-events:auto}
+/* the page sits above the canvas; only the empty gaps let a drag through to orbit the model */
+.has3d .app{position:relative;z-index:1}
+.has3d .app *{pointer-events:auto}
+.has3d :is(.app,.page,.home,.top,.hero-art){pointer-events:none}
+.has3d :is(.hero-art,.mini,.evart){display:none}
+/* text that sits straight on the model gets a soft frosted panel (wide screens) or a halo (phones) */
+.has3d :is(.hl,.ml){text-shadow:0 0 14px color-mix(in srgb,var(--ml-bg) 80%,transparent),0 0 3px color-mix(in srgb,var(--ml-bg) 70%,transparent)}
+@media (min-width:861px){
+  .has3d .hl{padding:10px 14px;margin:-10px -14px;text-shadow:none}
+  .has3d .ml{text-shadow:none}
+}
+.has3d .top{background:linear-gradient(180deg,color-mix(in srgb,var(--ml-bg) 55%,transparent),transparent)}
+
+/* footer: camera view buttons */
+.views3d{display:flex;align-items:center;flex:0 0 auto}
+.seg3{display:inline-flex;gap:2px;padding:3px;border-radius:14px;background:var(--ml-pill)}
+.seg3 button,.cyc3{border:0;background:none;color:var(--ml-ink);font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:11px;white-space:nowrap}
+.seg3 button[aria-pressed="true"]{background:var(--ml-accent);color:var(--ml-on-accent)}
+.cyc3{display:none;align-items:center;gap:6px;background:var(--ml-pill);padding:7px 11px}
+@media (max-width:860px){ .seg3{display:none}.cyc3{display:inline-flex}.views3d{display:flex} }
