@@ -4,12 +4,14 @@
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { chromium } = require('playwright')
+// the other checks run on the flat artwork: software-rendered WebGL makes them minutes slower (stage3d.mjs covers the 3D scene)
+const FLAT = { cookies: [], origins: [{ origin: 'http://localhost:4173', localStorage: [{ name: 'ml-flat', value: '1' }] }] }
 const BASE = process.env.BASE_URL ?? 'http://localhost:4173/'
 
 const fail = (m) => { console.error('FAIL:', m); process.exitCode = 1 }
 const browser = await chromium.launch()
 for (const lang of ['fa', 'en']) {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const ctx = await browser.newContext({ storageState: FLAT, viewport: { width: 1440, height: 900 } })
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(e.message))

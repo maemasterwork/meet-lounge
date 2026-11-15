@@ -1,12 +1,14 @@
 // A customer can cancel an order while it is still "Received", from the confirmation card and from the Profile page,
 // but not once the cafe has started preparing it.
 import { createRequire } from 'node:module'
+// the other checks run on the flat artwork: software-rendered WebGL makes them minutes slower (stage3d.mjs covers the 3D scene)
+const FLAT = { cookies: [], origins: [{ origin: 'http://localhost:4173', localStorage: [{ name: 'ml-flat', value: '1' }] }] }
 const { chromium } = createRequire(import.meta.url)('playwright')
 const BASE = process.env.BASE_URL ?? 'http://localhost:4173/'
 const fail = (m) => { console.error('FAIL', m); process.exit(1) }
 const b = await chromium.launch()
 for (const lang of ['en', 'fa']) {
-  const page = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage()
+  const page = await (await b.newContext({ storageState: FLAT, viewport: { width: 1440, height: 900 } })).newPage()
   await page.addInitScript((l) => localStorage.setItem('ml-ui', JSON.stringify({ state: { lang: l, theme: null, notifyOn: true, favorites: [], registered: [] }, version: 1 })), lang)
   const order = async () => {
     await page.goto(BASE + '#menu'); await page.waitForSelector('.mgrid')

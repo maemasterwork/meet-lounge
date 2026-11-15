@@ -3,10 +3,12 @@
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const { chromium } = require('playwright')
+// the other checks run on the flat artwork: software-rendered WebGL makes them minutes slower (stage3d.mjs covers the 3D scene)
+const FLAT = { cookies: [], origins: [{ origin: 'http://localhost:4173', localStorage: [{ name: 'ml-flat', value: '1' }] }] }
 const BASE = process.env.BASE_URL ?? 'http://localhost:4173/'
 const fail = (m) => { console.error('FAIL:', m); process.exitCode = 1 }
 const browser = await chromium.launch()
-const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage()
+const page = await (await browser.newContext({ storageState: FLAT, viewport: { width: 1440, height: 900 } })).newPage()
 const errors = []
 page.on('pageerror', (e) => errors.push(e.message))
 page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|ERR_/.test(m.text())) errors.push(m.text()) })
@@ -92,6 +94,20 @@ await tab('Brand')
 await page.locator('.panel', { hasText: 'Brand and hero image' }).locator('input').nth(1).fill('Test Lounge')
 await page.locator('.panel', { hasText: 'Brand and hero image' }).locator('button:has-text("Save")').first().click()
 await page.waitForSelector('text=Saved')
+
+// Season: the owner switches the 3D cafe to summer
+const seasonBtns = page.locator('.panel', { hasText: 'Season' }).locator('button[aria-pressed]')
+if ((await seasonBtns.nth(2).getAttribute('aria-pressed')) !== 'true') fail('fall should be the default season')
+await seasonBtns.nth(1).click()
+await page.waitForFunction(() => [...document.querySelectorAll('.panel button[aria-pressed="true"]')].some((b) => b.textContent === 'Summer'))
+
+// Special event: Nowruz also sets spring; None leaves the season alone
+const evBtns = page.locator('.panel', { hasText: 'Special event' }).locator('button[aria-pressed]')
+await evBtns.nth(3).click()
+await page.waitForFunction(() => [...document.querySelectorAll('.panel button[aria-pressed="true"]')].some((b) => b.textContent === 'Nowruz'))
+if ((await seasonBtns.nth(0).getAttribute('aria-pressed')) !== 'true') fail('Nowruz should switch the season to spring')
+await evBtns.nth(0).click()
+await page.waitForFunction(() => [...document.querySelectorAll('.panel button[aria-pressed="true"]')].some((b) => b.textContent === 'None'))
 
 // Stats render
 await tab('Stats')
