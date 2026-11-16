@@ -191,25 +191,30 @@ export function createDiorama(host: HTMLElement): Diorama | null {
       if (m && m.width > maxW) { size = Math.floor(size * maxW / m.width); x.font = weight + ' ' + size + 'px ' + family; }
       return size;
     }
+    // in front logo: two rings, one offset left and one offset right, to give a 3D effect
     function ring2d(x, cx, cy, r, off, lw) {
       x.lineWidth = lw;
       x.strokeStyle = '#f4efe3'; x.beginPath(); x.arc(cx - off, cy, r, 0, Math.PI * 2); x.stroke();
       x.strokeStyle = '#e0702f'; x.beginPath(); x.arc(cx + off, cy, r, 0, Math.PI * 2); x.stroke();
     }
     function signTexture() {
+      var logo = new Image();
       var c = document.createElement('canvas'); c.width = 1600; c.height = 440;
       var x = c.getContext('2d');
       var fam = '"Unbounded", "Helvetica Neue", Arial, sans-serif';
       function draw() {
         x.fillStyle = '#1c1e20'; x.fillRect(0, 0, c.width, c.height);
-        ring2d(x, 290, 220, 118, 62, 16);
-        x.textBaseline = 'alphabetic'; x.textAlign = 'left'; x.fillStyle = '#f4efe3';
+        if (logo.complete && logo.naturalWidth) x.drawImage(logo, 80, 0, 500, 600); else ring2d(x, 290, 220, 118, 62, 16);
+        x.textBaseline = 'alphabetic'; x.textAlign = 'left'; x.fillStyle = '#ffb600';
         fitFont(x, 'LOUNGE', 700, fam, 960, 150); x.fillText('MEET', 560, 168);
         fitFont(x, 'LOUNGE', 700, fam, 960, 150); x.fillText('LOUNGE', 560, 318);
-        x.fillStyle = '#e0702f'; x.font = '600 38px "Manrope", Arial, sans-serif'; x.fillText('SPECIALTY COFFEE · ROASTERY', 560, 392);
+        x.fillStyle = '#f4efe3'; x.font = '600 38px "Manrope", Arial, sans-serif'; x.fillText('Powered by · Metic Cafe', 560, 392);
       }
       draw();
       var t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+      logo.onload = function () { draw(); t.needsUpdate = true; };
+      logo.onerror = function () { console.error('Unable to load storefront SVG logo:', logo.src); };
+      logo.src = import.meta.env.BASE_URL + 'logo/mark.svg';
       if (document.fonts && document.fonts.load) {
         document.fonts.load('700 150px "Unbounded"').then(function () { draw(); t.needsUpdate = true; }).catch(function () {});
       }

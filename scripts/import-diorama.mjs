@@ -15,9 +15,32 @@ if (start < 0 || end < 0 || end <= start) {
   console.error('Could not find the scene section. Expected a line `scene.add(world);` and a comment `/* ---------- camera, controls, views ---------- */` in the HTML.')
   process.exit(1)
 }
-const body = lines.slice(start + 1, end).map((l) => (l.trim() ? '  ' + l : '')).join('\n').replace(/\n+$/, '')
+let body = lines.slice(start + 1, end).map((l) => (l.trim() ? '  ' + l : '')).join('\n').replace(/\n+$/, '')
   // the model's own page buttons (logo upload, light/dark panel, ...) are not part of the product: ignore its DOM lookups
   .replace(/document\.getElementById\(/g, 'byId(').replace(/document\.querySelector\(/g, 'query(')
+
+const signStart = body.indexOf('function signTexture() {')
+const signEnd = body.indexOf('var MENUS = {', signStart)
+if (signStart < 0 || signEnd < 0) {
+  console.error('Could not find signTexture() to apply the storefront SVG logo.')
+  process.exit(1)
+}
+let sign = body.slice(signStart, signEnd)
+const ringMark = 'ring2d(x, 290, 220, 118, 62, 16);'
+const textureCreation = 'var t = new THREE.CanvasTexture(c); t.anisotropy = 4;'
+if (sign.indexOf(ringMark) < 0 || sign.indexOf(ringMark, sign.indexOf(ringMark) + ringMark.length) >= 0 ||
+    sign.indexOf(textureCreation) < 0 || sign.indexOf(textureCreation, sign.indexOf(textureCreation) + textureCreation.length) >= 0) {
+  console.error('Could not uniquely locate the storefront mark and texture creation. Nothing was changed.')
+  process.exit(1)
+}
+sign = sign
+  .replace('function signTexture() {', 'function signTexture() {\n      var logo = new Image();')
+  .replace(ringMark, 'if (logo.complete && logo.naturalWidth) x.drawImage(logo, 80, 0, 440, 440); else ' + ringMark)
+  .replace(textureCreation, textureCreation + `
+      logo.onload = function () { draw(); t.needsUpdate = true; };
+      logo.onerror = function () { console.error('Unable to load storefront SVG logo:', logo.src); };
+      logo.src = import.meta.env.BASE_URL + 'logo/mark.svg';`)
+body = body.slice(0, signStart) + sign + body.slice(signEnd)
 
 // names the product's own code (camera loop, controls, settings) relies on
 const need = ['nightGoal', 'seasonGoal', 'winterGoal', 'springGoal', 'yaldaGoal', 'xmasGoal', 'nowruzGoal', 'annivGoal', 'vdayGoal', 'oilDayGoal', 'yaldaDecor', 'xmasDecor', 'nowruzDecor', 'annivDecor', 'vDecor', 'oilDecor',
