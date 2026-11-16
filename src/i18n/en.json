@@ -237,6 +237,7 @@
   "common.delete": "Delete",
   "common.edit": "Edit",
   "common.currency": "Toman",
+  "foot.namvaran": "namvaran",
   "foot.credit": "Internal Phone",
   "foot.creditValue": "1077",
   "admin.title": "{brand} dashboard",

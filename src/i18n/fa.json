@@ -237,6 +237,7 @@
   "common.delete": "حذف",
   "common.edit": "ویرایش",
   "common.currency": "تومان",
+  "foot.namvaran": "ناموران",
   "foot.credit": "شماره داخلی",
   "foot.creditValue": "۱۰۷۷",
   "admin.title": "پنل مدیریت {brand}",

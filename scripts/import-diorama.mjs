@@ -42,6 +42,13 @@ sign = sign
       logo.src = import.meta.env.BASE_URL + 'logo/mark.svg';`)
 body = body.slice(0, signStart) + sign + body.slice(signEnd)
 
+const wallRings = /torus\(0\.8, 0\.06, neonA, -6\.66, 5\.2, 1\.0, Math\.PI \/ 2\);\s*torus\(0\.8, 0\.06, neonB, -6\.66, 5\.2, 1\.85, Math\.PI \/ 2\);/g
+if ((body.match(wallRings) || []).length !== 1) {
+  console.error('Could not uniquely locate the left-wall neon rings for the Namvaran logo. Nothing was changed.')
+  process.exit(1)
+}
+body = body.replace(wallRings, 'addNamvaranLogo3D();')
+
 // names the product's own code (camera loop, controls, settings) relies on
 const need = ['nightGoal', 'seasonGoal', 'winterGoal', 'springGoal', 'yaldaGoal', 'xmasGoal', 'nowruzGoal', 'annivGoal', 'vdayGoal', 'oilDayGoal', 'yaldaDecor', 'xmasDecor', 'nowruzDecor', 'annivDecor', 'vDecor', 'oilDecor',
   'applySeason', 'applyLight', 'applyBuilding', 'refreshMenu', 'curSeason', 'movers', 'steam', 'updateLeaves', 'updateSnow', 'updateSpring', 'updateSanta', 'updateNowruz', 'updateAnniv', 'updateVday', 'updateOilDay']

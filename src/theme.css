@@ -125,6 +125,7 @@
     --ml-pill: #3A2B20; --ml-line: #4A382B; --ml-blush: #4A2D26; --ml-peach: #3B2B21; --ml-grass: #3A4A33;
     --ml-ink: #F6EBDD; --ml-ink-2: #C9B39D; --ml-on-accent: #1C1410; --ml-on-gold: #2B1F17;
     --ml-accent: #E27E4F; --ml-accent-soft: #3E2519; --ml-gold: #E9B648; --ml-gold-soft: #4A3A16;
+    --mc-cream: var(--ml-ink);    
     --ml-sage: #8FA68A; --ml-brick: #A94A33; --ml-teal: #477C75;
     --ml-success: #6FCB93; --ml-warning: #E6B15C; --ml-danger: #F28B82;
     --ml-chart-1: #E27E4F; --ml-chart-2: #6FB6AB; --ml-chart-3: #E9B648; --ml-chart-4: #B79BDB; --ml-chart-5: #9DB898; --ml-chart-axis: #6B5849;
@@ -141,6 +142,7 @@
   --ml-bg: #1C1410; --ml-bg-2: #241912; --ml-surface: #2B1F17; --ml-surface-2: #33251B;
   --ml-pill: #3A2B20; --ml-line: #4A382B; --ml-blush: #4A2D26; --ml-peach: #3B2B21; --ml-grass: #3A4A33;
   --ml-ink: #F6EBDD; --ml-ink-2: #C9B39D; --ml-on-accent: #1C1410; --ml-on-gold: #2B1F17;
+  --mc-cream: var(--ml-ink);
   --ml-accent: #E27E4F; --ml-accent-soft: #3E2519; --ml-gold: #E9B648; --ml-gold-soft: #4A3A16;
   --ml-sage: #8FA68A; --ml-brick: #A94A33; --ml-teal: #477C75;
   --ml-success: #6FCB93; --ml-warning: #E6B15C; --ml-danger: #F28B82;
