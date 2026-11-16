@@ -252,7 +252,7 @@
   "admin.cancelReason": "Reason for cancelling",
   "admin.waiting": "Waiting {n} min",
   "admin.menuTitle": "Manage menu and goods",
-  "admin.price": "Base price (Toman)",
+  "admin.price": "Base price (thousand Toman)",
   "admin.available": "Available",
   "admin.image": "Image",
   "admin.removeImage": "Remove image",

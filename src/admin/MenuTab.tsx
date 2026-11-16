@@ -9,9 +9,14 @@ import type { Category } from '../types'
 const CATS: Category[] = ['hot', 'cold', 'sweet', 'goods']
 
 function PriceInput({ item, onSave, disabled }: { item: AdminItem; onSave: (p: number) => void; disabled: boolean }) {
-  const [v, setV] = useState(String(item.price))
-  const commit = () => { const p = Math.round(Number(v)); if (Number.isFinite(p) && p >= 0 && p !== item.price) onSave(p); else setV(String(item.price)) }
-  return <input type="number" min={0} step={1000} dir="ltr" value={v} disabled={disabled} aria-label={item.name.fa} onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
+  const [v, setV] = useState(String(item.price / 1000))
+  const commit = () => {
+    const thousands = Number(v)
+    const p = thousands * 1000
+    if (v.trim() && Number.isInteger(thousands) && thousands > 0 && p !== item.price) onSave(p)
+    else setV(String(item.price / 1000))
+  }
+  return <input type="number" min={1} step={1} dir="ltr" value={v} disabled={disabled} aria-label={item.name.fa} onChange={(e) => setV(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
 }
 
 function Editor({ item, onClose, act }: { item: AdminItem; onClose: () => void; act: ReturnType<typeof useAct> }) {
@@ -39,9 +44,10 @@ function NewItem({ act }: { act: ReturnType<typeof useAct> }) {
   const { t } = useI18n()
   const blank = { nameFa: '', nameEn: '', descFa: '', descEn: '', cat: 'hot' as Category, price: '', milk: false, reward: false, coins: '1', cost: '6', stock: '' }
   const [f, setF] = useState(blank)
-  const price = Math.round(Number(f.price))
+  const thousands = Number(f.price)
+  const price = thousands * 1000
   const coins = Math.round(Number(f.coins)), cost = Math.round(Number(f.cost)), stock = f.stock.trim() === '' ? null : Math.round(Number(f.stock))
-  const ok = f.nameFa.trim() && f.nameEn.trim() && Number.isFinite(price) && price > 0 && coins >= 0 && coins <= 50 && cost >= 1 && cost <= 200 && (stock === null || (Number.isFinite(stock) && stock >= 0))
+  const ok = f.nameFa.trim() && f.nameEn.trim() && Number.isInteger(thousands) && thousands > 0 && coins >= 0 && coins <= 50 && cost >= 1 && cost <= 200 && (stock === null || (Number.isFinite(stock) && stock >= 0))
   return (
     <div className="panel">
       <h3>{t('a2.newItem')}</h3>
@@ -53,7 +59,7 @@ function NewItem({ act }: { act: ReturnType<typeof useAct> }) {
         <label className="field">{t('a2.category')}
           <select value={f.cat} onChange={(e) => setF({ ...f, cat: e.target.value as Category })}>{CATS.map((c) => <option key={c} value={c}>{t(`cat.${c}`)}</option>)}</select>
         </label>
-        <label className="field">{t('admin.price')}<input type="number" dir="ltr" min={1000} step={1000} value={f.price} onChange={(e) => setF({ ...f, price: e.target.value })} /></label>
+        <label className="field">{t('admin.price')}<input type="number" dir="ltr" min={1} step={1} value={f.price} onChange={(e) => setF({ ...f, price: e.target.value })} /></label>
         <label className="field">{t('a2.coinsEarned')}<input type="number" dir="ltr" min={0} max={50} value={f.coins} onChange={(e) => setF({ ...f, coins: e.target.value })} /><small className="muted">{t('a2.coinsEarnedHelp')}</small></label>
         <label className="field">{t('a2.stock')}<input type="number" dir="ltr" min={0} placeholder={t('a2.unlimited')} value={f.stock} onChange={(e) => setF({ ...f, stock: e.target.value })} /><small className="muted">{t('a2.stockHelp')}</small></label>
         {f.reward && <label className="field">{t('a2.rewardCost')}<input type="number" dir="ltr" min={1} max={200} value={f.cost} onChange={(e) => setF({ ...f, cost: e.target.value })} /><small className="muted">{t('a2.rewardCostHelp')}</small></label>}

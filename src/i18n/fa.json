@@ -252,7 +252,7 @@
   "admin.cancelReason": "دلیل لغو",
   "admin.waiting": "{n} دقیقه در انتظار",
   "admin.menuTitle": "مدیریت منو و کالاها",
-  "admin.price": "قیمت پایه (تومان)",
+  "admin.price": "قیمت پایه (هزار تومان)",
   "admin.available": "موجود",
   "admin.image": "تصویر",
   "admin.removeImage": "حذف تصویر",
