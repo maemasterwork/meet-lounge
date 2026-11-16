@@ -13,7 +13,7 @@ import { LOW_STOCK, canTakeReward, isAvailable, rewardCostOf, stockLeft } from '
 import { clamp } from '../lib/format'
 import type { MenuItem } from '../types'
 
-const GROUPS = ['hot', 'cold', 'sweet'] as const
+const GROUPS = ['hot', 'cold', 'tea', 'breakfast', 'food', 'sweet'] as const
 type Filter = 'all' | (typeof GROUPS)[number]
 
 export function MenuPage() {
@@ -61,7 +61,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const quick = (m: MenuItem) => {
     if (!isAvailable(m)) return
     if (stockLeft(m, cart.lines) < 1) { toast(t('menu.maxInBagToast', { name: t(`item.${m.id}.name`) })); return }
-    cart.add({ itemId: m.id, size: m.cat === 'hot' || m.cat === 'cold' ? 'medium' : m.sizes[0].key, milk: 0, sugar: 1, qty: 1, free: false })
+    cart.add({ itemId: m.id, size: isDrink(m) ? 'medium' : m.sizes[0].key, milk: 0, sugar: 1, qty: 1, free: false })
     toast(t('menu.addedToast', { name: t(`item.${m.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
   return (
@@ -90,7 +90,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
                 <span className="sb">{m.tags.slice(0, 2).map((k) => t(`tag.${k}`)).join(' · ')}</span>
               </button>
               <div className="pr2">
-                <span>{price(unitPrice(m, { size: m.cat === 'hot' || m.cat === 'cold' ? 'medium' : m.sizes[0].key, milk: 0 }, offers))}</span>
+                <span>{price(unitPrice(m, { size: isDrink(m) ? 'medium' : m.sizes[0].key, milk: 0 }, offers))}</span>
                 <button type="button" className="plus" disabled={!isAvailable(m)} aria-label={t(isAvailable(m) ? 'menu.quickAdd' : 'menu.soldOut', { name })} onClick={() => quick(m)}><Icon name="plus" size={16} /></button>
               </div>
             </div>)
@@ -123,7 +123,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
 
   // Choosing another item resets its options (medium drinks, one sugar cube, quantity 1).
   useEffect(() => {
-    setSize(item.cat === 'hot' || item.cat === 'cold' ? 'medium' : item.sizes[0].key)
+    setSize(isDrink(item) ? 'medium' : item.sizes[0].key)
     setMilk(0); setSugar(1); setQty(1)
   }, [item.id]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {

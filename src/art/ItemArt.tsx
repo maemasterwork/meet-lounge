@@ -5,6 +5,7 @@ import { useMeetLounge } from '../lib/meetlounge'
 import { useI18n } from '../i18n'
 import { sizeOf } from '../lib/pricing'
 import type { TimeKey } from '../data/catalog'
+import { isDrink } from '../data/catalog'
 
 export interface ArtOpts { scale?: number; tint?: number; sugar?: number }
 
@@ -19,7 +20,7 @@ export function ItemArt({ item, opts, uid }: { item: MenuItem; opts?: ArtOpts; u
 }
 
 export const stageOpts = (item: MenuItem, sel: { size: string; milk: number; sugar: number }): ArtOpts => ({
-  scale: sizeOf(item, sel.size).scale, tint: item.milk ? sel.milk : 0, sugar: item.cat === 'hot' || item.cat === 'cold' ? sel.sugar : 0,
+  scale: sizeOf(item, sel.size).scale, tint: item.milk ? sel.milk : 0, sugar: isDrink(item) ? sel.sugar : 0,
 })
 
 /** Product stage picture. A registered 3D/360 renderer (MeetLounge.setItemRenderer) takes over the stage. */

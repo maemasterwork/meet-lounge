@@ -63,6 +63,8 @@ export class OrderError extends Error {
 
 /** Dashboard-only operations. Staff can read orders; everything here needs the owner role (enforced by the database). */
 export interface AdminItem extends MenuItem { name: Record<Lang, string>; desc: Record<Lang, string>; archived: boolean }
+export type AdminItemPatch = Partial<Pick<AdminItem, 'price' | 'available' | 'rewardEligible' | 'coinsEarned' | 'rewardCost' | 'stock' | 'archived' | 'name' | 'desc'>>
+export interface AdminItemChange { id: string; patch: AdminItemPatch }
 export interface NewItem { name: Record<Lang, string>; desc: Record<Lang, string>; cat: Category; price: number; milk: boolean; rewardEligible: boolean; coinsEarned?: number; rewardCost?: number; stock?: number | null }
 export interface OfferDraft { title: Record<Lang, string>; body: Record<Lang, string>; itemId: string; pct: number; audience: string; endsAt?: string }
 export interface Customer { id: string; name: string; email: string; phone?: string; balance: number; orders: number }
@@ -85,7 +87,9 @@ export interface AdminRepo extends Subscribable {
   deleteEvent(id: string): Promise<void>
   attendees(id: string): Promise<Attendee[]>
   items(): Promise<AdminItem[]>
-  saveItem(id: string, patch: Partial<Pick<AdminItem, 'price' | 'available' | 'rewardEligible' | 'coinsEarned' | 'rewardCost' | 'stock' | 'archived' | 'name' | 'desc'>>): Promise<void>
+  saveItem(id: string, patch: AdminItemPatch): Promise<void>
+  saveItems(changes: AdminItemChange[]): Promise<void>
+  reorderItems(ids: string[]): Promise<void>
   addItem(i: NewItem): Promise<string>
   setItemImage(id: string, file: File | null): Promise<void>
   offers(): Promise<Offer[]>

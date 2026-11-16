@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { CafeEvent, EventInput, LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput } from '../types'
+import { isDrinkCategory } from '../data/catalog'
 import { OrderError, SCENE_EVENTS, SEASONS, type AdminItem, type Customer, type LedgerRow, type OrderErrorCode, type Repos, type Settings } from './types'
 
 const CODES: OrderErrorCode[] = [
@@ -100,6 +101,22 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
     if (r.error) mapError(r.error)
     if (!r.data) throw new OrderError('not-found')
     return r.data.id as string
+  }
+
+  const updateItem = async (id: string, p: Parameters<Repos['admin']['saveItem']>[1]) => {
+    const u: Record<string, unknown> = {}
+    if (p.price !== undefined) u.base_price = p.price
+    if (p.available !== undefined) u.available = p.available
+    if (p.rewardEligible !== undefined) u.reward_eligible = p.rewardEligible
+    if (p.coinsEarned !== undefined) u.coins_earned = p.coinsEarned
+    if (p.rewardCost !== undefined) u.reward_cost = p.rewardCost
+    if (p.stock !== undefined) u.stock = p.stock
+    if (p.archived !== undefined) u.archived = p.archived
+    if (p.name) { u.name_fa = p.name.fa; u.name_en = p.name.en }
+    if (p.desc) { u.description_fa = p.desc.fa; u.description_en = p.desc.en }
+    const r = await sb.from('menu_items').update(u).eq('id', id).select('id')
+    if (!r.error && !r.data?.length) throw new OrderError('not-allowed')
+    ok(r)
   }
 
   return {
@@ -208,25 +225,26 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
       async attendees(id) { return ok(await sb.rpc('event_attendees', { p_event: id })).map((r: any) => ({ name: r.name ?? '', phone: r.phone ?? undefined, at: r.at })) },
       async items() { return ok(await sb.from('menu_items').select('*').order('sort')).map((r: any): AdminItem => ({ ...toMenu(r, pub), name: { fa: r.name_fa, en: r.name_en }, desc: { fa: r.description_fa, en: r.description_en }, archived: r.archived })) },
       async saveItem(id, p) {
-        const u: Record<string, unknown> = {}
-        if (p.price !== undefined) u.base_price = p.price
-        if (p.available !== undefined) u.available = p.available
-        if (p.rewardEligible !== undefined) u.reward_eligible = p.rewardEligible
-        if (p.coinsEarned !== undefined) u.coins_earned = p.coinsEarned
-        if (p.rewardCost !== undefined) u.reward_cost = p.rewardCost
-        if (p.stock !== undefined) u.stock = p.stock
-        if (p.archived !== undefined) u.archived = p.archived
-        if (p.name) { u.name_fa = p.name.fa; u.name_en = p.name.en }
-        if (p.desc) { u.description_fa = p.desc.fa; u.description_en = p.desc.en }
-        const r = await sb.from('menu_items').update(u).eq('id', id).select('id')
-        if (!r.error && !r.data?.length) throw new OrderError('not-allowed')   // RLS filtered the row: not the owner
-        ok(r); emit()
+        await updateItem(id, p)
+        emit()
+      },
+      async saveItems(changes) {
+        await Promise.all(changes.map(({ id, patch }) => updateItem(id, patch)))
+        emit()
+      },
+      async reorderItems(ids) {
+        for (const [sort, id] of ids.entries()) {
+          const r = await sb.from('menu_items').update({ sort }).eq('id', id).select('id')
+          if (!r.error && !r.data?.length) throw new OrderError('not-allowed')
+          ok(r)
+        }
+        emit()
       },
       async addItem(i) {
         const base = (i.name.en || i.name.fa).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24)
         const id = `${base.length >= 2 ? base : i.cat}-${Math.random().toString(36).slice(2, 6)}`
-        const sizes = i.cat === 'hot' || i.cat === 'cold' ? [{ key: 'small', mult: 1, scale: 0.9 }, { key: 'medium', mult: 1.15, scale: 1 }, { key: 'large', mult: 1.3, scale: 1.08 }] : [{ key: 'piece1', mult: 1, scale: 1 }]
-        const art = i.cat === 'goods' ? 'mug' : i.cat === 'sweet' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso'
+        const sizes = isDrinkCategory(i.cat) ? [{ key: 'small', mult: 1, scale: 0.9 }, { key: 'medium', mult: 1.15, scale: 1 }, { key: 'large', mult: 1.3, scale: 1.08 }] : [{ key: 'piece1', mult: 1, scale: 1 }]
+        const art = i.cat === 'goods' ? 'mug' : i.cat === 'sweet' || i.cat === 'breakfast' || i.cat === 'food' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso'
         const sort = Number((await sb.from('menu_items').select('sort').order('sort', { ascending: false }).limit(1)).data?.[0]?.sort ?? 0) + 1
         ok(await sb.from('menu_items').insert({ id, category: i.cat, name_fa: i.name.fa, name_en: i.name.en, description_fa: i.desc.fa, description_en: i.desc.en, base_price: i.price, sizes, milk_options: i.milk, reward_eligible: i.rewardEligible, coins_earned: i.coinsEarned ?? 1, reward_cost: i.rewardCost ?? 6, stock: i.stock ?? null, art, sort }).select('id'))
         emit(); return id

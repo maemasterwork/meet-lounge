@@ -47,7 +47,8 @@ const seeds: Seed[] = [
 export const initialMenu = (): MenuItem[] =>
   seeds.map((s) => ({ ...s, available: true, coinsEarned: 1, rewardCost: DEFAULT_REWARD_EVERY, stock: null, sizes: s.sizes ?? DRINK_SIZES }))
 
-export const isDrink = (i: Pick<MenuItem, 'cat'>) => i.cat === 'hot' || i.cat === 'cold'
+export const isDrinkCategory = (cat: MenuItem['cat']) => cat === 'hot' || cat === 'cold' || cat === 'tea'
+export const isDrink = (i: Pick<MenuItem, 'cat'>) => isDrinkCategory(i.cat)
 
 export interface EventInfo { id: string; daysAhead: number; time: string; seats: number }
 export const EVENTS: EventInfo[] = [

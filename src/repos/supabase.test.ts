@@ -43,4 +43,32 @@ describe('supabase repos', () => {
     const after = await r.orders.listAll()
     expect(after[0].status).toBe('new')
   })
+  it('persists item order using the menu sort column', async () => {
+    const updates: Array<{ id: string; sort: number }> = []
+    const sb = fake({
+      'select:menu_items': (s: any) => {
+        updates.push({ id: s.eq[1], sort: s.update[0].sort })
+        return { data: [{ id: s.eq[1] }], error: null }
+      },
+    })
+    const r = createSupabaseRepos(sb, () => 'me')
+    await r.admin.reorderItems(['latte', 'espresso'])
+    expect(updates).toEqual([{ id: 'latte', sort: 0 }, { id: 'espresso', sort: 1 }])
+  })
+  it('saves multiple menu item patches in parallel', async () => {
+    const updates: Array<{ id: string; values: Record<string, unknown> }> = []
+    const sb = fake({
+      'select:menu_items': (s: any) => {
+        updates.push({ id: s.eq[1], values: s.update[0] })
+        return { data: [{ id: s.eq[1] }], error: null }
+      },
+    })
+    const r = createSupabaseRepos(sb, () => 'me')
+    await r.admin.saveItems([
+      { id: 'latte', patch: { price: 210000 } },
+      { id: 'espresso', patch: { available: false } },
+    ])
+    expect(updates).toContainEqual({ id: 'latte', values: { base_price: 210000 } })
+    expect(updates).toContainEqual({ id: 'espresso', values: { available: false } })
+  })
 })

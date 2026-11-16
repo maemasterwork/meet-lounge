@@ -74,4 +74,20 @@ describe('mock repos', () => {
     await r.admin.saveItem('latte', { stock: null })
     await expect(r.orders.place({ lines: [{ ...latte, qty: 20 }], mode: 'pickup' })).resolves.toBeDefined()
   })
+  it('reorders menu items persistently in the mock repository', async () => {
+    const r = createMockRepos()
+    const ids = (await r.admin.items()).map((item) => item.id)
+    await r.admin.reorderItems([ids[1], ids[0], ...ids.slice(2)])
+    expect((await r.menu.list()).map((item) => item.id)).toEqual([ids[1], ids[0], ...ids.slice(2)])
+  })
+  it('saves several item edits together in the mock repository', async () => {
+    const r = createMockRepos()
+    await r.admin.saveItems([
+      { id: 'latte', patch: { price: 210000 } },
+      { id: 'espresso', patch: { available: false } },
+    ])
+    const items = await r.admin.items()
+    expect(items.find((item) => item.id === 'latte')?.price).toBe(210000)
+    expect(items.find((item) => item.id === 'espresso')?.available).toBe(false)
+  })
 })

@@ -1,5 +1,5 @@
 export type Lang = 'fa' | 'en'
-export type Category = 'hot' | 'cold' | 'sweet' | 'goods'
+export type Category = 'hot' | 'cold' | 'tea' | 'breakfast' | 'food' | 'sweet' | 'goods'
 export type OrderMode = 'pickup' | 'table' | 'delivery'
 export type OrderStatus = 'new' | 'prep' | 'ready' | 'out' | 'done' | 'cancelled'
 

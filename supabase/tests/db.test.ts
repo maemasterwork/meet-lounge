@@ -60,6 +60,21 @@ describe('schema and seed', () => {
 })
 
 describe('prices are computed in Postgres and match the app', () => {
+  it('accepts the new menu categories and preserves tea sugar options', async () => {
+    await as(db, owner, `
+      insert into public.menu_items (id, category, name_fa, name_en, base_price, milk_options)
+      values
+        ('tea-test', 'tea', 'چای', 'Tea', 100000, false),
+        ('breakfast-test', 'breakfast', 'صبحانه', 'Breakfast', 200000, false),
+        ('food-test', 'food', 'غذا', 'Food', 300000, false)
+    `)
+    expect((await as(db, null, "select count(*)::int n from public.menu_items where category in ('tea', 'breakfast', 'food')"))[0].n).toBe(3)
+
+    const o = await order(alice, line({ item_id: 'tea-test', size: 'piece1', sugar: 0 }))
+    const [savedLine] = await as<{ sugar: number }>(db, alice, 'select sugar from public.order_items where order_id=$1', [o.id])
+    expect(savedLine.sugar).toBe(0)
+  })
+
   it('ignores any price the client sends', async () => {
     const o = await order(alice, line({ item_id: 'espresso', unit_price: 1, price: 1, total: 1 }))
     expect(o.subtotal).toBe(95000)

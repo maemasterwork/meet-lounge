@@ -23,6 +23,19 @@
 .panel h3{margin:0;font-size:15px}
 .twocol{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .tblw{overflow-x:auto}
+.item-category{display:inline-flex;align-items:center;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700}
+.item-category-hot{background:color-mix(in srgb,#e76f51 18%,transparent);color:#a63d22}
+.item-category-cold{background:color-mix(in srgb,#3b82f6 18%,transparent);color:#1d4ed8}
+.item-category-sweet{background:color-mix(in srgb,#c026d3 16%,transparent);color:#86198f}
+.item-category-goods{background:color-mix(in srgb,#16a34a 16%,transparent);color:#166534}
+.item-category-tea{background:color-mix(in srgb,#0f766e 16%,transparent);color:#115e59}
+.item-category-breakfast{background:color-mix(in srgb,#d97706 18%,transparent);color:#92400e}
+.item-category-food{background:color-mix(in srgb,#dc2626 16%,transparent);color:#991b1b}
+.item-order-btn{min-width:28px;height:28px;padding:0 5px;border:1px solid var(--ml-line);border-radius:7px;background:var(--ml-surface);color:var(--ml-ink);cursor:pointer}
+.item-order-btn:disabled{opacity:.4;cursor:default}
+.item-drag-handle{cursor:grab}
+.item-drag-handle:active{cursor:grabbing}
+.item-dragging{opacity:.45}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 th,td{padding:8px 10px;text-align:start;border-bottom:1px solid var(--ml-line);vertical-align:middle}
 th{font-size:12px;color:var(--ml-ink-2);font-weight:500}

@@ -1,5 +1,5 @@
 import type { CafeEvent, LedgerEntry, MenuItem, Offer, Order, OrderStatus, PlaceOrderInput } from '../types'
-import { DEFAULT_REWARD_EVERY, DELIVERY_FEE, DRINK_SIZES, initialMenu } from '../data/catalog'
+import { DEFAULT_REWARD_EVERY, DELIVERY_FEE, DRINK_SIZES, initialMenu, isDrinkCategory } from '../data/catalog'
 import { awardForOrder, balanceOf, cancelOrder, earnOfOrder, rewardCostOf, spendRewards } from '../lib/coins'
 import { orderTotals } from '../lib/pricing'
 import { OrderError, type AdminItem, type Customer, type LedgerRow, type Repos, type Settings } from './types'
@@ -151,10 +151,22 @@ export function createMockRepos(): Repos {
       subscribe,
       items: async () => menu.map((m): AdminItem => ({ ...m, name: m.name ?? copy(m.id, 'name'), desc: m.desc ?? copy(m.id, 'desc'), archived: !!m.archived })),
       saveItem: async (id, patch) => { menu = menu.map((m) => (m.id === id ? { ...m, ...patch } : m)); emit() },
+      saveItems: async (changes) => {
+        const patches = new Map(changes.map(({ id, patch }) => [id, patch]))
+        menu = menu.map((m) => ({ ...m, ...patches.get(m.id) }))
+        emit()
+      },
+      reorderItems: async (ids) => {
+        const byId = new Map(menu.map((m) => [m.id, m]))
+        const ordered = ids.flatMap((id) => { const item = byId.get(id); return item ? [item] : [] })
+        const included = new Set(ids)
+        menu = [...ordered, ...menu.filter((m) => !included.has(m.id))]
+        emit()
+      },
       addItem: async (i) => {
         const id = `x-${Date.now().toString(36)}`
-        menu = [...menu, { id, cat: i.cat, price: i.price, art: i.cat === 'goods' ? 'mug' : i.cat === 'sweet' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso', milk: i.milk, available: true, rewardEligible: i.rewardEligible, coinsEarned: i.coinsEarned ?? 1, rewardCost: i.rewardCost ?? settings.rewardEvery, stock: i.stock ?? null,
-          sizes: i.cat === 'hot' || i.cat === 'cold' ? DRINK_SIZES : [{ key: 'piece1', mult: 1, scale: 1 }], tags: [], name: i.name, desc: i.desc }]
+        menu = [...menu, { id, cat: i.cat, price: i.price, art: i.cat === 'goods' ? 'mug' : i.cat === 'sweet' || i.cat === 'breakfast' || i.cat === 'food' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso', milk: i.milk, available: true, rewardEligible: i.rewardEligible, coinsEarned: i.coinsEarned ?? 1, rewardCost: i.rewardCost ?? settings.rewardEvery, stock: i.stock ?? null,
+          sizes: isDrinkCategory(i.cat) ? DRINK_SIZES : [{ key: 'piece1', mult: 1, scale: 1 }], tags: [], name: i.name, desc: i.desc }]
         emit()
         return id
       },

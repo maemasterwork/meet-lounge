@@ -4,7 +4,7 @@
 // @ts-nocheck
 import { esc } from '../lib/format'
 
-const isDrink = (it) => it.cat === 'hot' || it.cat === 'cold'
+const isDrink = (it) => it.cat === 'hot' || it.cat === 'cold' || it.cat === 'tea'
 
 const INK = 'var(--ml-draw)'
 const TEAL = 'var(--ml-teal)'
