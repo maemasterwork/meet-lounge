@@ -4,16 +4,18 @@ import { useAuth } from '../lib/auth'
 import { Icon } from './icons'
 
 /** Password sign-in and customer registration. Guest registration keeps the same user id and coins. */
-export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff'; note?: string; onClose: () => void }) {
+export function AuthPanel({ mode, note, onClose, email: initialEmail, phone: initialPhone, seat: initialSeat, registering: initialRegistering, signInOnly = false }: {
+  mode: 'customer' | 'staff'; note?: string; onClose: () => void; email?: string; phone?: string; seat?: string; registering?: boolean; signInOnly?: boolean
+}) {
   const { t } = useI18n()
   const a = useAuth()
   const staffMode = mode === 'staff'
   const dialog = useRef<HTMLDialogElement>(null)
-  const [registering, setRegistering] = useState(false)
-  const [email, setEmail] = useState('')
+  const [registering, setRegistering] = useState(initialRegistering ?? false)
+  const [email, setEmail] = useState(initialEmail ?? '')
   const [fullName, setFullName] = useState('')
-  const [seat, setSeat] = useState('')
-  const [phone, setPhone] = useState('')
+  const [seat, setSeat] = useState(initialSeat ?? '')
+  const [phone, setPhone] = useState(initialPhone ?? '')
   const [pw, setPw] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
@@ -27,13 +29,14 @@ export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff';
     const e = await fn()
     setMsg(e ? t('auth.error', { msg: e }) : okMsg)
     setBusy(false)
+    return !e
   }
   useEffect(() => {
     if (!a.profile) return
     setFullName(a.profile.fullName)
-    setPhone(a.profile.phone)
-    setSeat(a.profile.seat)
-  }, [a.profile])
+    setPhone(initialPhone ?? a.profile.phone)
+    setSeat(initialSeat ?? a.profile.seat)
+  }, [a.profile, initialPhone, initialSeat])
   if (!a.configured) return null
   return (
     <dialog
@@ -85,7 +88,7 @@ export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff';
                 fullName: fullName.trim(), seat: seat.trim(), phone: phone.trim(),
               }), t('auth.accountCreated'))
             } else {
-              void run(() => a.signInPassword(email.trim(), pw))
+              void run(() => a.signInPassword(email.trim(), pw)).then((ok) => { if (ok && signInOnly) onClose() })
             }
           }}>
             {!staffMode && registering && <label className="field">{t('auth.fullName')}
@@ -96,12 +99,13 @@ export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff';
                 type="email"
                 dir="ltr"
                 autoComplete="email"
-                autoFocus={staffMode || !registering}
+                autoFocus={staffMode || (!registering && !signInOnly)}
                 required
                 pattern={!staffMode && registering ? '[^@]+@namvaran[.]ir' : undefined}
                 title={!staffMode && registering ? t('auth.companyEmailHint') : undefined}
                 placeholder={!staffMode && registering ? 'example@namvaran.ir' : undefined}
                 value={email}
+                readOnly={signInOnly}
                 onChange={(e) => setEmail(!staffMode && registering ? e.target.value.toLowerCase() : e.target.value)}
               />
             </label>
@@ -114,12 +118,12 @@ export function AuthPanel({ mode, note, onClose }: { mode: 'customer' | 'staff';
               </label>
             </>}
             <label className="field">{t('auth.password')}
-              <input type="password" dir="ltr" autoComplete={registering ? 'new-password' : 'current-password'} minLength={8} required value={pw} onChange={(e) => setPw(e.target.value)} />
+              <input type="password" dir="ltr" autoComplete={registering ? 'new-password' : 'current-password'} minLength={8} required autoFocus={signInOnly} value={pw} onChange={(e) => setPw(e.target.value)} />
             </label>
             {msg && <p className={msg === t('auth.accountCreated') ? 'muted sm' : 'err'} role="status">{msg}</p>}
             <div className="auth-actions">
               <button type="submit" className="btn sm" disabled={busy || pw.length < 8}>{t(registering && !staffMode ? 'auth.signUp' : 'auth.signIn')}</button>
-              {!staffMode && (registering
+              {!staffMode && !signInOnly && (registering
                 ? <button type="button" className="btn ghost sm" onClick={() => { setRegistering(false); setMsg('') }}>{t('auth.haveAccount')}</button>
                 : <button type="button" className="btn ghost sm" onClick={() => { setRegistering(true); setMsg('') }}>{t('auth.signUp')}</button>)}
             </div>

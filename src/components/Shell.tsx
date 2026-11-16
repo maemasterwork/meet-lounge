@@ -199,7 +199,8 @@ export function AuthModalHost() {
   const { t } = useI18n()
   const auth = useAuth()
   const open = useUi((s) => s.authOpen)
+  const request = useUi((s) => s.authRequest)
   const setOpen = useUi((s) => s.setAuthOpen)
   if (!open || !auth.configured) return null
-  return <AuthPanel mode="customer" note={auth.isGuest ? t('auth.guestNote') : undefined} onClose={() => setOpen(false)} />
+  return <AuthPanel mode="customer" {...request} note={request?.note ? t(request.note) : auth.isGuest ? t('auth.guestNote') : undefined} onClose={() => setOpen(false)} />
 }

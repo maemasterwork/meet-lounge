@@ -38,7 +38,8 @@ function cup(c, tint) {
   s += `<ellipse cx="130" cy="${rimY}" rx="${hw}" ry="${ry + 1}" fill="var(--ml-cup)" stroke="${INK}" stroke-width="2.5"/><ellipse cx="130" cy="${rimY}" rx="${hw - 5}" ry="${ry - 1.5}" fill="${coffee}" stroke="${INK}" stroke-width="2"/>`
   let sy = rimY - 14
   if (c.crema) s += `<ellipse cx="130" cy="${rimY}" rx="${hw - 14}" ry="${ry - 3}" fill="${c.crema}"/><ellipse cx="122" cy="${rimY - 1}" rx="10" ry="2.5" fill="#fff" opacity=".25"/>`
-  if (c.heart) s += `<path d="${heart(rimY + 1, 0.95)}" fill="#FFF3E0"/><path d="${heart(rimY + 1, 0.6)}" fill="${coffee}" opacity=".6"/><path d="${heart(rimY + 1, 0.3)}" fill="#FFF3E0"/>`
+  if (c.ring) s += `<ellipse cx="130" cy="${rimY}" rx="${hw - 10}" ry="${ry - 3}" fill="none" stroke="${c.ring}" stroke-width="3" opacity=".85"/><path d="M${130 - hw * 0.45} ${rimY - 2} q10 -4 22 -2" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round"/>`
+  if (c.heart) s +=`<path d="${heart(rimY + 1, 0.95)}" fill="#FFF3E0"/><path d="${heart(rimY + 1, 0.6)}" fill="${coffee}" opacity=".6"/><path d="${heart(rimY + 1, 0.3)}" fill="#FFF3E0"/>`
   if (c.dome) {
     s += `<path d="M${x1 + 5} ${rimY} C${x1 + 9} ${rimY - 32} ${x2 - 9} ${rimY - 32} ${x2 - 5} ${rimY} A${hw - 5} ${ry - 1} 0 0 1 ${x1 + 5} ${rimY}Z" fill="#FFF3E0" stroke="${INK}" stroke-width="2"/>`
     s += [[118, -17], [132, -22], [146, -16], [126, -9], [141, -9]].map((p) => `<circle cx="${p[0]}" cy="${rimY + p[1]}" r="2.2" fill="#7A4A32"/>`).join('')
@@ -113,6 +114,7 @@ export function art(it, o, u) {
   let b = ''
   switch (it.art) {
     case 'espresso': b = cup({ hw: 44, rimY: 132, h: 58, coffee: '#3B2013', crema: '#B07A4B' }, 0); break
+    case 'americano': b = cup({ hw: 56, rimY: 112, h: 78, coffee: '#2B170C', ring: '#9A6A3E' }, 0); break
     case 'latte': b = cup({ hw: 62, rimY: 104, h: 86, coffee: '#CBA074', heart: true, milky: true }, tint); break
     case 'cappuccino': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#C69A6E', dome: true, milky: true }, tint); break
     case 'mocha': b = cup({ hw: 62, rimY: 106, h: 84, coffee: '#6B3E2A', cream: true }, 0); break

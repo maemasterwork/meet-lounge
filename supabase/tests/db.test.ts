@@ -260,6 +260,7 @@ describe('dashboard (owner tools)', () => {
     expect(customers.some((r: any) => r.id === noEmail.id)).toBe(false)
     expect(customers.some((r: any) => r.id === guestWithCoins.id)).toBe(false)
   })
+
   it('the owner can add, edit, archive menu items and set a picture path; staff cannot', async () => {
     const ins = "insert into public.menu_items (id,category,name_fa,name_en,base_price,sizes) values ('x-new','hot','جدید','New',99000,'[{\"key\":\"small\",\"mult\":1,\"scale\":1}]')"
     await expect(as(db, staff, ins)).rejects.toThrow(/row-level/)
@@ -285,6 +286,19 @@ describe('dashboard (owner tools)', () => {
     await as(db, owner, "update public.menu_items set reward_cost=3 where id='latte'")
     expect((await order(c, line({ reward: true }))).reward_coins).toBe(3)
     await as(db, owner, "update public.menu_items set reward_cost=6 where id='latte'")
+  })
+})
+
+describe('guest account lookup', () => {
+  it('lets an anonymous customer find the email for a registered account by phone only', async () => {
+    const account = await addUser(db)
+    await as(db, null, 'update public.profiles set phone=$1 where id=$2', ['09129998877', account.id])
+    const match = await as<{ email: string | null }>(db, guest, 'select public.lookup_customer_email_by_phone($1) email', ['0912 999 8877'])
+    expect(match[0].email).toMatch(/@example\.test$/)
+    const missing = await as<{ email: string | null }>(db, guest, 'select public.lookup_customer_email_by_phone($1) email', ['09120000000'])
+    expect(missing[0].email).toBeNull()
+    await expect(as(db, alice, 'select public.lookup_customer_email_by_phone($1)', ['09129998877'])).rejects.toThrow(/not-allowed/)
+    await expect(as(db, 'anon', 'select public.lookup_customer_email_by_phone($1)', ['09129998877'])).rejects.toThrow(/permission denied/)
   })
 })
 

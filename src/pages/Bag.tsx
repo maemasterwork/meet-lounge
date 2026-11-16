@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { useShop } from '../data/context'
 import { go } from '../lib/route'
@@ -16,7 +16,7 @@ import { useAuth } from '../lib/auth'
 import { Placed, type ReceiptLine } from './Placed'
 import type { CartLine, Order, OrderMode } from '../types'
 
-const MODES: OrderMode[] = ['pickup', 'table', 'delivery']
+const MODES: OrderMode[] = ['pickup', 'delivery']
 const ERR: Record<string, string> = {
   'address-required': 'err.addressRequired', 'shop-closed': 'err.shopClosed', 'item-unavailable': 'err.itemUnavailable', 'out-of-stock': 'err.outOfStock', 'not-enough-coins': 'err.notEnoughCoins',
   'table-required': 'err.generic', 'phone-required': 'err.phoneRequired', 'bad-option': 'err.generic', 'reward-not-allowed': 'err.generic',
@@ -29,12 +29,23 @@ export function BagPage() {
   const cart = useCart()
   const toast = useUi((s) => s.toast)
   const shopTables = useShop().data?.settings.tableCount ?? 12
-  const guest = useAuth((a) => a.configured && a.isGuest)
+  const auth = useAuth()
+  const guest = auth.configured && auth.isGuest
+  const requestAuth = useUi((s) => s.requestAuth)
   const [phone, setPhone] = useState('')
+  const [phoneLookupBusy, setPhoneLookupBusy] = useState(false)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [placed, setPlaced] = useState<{ order: Order; lines: ReceiptLine[] } | null>(null)
+  const importedAddressFor = useRef<string | null>(null)
   const scene = (c: React.ReactNode) => <HomeScene active="bag" className="isbag">{c}</HomeScene>
+  useEffect(() => {
+    if (!auth.userId || guest) { importedAddressFor.current = null; return }
+    if (cart.mode === 'delivery' && auth.profile?.seat.trim() && importedAddressFor.current !== auth.userId) {
+      cart.setAddress(auth.profile.seat)
+      importedAddressFor.current = auth.userId
+    }
+  }, [auth.userId, auth.profile?.seat, guest, cart.mode])
   if (!data) return scene(<article className="card bagc"><LoadState error={error} onRetry={reload} /></article>)
 
   const lineLabel = (l: CartLine) => {
@@ -59,6 +70,19 @@ export function BagPage() {
     } catch (e) {
       setErr(t(e instanceof OrderError ? ERR[e.code] ?? 'err.generic' : 'err.network'))
     } finally { setBusy(false) }
+  }
+  const importCustomer = async () => {
+    setPhoneLookupBusy(true); setErr('')
+    let result: Awaited<ReturnType<typeof auth.lookupCustomerEmail>>
+    try { result = await auth.lookupCustomerEmail(phone.trim()) }
+    catch { setErr(t('bag.customerLookupFailed')); return }
+    finally { setPhoneLookupBusy(false) }
+    if (result.error) { setErr(t('bag.customerLookupFailed')); return }
+    if (result.email) {
+      requestAuth({ email: result.email, signInOnly: true, note: 'auth.phoneAccountFound' })
+    } else {
+      requestAuth({ phone: phone.trim(), seat: cart.mode === 'delivery' ? cart.address : '', registering: true, note: 'auth.phoneNoAccount' })
+    }
   }
 
   const treats = cart.lines.reduce((a, l) => a + l.qty, 0)
@@ -134,6 +158,9 @@ export function BagPage() {
           <label className="field">{t('bag.phoneLabel')}
             <input type="tel" inputMode="tel" dir="ltr" autoComplete="tel" value={phone} placeholder="09123456789" onChange={(e) => setPhone(e.target.value)} maxLength={20} />
           </label>)}
+        {guest && <button type="button" className="btn ghost sm" style={{ alignSelf: 'start' }} disabled={phoneLookupBusy || !/^\+?[0-9 ()-]{6,20}$/.test(phone.trim())} onClick={() => void importCustomer()}>
+          {phoneLookupBusy ? t('bag.customerLookupBusy') : t('bag.importCustomer')}
+        </button>}
         {err && <p className="err" role="alert">{err}</p>}
         <div className="sum">
           <div><span>{t('bag.subtotal')}</span><span>{price(totals.subtotal)}</span></div>

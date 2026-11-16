@@ -6,6 +6,7 @@ import type { ViewName } from '../scene3d/views'
 export interface Toast { id: number; text: string; gold?: boolean; action?: { label: string; run: () => void } }
 export type Pop = 'offers' | 'settings' | null
 export type MeTab = 'orders' | 'coins' | 'favs'
+export interface AuthRequest { email?: string; phone?: string; seat?: string; registering?: boolean; signInOnly?: boolean; note?: string }
 
 interface UiState {
   lang: Lang
@@ -22,7 +23,9 @@ interface UiState {
   pop: Pop
   setPop: (p: Pop) => void
   authOpen: boolean
+  authRequest: AuthRequest | null
   setAuthOpen: (open: boolean) => void
+  requestAuth: (request: AuthRequest) => void
   meTab: MeTab
   setMeTab: (t: MeTab) => void
   selectedId: string
@@ -57,7 +60,9 @@ export const useUi = create<UiState>()(
       pop: null,
       setPop: (pop) => set({ pop }),
       authOpen: false,
-      setAuthOpen: (authOpen) => set({ authOpen }),
+      authRequest: null,
+      setAuthOpen: (authOpen) => set({ authOpen, ...(authOpen ? {} : { authRequest: null }) }),
+      requestAuth: (authRequest) => set({ authOpen: true, authRequest }),
       meTab: 'orders',
       setMeTab: (meTab) => set({ meTab }),
       selectedId: 'cheesecake',

@@ -15,6 +15,7 @@ interface AuthState {
   profile: CustomerProfile | null
   signInPassword(email: string, password: string): Promise<string | null>
   signUpPassword(email: string, password: string, profile: CustomerRegistration): Promise<string | null>
+  lookupCustomerEmail(phone: string): Promise<{ email: string | null; error: string | null }>
   updateCustomerProfile(profile: CustomerProfile): Promise<string | null>
   signOut(): Promise<void>
 }
@@ -37,6 +38,10 @@ export const useAuth = create<AuthState>((set, get) => ({
       ? await sb.auth.updateUser({ email, password, data })
       : await sb.auth.signUp({ email, password, options: { data } })
     return error?.message ?? null
+  },
+  async lookupCustomerEmail(phone) {
+    const { data, error } = await supabase().rpc('lookup_customer_email_by_phone', { p_phone: phone })
+    return { email: typeof data === 'string' ? data : null, error: error?.message ?? null }
   },
   async updateCustomerProfile(profile) {
     const userId = get().userId
