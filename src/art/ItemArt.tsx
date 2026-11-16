@@ -55,7 +55,7 @@ export function SceneArt({ kind, time }: { kind: 'hero' | 'mini'; time: TimeKey 
   if (renderer) return <div ref={host} style={{ position: 'absolute', inset: 0 }} />
   if (ml.assets.hero)
     return <img src={ml.assets.hero} alt="" style={kind === 'mini' ? { position: 'absolute', left: 0, bottom: 0, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'left bottom' } : undefined} />
-  return <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: sceneSVG(kind, t('brand.name'), t('brand.name')) }} />
+  return <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: sceneSVG(kind, t('brand.name'), t('brand.name'), kind) }} />
 }
 
 /**
