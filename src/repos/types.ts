@@ -1,4 +1,4 @@
-import type { CafeEvent, Category, EventInput, LedgerEntry, Lang, MenuItem, Offer, Order, PlaceOrderInput } from '../types'
+import type { CafeEvent, Category, EventInput, LedgerEntry, Lang, MenuItem, Offer, Order, PlaceOrderInput, Syrup } from '../types'
 
 /** Phase 3 replaces the mock implementations with Supabase ones. Pages call only these interfaces. */
 export interface Subscribable { subscribe(cb: () => void): () => void }
@@ -31,6 +31,9 @@ export interface CoinRepo extends Subscribable {
 export interface OfferRepo extends Subscribable {
   listActive(): Promise<Offer[]>
   markAllRead(): Promise<void>
+}
+export interface SyrupRepo extends Subscribable {
+  list(): Promise<Syrup[]>
 }
 
 export type Season = 'spring' | 'summer' | 'fall' | 'winter'
@@ -65,7 +68,7 @@ export class OrderError extends Error {
 export interface AdminItem extends MenuItem { name: Record<Lang, string>; desc: Record<Lang, string>; archived: boolean }
 export type AdminItemPatch = Partial<Pick<AdminItem, 'price' | 'available' | 'rewardEligible' | 'coinsEarned' | 'rewardCost' | 'stock' | 'archived' | 'name' | 'desc'>>
 export interface AdminItemChange { id: string; patch: AdminItemPatch }
-export interface NewItem { name: Record<Lang, string>; desc: Record<Lang, string>; cat: Category; price: number; milk: boolean; rewardEligible: boolean; coinsEarned?: number; rewardCost?: number; stock?: number | null }
+export interface NewItem { name: Record<Lang, string>; desc: Record<Lang, string>; cat: Category; price: number; milk: boolean; syrupOptions: boolean; rewardEligible: boolean; coinsEarned?: number; rewardCost?: number; stock?: number | null }
 export interface OfferDraft { title: Record<Lang, string>; body: Record<Lang, string>; itemId: string; pct: number; audience: string; endsAt?: string }
 export interface Customer { id: string; name: string; email: string; phone?: string; balance: number; orders: number }
 export interface LedgerRow extends LedgerEntry { customer: string }
@@ -103,4 +106,4 @@ export interface AdminRepo extends Subscribable {
   ledgerAll(): Promise<LedgerRow[]>
 }
 
-export interface Repos { menu: MenuRepo; orders: OrderRepo; coins: CoinRepo; offers: OfferRepo; settings: SettingsRepo; events: EventsRepo; admin: AdminRepo }
+export interface Repos { menu: MenuRepo; orders: OrderRepo; coins: CoinRepo; offers: OfferRepo; syrups: SyrupRepo; settings: SettingsRepo; events: EventsRepo; admin: AdminRepo }

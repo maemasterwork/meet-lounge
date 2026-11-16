@@ -9,7 +9,7 @@ import type { Offer } from '../../src/types'
 let db: PGlite
 let owner: any, staff: any, alice: any, bob: any, guest: any
 
-const line = (o: Record<string, unknown>) => JSON.stringify([{ item_id: 'latte', size: 'small', milk: 0, sugar: 1, qty: 1, ...o }])
+const line = (o: Record<string, unknown>) => JSON.stringify([{ item_id: 'latte', size: 'small', milk: 0, syrup_id: null, syrup_pumps: 0, qty: 1, ...o }])
 const order = (who: any, items = line({}), mode = 'pickup', table: string | null = null, addr: string | null = null, phone: string | null = null) =>
   as(db, who, 'select * from public.create_order($1::jsonb, $2::public.order_mode, $3, $4, $5)', [items, mode, table, addr, phone]).then((r) => r[0])
 const balance = async (id: string) => Number((await as(db, null, 'select coalesce(sum(delta),0)::int b from public.coin_ledger where customer_id=$1', [id]))[0].b)
@@ -60,19 +60,31 @@ describe('schema and seed', () => {
 })
 
 describe('prices are computed in Postgres and match the app', () => {
-  it('accepts the new menu categories and preserves tea sugar options', async () => {
+  it('prices syrups per pump and restricts them to drinks', async () => {
     await as(db, owner, `
-      insert into public.menu_items (id, category, name_fa, name_en, base_price, milk_options)
+      insert into public.menu_items (id, category, name_fa, name_en, base_price, milk_options, syrup_options)
       values
-        ('tea-test', 'tea', 'چای', 'Tea', 100000, false),
-        ('breakfast-test', 'breakfast', 'صبحانه', 'Breakfast', 200000, false),
-        ('food-test', 'food', 'غذا', 'Food', 300000, false)
+        ('tea-test', 'tea', 'چای', 'Tea', 100000, false, true),
+        ('breakfast-test', 'breakfast', 'صبحانه', 'Breakfast', 200000, false, false),
+        ('food-test', 'food', 'غذا', 'Food', 300000, false, false)
     `)
     expect((await as(db, null, "select count(*)::int n from public.menu_items where category in ('tea', 'breakfast', 'food')"))[0].n).toBe(3)
-
-    const o = await order(alice, line({ item_id: 'tea-test', size: 'piece1', sugar: 0 }))
-    const [savedLine] = await as<{ sugar: number }>(db, alice, 'select sugar from public.order_items where order_id=$1', [o.id])
-    expect(savedLine.sugar).toBe(0)
+    await as(db, owner, "insert into public.menu_items (id, category, name_fa, name_en, base_price, syrup_options) values ('no-syrup-test', 'hot', 'قهوه', 'Coffee', 100000, false)")
+    const o = await order(alice, line({ item_id: 'tea-test', size: 'piece1', syrup_id: 'vanilla', syrup_pumps: 2 }))
+    expect(o.subtotal).toBe(160000)
+    const [savedLine] = await as<{ syrup_id: string; syrup_pumps: number }>(db, alice, 'select syrup_id, syrup_pumps from public.order_items where order_id=$1', [o.id])
+    expect(savedLine).toEqual({ syrup_id: 'vanilla', syrup_pumps: 2 })
+    const baseLatte = await order(alice)
+    const syrupLatte = await order(alice, line({ syrup_id: 'vanilla', syrup_pumps: 2 }))
+    expect(syrupLatte.subtotal - baseLatte.subtotal).toBe(60000)
+    await expect(order(alice, line({ item_id: 'no-syrup-test', syrup_id: 'vanilla', syrup_pumps: 1 }))).rejects.toThrow(/bad-option/)
+    await expect(order(alice, line({ item_id: 'tea-test', size: 'piece1', syrup_id: 'vanilla', syrup_pumps: 3 }))).rejects.toThrow(/bad-option/)
+    await expect(order(alice, line({ item_id: 'food-test', size: 'piece1', syrup_id: 'vanilla', syrup_pumps: 1 }))).rejects.toThrow(/bad-option/)
+    await expect(order(alice, line({ syrup_id: 'unknown', syrup_pumps: 1 }))).rejects.toThrow(/bad-option/)
+    await as(db, owner, "update public.syrups set active=false where id='vanilla'")
+    await expect(order(alice, line({ syrup_id: 'vanilla', syrup_pumps: 1 }))).rejects.toThrow(/bad-option/)
+    await as(db, owner, "update public.syrups set active=true where id='vanilla'")
+    await expect(order(alice, line({ syrup_id: 'vanilla', syrup_pumps: 1, reward: true }))).rejects.toThrow(/bad-option/)
   })
 
   it('ignores any price the client sends', async () => {
@@ -418,7 +430,7 @@ describe('per-item coins and stock', () => {
   it('an order earns coins_earned per unit of each paid line', async () => {
     const c = await addUser(db)
     await setItem('latte', 'coins_earned=3'); await setItem('espresso', 'coins_earned=0')
-    const o = await order(c, JSON.stringify([{ item_id: 'latte', size: 'small', milk: 0, sugar: 1, qty: 2 }, { item_id: 'espresso', size: 'small', sugar: 1, qty: 1 }]))
+    const o = await order(c, JSON.stringify([{ item_id: 'latte', size: 'small', milk: 0, syrup_id: null, syrup_pumps: 0, qty: 2 }, { item_id: 'espresso', size: 'small', syrup_id: null, syrup_pumps: 0, qty: 1 }]))
     await finish(o.id)
     expect(await balance(c.id)).toBe(6)
     await setItem('latte', 'coins_earned=1'); await setItem('espresso', 'coins_earned=1')

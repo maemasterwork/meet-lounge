@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createMockRepos } from './mock'
 import { OrderError } from './types'
 
-const latte = { itemId: 'latte', size: 'small', milk: 0, sugar: 1, qty: 1, free: false }
+const latte = { itemId: 'latte', size: 'small', milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false }
 
 describe('mock repos', () => {
   it('places an order, advances it, and awards one coin on done', async () => {
@@ -89,5 +89,15 @@ describe('mock repos', () => {
     const items = await r.admin.items()
     expect(items.find((item) => item.id === 'latte')?.price).toBe(210000)
     expect(items.find((item) => item.id === 'espresso')?.available).toBe(false)
+  })
+  it('enables syrup choices only for new drinks explicitly configured for syrups', async () => {
+    const base = { name: { fa: 'چای', en: 'Tea' }, desc: { fa: '', en: '' }, cat: 'tea' as const, price: 100000, milk: false, rewardEligible: false }
+    const withoutRepo = createMockRepos()
+    const without = await withoutRepo.admin.addItem({ ...base, syrupOptions: false })
+    expect((await withoutRepo.menu.list()).find((item) => item.id === without)?.syrupOptions).toBe(false)
+
+    const withRepo = createMockRepos()
+    const withSyrup = await withRepo.admin.addItem({ ...base, syrupOptions: true })
+    expect((await withRepo.menu.list()).find((item) => item.id === withSyrup)?.syrupOptions).toBe(true)
   })
 })

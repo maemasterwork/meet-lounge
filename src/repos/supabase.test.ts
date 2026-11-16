@@ -26,7 +26,7 @@ describe('supabase repos', () => {
     const rpc = vi.fn(async () => ({ data: row(), error: null }))
     const sb = fake({}); sb.rpc = rpc
     const r = createSupabaseRepos(sb, () => 'me')
-    await r.orders.place({ lines: [{ itemId: 'latte', size: 'small', milk: 0, sugar: 1, qty: 2, free: false }], mode: 'pickup' }).catch(() => {})
+    await r.orders.place({ lines: [{ itemId: 'latte', size: 'small', milk: 0, syrupId: null, syrupPumps: 0, qty: 2, free: false }], mode: 'pickup' }).catch(() => {})
     const payload = JSON.stringify(rpc.mock.calls[0])
     expect(payload).not.toMatch(/price|total|subtotal/i)
   })
@@ -70,5 +70,20 @@ describe('supabase repos', () => {
     ])
     expect(updates).toContainEqual({ id: 'latte', values: { base_price: 210000 } })
     expect(updates).toContainEqual({ id: 'espresso', values: { available: false } })
+  })
+  it('persists syrup availability when adding a menu item', async () => {
+    let inserted: Record<string, unknown> | undefined
+    const sb = fake({
+      'select:menu_items': (s: any) => {
+        if (s.insert) { inserted = s.insert[0]; return { data: [{ id: s.insert[0].id }], error: null } }
+        return { data: [{ sort: 1 }], error: null }
+      },
+    })
+    const r = createSupabaseRepos(sb, () => 'me')
+    await r.admin.addItem({
+      name: { fa: 'لاته', en: 'Latte' }, desc: { fa: '', en: '' }, cat: 'hot', price: 100000,
+      milk: false, syrupOptions: true, rewardEligible: false,
+    })
+    expect(inserted?.syrup_options).toBe(true)
   })
 })

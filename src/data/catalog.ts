@@ -1,4 +1,4 @@
-import type { MenuItem, SizeOption } from '../types'
+import type { MenuItem, SizeOption, Syrup } from '../types'
 
 export const DRINK_SIZES: SizeOption[] = [
   { key: 'small', mult: 1, scale: 0.9 },
@@ -13,12 +13,17 @@ export const MILKS = [
   { key: 'milk.almond', add: 15000 },
   { key: 'milk.oat', add: 20000 },
 ] as const
-export const SUGARS = ['sugar.none', 'sugar.1', 'sugar.2'] as const
+export const MAX_SYRUP_PUMPS = 2
+export const DEMO_SYRUPS: Syrup[] = [
+  { id: 'vanilla', name: { fa: 'وانیل', en: 'Vanilla' }, pricePerPump: 30000, active: true },
+  { id: 'caramel', name: { fa: 'کارامل', en: 'Caramel' }, pricePerPump: 30000, active: true },
+  { id: 'hazelnut', name: { fa: 'فندق', en: 'Hazelnut' }, pricePerPump: 30000, active: true },
+]
 
 export const DELIVERY_FEE = 30000
 export const DEFAULT_REWARD_EVERY = 6
 
-type Seed = Omit<MenuItem, 'available' | 'sizes' | 'coinsEarned' | 'rewardCost' | 'stock'> & { sizes?: SizeOption[] }
+type Seed = Omit<MenuItem, 'available' | 'sizes' | 'coinsEarned' | 'rewardCost' | 'stock' | 'syrupOptions'> & { sizes?: SizeOption[] }
 const seeds: Seed[] = [
   { id: 'espresso', cat: 'hot', price: 95000, art: 'espresso', milk: false, rewardEligible: false, tags: ['freshRoast', 'singleOrigin'] },
   { id: 'latte', cat: 'hot', price: 135000, art: 'latte', milk: true, rewardEligible: true, tags: ['silkyFoam', 'doubleShot'] },
@@ -45,7 +50,7 @@ const seeds: Seed[] = [
 ]
 
 export const initialMenu = (): MenuItem[] =>
-  seeds.map((s) => ({ ...s, available: true, coinsEarned: 1, rewardCost: DEFAULT_REWARD_EVERY, stock: null, sizes: s.sizes ?? DRINK_SIZES }))
+  seeds.map((s) => ({ ...s, syrupOptions: isDrinkCategory(s.cat), available: true, coinsEarned: 1, rewardCost: DEFAULT_REWARD_EVERY, stock: null, sizes: s.sizes ?? DRINK_SIZES }))
 
 export const isDrinkCategory = (cat: MenuItem['cat']) => cat === 'hot' || cat === 'cold' || cat === 'tea'
 export const isDrink = (i: Pick<MenuItem, 'cat'>) => isDrinkCategory(i.cat)

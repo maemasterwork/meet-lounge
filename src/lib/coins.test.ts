@@ -46,8 +46,8 @@ describe('cancel', () => {
   })
 })
 
-const it1 = (o: Partial<MenuItem>): MenuItem => ({ id: 'a', cat: 'hot', price: 1, art: 'x', milk: false, available: true, rewardEligible: true, coinsEarned: 1, rewardCost: 6, stock: null, sizes: [], tags: [], ...o })
-const ln = (itemId: string, qty = 1, free = false): CartLine => ({ itemId, size: 's', milk: 0, sugar: 1, qty, free })
+const it1 = (o: Partial<MenuItem>): MenuItem => ({ id: 'a', cat: 'hot', price: 1, art: 'x', milk: false, syrupOptions: false, available: true, rewardEligible: true, coinsEarned: 1, rewardCost: 6, stock: null, sizes: [], tags: [], ...o })
+const ln = (itemId: string, qty = 1, free = false): CartLine => ({ itemId, size: 's', milk: 0, syrupId: null, syrupPumps: 0, qty, free })
 
 describe('award amount', () => {
   it('credits the given amount and nothing for zero', () => {

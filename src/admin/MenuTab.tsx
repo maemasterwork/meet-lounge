@@ -45,7 +45,7 @@ function Editor({ item, onClose, onStage, act }: { item: AdminItem; onClose: () 
 
 function NewItem({ act }: { act: ReturnType<typeof useAct> }) {
   const { t } = useI18n()
-  const blank = { nameFa: '', nameEn: '', descFa: '', descEn: '', cat: 'hot' as Category, price: '', milk: false, reward: false, coins: '1', cost: '6', stock: '' }
+  const blank = { nameFa: '', nameEn: '', descFa: '', descEn: '', cat: 'hot' as Category, price: '', milk: false, syrupOptions: false, reward: false, coins: '1', cost: '6', stock: '' }
   const [f, setF] = useState(blank)
   const thousands = Number(f.price)
   const price = thousands * 1000
@@ -69,9 +69,10 @@ function NewItem({ act }: { act: ReturnType<typeof useAct> }) {
       </div>
       <div className="row" style={{ gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         {isDrinkCategory(f.cat) && <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.milk} onChange={(e) => setF({ ...f, milk: e.target.checked })} />{t('milk.whole')} / {t('milk.oat')}</label>}
+        {isDrinkCategory(f.cat) && <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.syrupOptions} onChange={(e) => setF({ ...f, syrupOptions: e.target.checked })} />{t('admin.syrupOptions')}</label>}
         <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.reward} onChange={(e) => setF({ ...f, reward: e.target.checked })} />{t('admin.rewardEligible')}</label>
         <button type="button" className="btn sm" disabled={act.busy || !ok} onClick={async () => {
-          const id = await act.run(() => repos.admin.addItem({ name: { fa: f.nameFa.trim(), en: f.nameEn.trim() }, desc: { fa: f.descFa.trim(), en: f.descEn.trim() }, cat: f.cat, price, milk: f.milk && isDrinkCategory(f.cat), rewardEligible: f.reward, coinsEarned: coins, rewardCost: cost, stock }))
+          const id = await act.run(() => repos.admin.addItem({ name: { fa: f.nameFa.trim(), en: f.nameEn.trim() }, desc: { fa: f.descFa.trim(), en: f.descEn.trim() }, cat: f.cat, price, milk: f.milk && isDrinkCategory(f.cat), syrupOptions: f.syrupOptions && isDrinkCategory(f.cat), rewardEligible: f.reward, coinsEarned: coins, rewardCost: cost, stock }))
           if (id) setF(blank)
         }}>{t('a2.create')}</button>
       </div>

@@ -9,6 +9,13 @@ const isDrink = (it) => it.cat === 'hot' || it.cat === 'cold' || it.cat === 'tea
 const INK = 'var(--ml-draw)'
 const TEAL = 'var(--ml-teal)'
 const TINT = [null, '#D8BC93', '#D0B087']
+const SYRUP_COLORS = { vanilla: '#E6BD63', caramel: '#C9772B', hazelnut: '#79523D' }
+const SYRUP_Y = {
+  espresso: 132, americano: 112, cortado: 122, syruplatte: 104, syrupicedlatte: 84,
+  hotchoc: 108, mangochoc: 108, berrychoc: 108, latte: 104, cappuccino: 108, mocha: 106,
+  icedlatte: 84, iceamer: 78, coldbrew: 74, shake: 92,
+  queenberry: 100, appleparadise: 100, vitaminc: 100,
+}
 
 const plate = () =>
   `<ellipse cx="130" cy="198" rx="106" ry="17" fill="var(--ml-plate-2)" stroke="${INK}" stroke-width="2.5"/><ellipse cx="130" cy="195" rx="100" ry="14" fill="var(--ml-plate)" stroke="${INK}" stroke-width="2"/><ellipse cx="130" cy="196" rx="68" ry="8" fill="var(--ml-plate-2)" opacity=".7"/><path d="M38 192 Q58 183 88 181" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-linecap="round" fill="none"/>`
@@ -233,6 +240,11 @@ export function art(it, o, u) {
           .join('')
       break
     default: b = goodsBody(it.art)
+  }
+  const syrupColor = SYRUP_COLORS[o.syrupId]
+  if (syrupColor && isDrink(it)) {
+    const y = SYRUP_Y[it.art] || (it.cat === 'tea' ? 100 : it.cat === 'cold' ? 80 : 112)
+    b += `<path d="M104 ${y} q8 -6 16 0 t16 0 t16 0 t16 0" fill="none" stroke="${syrupColor}" stroke-width="4" stroke-linecap="round"/><circle cx="170" cy="${y + 3}" r="2.4" fill="${syrupColor}"/>`
   }
   const n = Math.min(o.sugar || 0, 3) // 4+ cubes would leave the 260px viewBox
   const cubes = isDrink(it) && n

@@ -6,7 +6,7 @@ import { basePrice, lineTotal, orderTotals, unitPrice } from './pricing'
 const items = initialMenu()
 const by = (id: string) => items.find((i) => i.id === id)!
 const offer = (itemId: string, pct: number, active = true): Offer => ({ id: 1, title: { fa: '', en: '' }, body: { fa: '', en: '' }, itemId, pct, audience: 'all', active, read: false })
-const line = (o: Partial<CartLine>): CartLine => ({ itemId: 'latte', size: 'medium', milk: 0, sugar: 1, qty: 1, free: false, ...o })
+const line = (o: Partial<CartLine>): CartLine => ({ itemId: 'latte', size: 'medium', milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false, ...o })
 
 describe('basePrice', () => {
   it('uses the size multiplier and rounds to 1,000', () => {
@@ -31,6 +31,14 @@ describe('offers', () => {
     const o = [offer('latte', 15)]
     expect(unitPrice(by('latte'), { size: 'small', milk: 0 }, o)).toBe(115000) // 114,750
     expect(unitPrice(by('mocha'), { size: 'small', milk: 0 }, o)).toBe(150000)
+  })
+
+  describe('syrups', () => {
+    const syrups = [{ id: 'vanilla', name: { fa: 'وانیل', en: 'Vanilla' }, pricePerPump: 30000, active: true }]
+    it('adds syrup per pump after any item discount', () => {
+      expect(unitPrice(by('latte'), { size: 'small', milk: 0, syrupId: 'vanilla', syrupPumps: 2 }, [offer('latte', 15)], syrups)).toBe(175000)
+      expect(lineTotal(line({ size: 'small', syrupId: 'vanilla', syrupPumps: 1 }), items, [], syrups)).toBe(165000)
+    })
   })
   it('ignores ended offers and 0% offers', () => {
     expect(unitPrice(by('latte'), { size: 'small', milk: 0 }, [offer('latte', 15, false)])).toBe(135000)

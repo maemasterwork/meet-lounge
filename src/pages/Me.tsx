@@ -53,7 +53,10 @@ export function MePage() {
             <div className="row" style={{ display: 'block' }} key={o.n}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{t('me.orderN', { n: n(o.n) })}</b><span className={`pillst${o.status === 'done' ? ' good' : ''}`}>{o.status === 'new' && !o.paid ? t('dep.awaiting') : t(`status.${o.status}`)}</span></div>
               <div className="muted sm">{t(`bag.mode${o.mode[0].toUpperCase()}${o.mode.slice(1)}`)}{o.table ? ` ${n(+o.table)}` : ''}{o.address ? ` · ${o.address}` : ''} · {price(o.total)}</div>
-              <div className="sm">{o.items.map((i) => `${n(i.qty)}× ${t(`item.${i.itemId}.name`)}${i.free ? ` (${t('bag.reward')})` : ''}`).join(lang === 'fa' ? '، ' : ', ')}</div>
+              <div className="sm">{o.items.map((i) => {
+                const syrup = i.syrupId ? data.syrups.find((s) => s.id === i.syrupId) : undefined
+                return `${n(i.qty)}× ${t(`item.${i.itemId}.name`)}${syrup && i.syrupPumps ? ` (${t('menu.syrupSummary', { name: syrup.name[lang], n: n(i.syrupPumps) })})` : ''}${i.free ? ` (${t('bag.reward')})` : ''}`
+              }).join(lang === 'fa' ? '، ' : ', ')}</div>
               <CancelOrder order={o} />
               {o.status !== 'cancelled' && <div className="stepper">{st.map((s, i) => <div key={s} className={`s${i < ci ? ' on' : ''}${i === ci ? ' cur' : ''}`}>{t(`status.${s}`)}</div>)}</div>}
             </div>)

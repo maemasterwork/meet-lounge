@@ -13,6 +13,7 @@ export interface MenuItem {
   /** Id of the flat illustration (see art/art.ts). */
   art: string
   milk: boolean
+  syrupOptions: boolean
   available: boolean
   rewardEligible: boolean
   /** Coins earned for each unit ordered (default 1), paid when the order is done. */
@@ -43,17 +44,25 @@ export interface Offer {
   read: boolean
 }
 
+export interface Syrup {
+  id: string
+  name: Record<Lang, string>
+  pricePerPump: number
+  active: boolean
+}
+
 export interface CartLine {
   itemId: string
   size: string
   milk: number
-  sugar: number
+  syrupId: string | null
+  syrupPumps: number
   qty: number
   /** A reward line costs N coins at checkout and is free. */
   free: boolean
 }
 
-export interface OrderItemSummary { itemId: string; qty: number; free: boolean; /** coins earned per unit, fixed when the order was placed */ coin?: number }
+export interface OrderItemSummary { itemId: string; qty: number; free: boolean; syrupId?: string; syrupPumps?: number; /** coins earned per unit, fixed when the order was placed */ coin?: number }
 
 export interface Order {
   n: number

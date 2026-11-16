@@ -8,7 +8,7 @@ import { Icon } from '../components/icons'
 import { LoadState } from '../components/Frame'
 import { HomeScene } from '../components/HomeScene'
 import { ItemArt } from '../art/ItemArt'
-import { MILKS, SUGARS, isDrink } from '../data/catalog'
+import { MILKS } from '../data/catalog'
 import { lineTotal, orderTotals } from '../lib/pricing'
 import { earnFor, isAvailable, rewardCostOf, stockLeft } from '../lib/coins'
 import { OrderError, repos } from '../repos'
@@ -53,10 +53,13 @@ export function BagPage() {
     if (!it) return ''
     const parts = [t(`size.${l.size}`)]
     if (it.milk) parts.push(t(MILKS[l.milk].key))
-    if (isDrink(it)) parts.push(t(SUGARS[l.sugar]))
+    if (l.syrupPumps > 0) {
+      const syrup = data.syrups.find((s) => s.id === l.syrupId)
+      if (syrup) parts.push(t('menu.syrupSummary', { name: syrup.name[lang], n: n(l.syrupPumps) }))
+    }
     return parts.join(lang === 'fa' ? '، ' : ', ')
   }
-  const totals = orderTotals(cart.lines, data.menu, data.offers, cart.mode, data.settings.deliveryFee)
+  const totals = orderTotals(cart.lines, data.menu, data.offers, cart.mode, data.settings.deliveryFee, data.syrups)
   const overRewards = rewardCostOf(cart.lines, data.menu) > data.balance
   const unavailable = cart.lines.some((l) => { const m = data.byId(l.itemId); return !m || !isAvailable(m) || stockLeft(m, cart.lines) === 0 && m.stock !== null && cart.lines.filter((x) => x.itemId === m.id).reduce((a, x) => a + x.qty, 0) > m.stock })
   const earn = earnFor(cart.lines, data.menu)
@@ -64,7 +67,7 @@ export function BagPage() {
   const place = async () => {
     setBusy(true); setErr('')
     try {
-      const snap: ReceiptLine[] = cart.lines.map((l) => ({ name: t(`item.${l.itemId}.name`), size: t(`size.${l.size}`), qty: l.qty, free: l.free, price: lineTotal(l, data.menu, data.offers) }))
+      const snap: ReceiptLine[] = cart.lines.map((l) => ({ name: t(`item.${l.itemId}.name`), size: lineLabel(l), qty: l.qty, free: l.free, price: lineTotal(l, data.menu, data.offers, data.syrups) }))
       const o = await repos.orders.place({ lines: cart.lines, mode: cart.mode, table: cart.table, address: cart.address, phone: guest ? phone : undefined })
       cart.clear(); setPlaced({ order: o, lines: snap }); toast(t('bag.orderPlaced', { n: n(o.n) }))
     } catch (e) {
@@ -90,7 +93,7 @@ export function BagPage() {
   const lineSub = (l: CartLine) => {
     const it = data.byId(l.itemId)
     if (!it) return ''
-    return l.free ? t('bag.rewardSub', { n: n(it.rewardCost) }) : `${lineLabel(l)} · ${t('bag.each', { price: price(lineTotal({ ...l, qty: 1 }, data.menu, data.offers)) })}`
+    return l.free ? t('bag.rewardSub', { n: n(it.rewardCost) }) : `${lineLabel(l)} · ${t('bag.each', { price: price(lineTotal({ ...l, qty: 1 }, data.menu, data.offers, data.syrups)) })}`
   }
 
   const rows = cart.lines.map((l, i) => {
@@ -111,7 +114,7 @@ export function BagPage() {
             <output>{n(l.qty)}</output>
             <button type="button" onClick={() => cart.setQty(i, l.qty + 1)} aria-label={t('menu.more')} disabled={l.qty >= 20 || stockLeft(it, cart.lines) < 1}><Icon name="plus" size={13} /></button>
           </span>)}
-        <span className={`lp${l.free ? ' fr' : ''}`}>{l.free ? t('bag.free2') : price(lineTotal(l, data.menu, data.offers))}</span>
+        <span className={`lp${l.free ? ' fr' : ''}`}>{l.free ? t('bag.free2') : price(lineTotal(l, data.menu, data.offers, data.syrups))}</span>
         <button type="button" className="x" onClick={() => cart.remove(i)} aria-label={t('bag.remove')}><Icon name="x" size={14} /></button>
       </div>)
   })

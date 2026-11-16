@@ -5,7 +5,7 @@ import type { TimeKey } from '../data/catalog'
 /** Teardown function a renderer may return; called before it is mounted again. */
 type Cleanup = void | (() => void)
 export type HeroRenderer = (el: HTMLElement, ctx: { time: TimeKey }) => Cleanup
-export type ItemRenderer = (el: HTMLElement, item: MenuItem, state: { size: string; milk: number; sugar: number }) => Cleanup
+export type ItemRenderer = (el: HTMLElement, item: MenuItem, state: { size: string; milk: number; sugar: number; syrupId: string | null; syrupPumps: number }) => Cleanup
 
 /**
  * Public plug-in points, also available as window.MeetLounge:

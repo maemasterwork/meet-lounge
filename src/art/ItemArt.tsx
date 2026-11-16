@@ -3,11 +3,10 @@ import type { MenuItem } from '../types'
 import { art, sceneSVG } from './art'
 import { useMeetLounge } from '../lib/meetlounge'
 import { useI18n } from '../i18n'
-import { sizeOf } from '../lib/pricing'
+import { sizeOf, type Selection } from '../lib/pricing'
 import type { TimeKey } from '../data/catalog'
-import { isDrink } from '../data/catalog'
 
-export interface ArtOpts { scale?: number; tint?: number; sugar?: number }
+export interface ArtOpts { scale?: number; tint?: number; sugar?: number; syrupId?: string | null }
 
 /** Every item picture goes through this one component: uploaded image, else flat SVG placeholder. */
 export function ItemArt({ item, opts, uid }: { item: MenuItem; opts?: ArtOpts; uid: string }) {
@@ -19,12 +18,12 @@ export function ItemArt({ item, opts, uid }: { item: MenuItem; opts?: ArtOpts; u
   return <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: art({ ...item, name }, opts ?? {}, uid) }} />
 }
 
-export const stageOpts = (item: MenuItem, sel: { size: string; milk: number; sugar: number }): ArtOpts => ({
-  scale: sizeOf(item, sel.size).scale, tint: item.milk ? sel.milk : 0, sugar: isDrink(item) ? sel.sugar : 0,
+export const stageOpts = (item: MenuItem, sel: Selection): ArtOpts => ({
+  scale: sizeOf(item, sel.size).scale, tint: item.milk ? sel.milk : 0, sugar: 0, syrupId: sel.syrupId,
 })
 
 /** Product stage picture. A registered 3D/360 renderer (MeetLounge.setItemRenderer) takes over the stage. */
-export function ItemStage({ item, sel }: { item: MenuItem; sel: { size: string; milk: number; sugar: number } }) {
+export function ItemStage({ item, sel }: { item: MenuItem; sel: Selection }) {
   const ml = useMeetLounge()
   const host = useRef<HTMLDivElement>(null)
   const renderer = ml.renderers.item
@@ -32,9 +31,9 @@ export function ItemStage({ item, sel }: { item: MenuItem; sel: { size: string; 
     if (!renderer || !host.current) return
     const el = host.current
     let cleanup: void | (() => void)
-    try { cleanup = renderer(el, item, sel) } catch (e) { console.error('item renderer failed', e); el.textContent = '' }
+    try { cleanup = renderer(el, item, { size: sel.size, milk: sel.milk, sugar: 0, syrupId: sel.syrupId ?? null, syrupPumps: sel.syrupPumps ?? 0 }) } catch (e) { console.error('item renderer failed', e); el.textContent = '' }
     return () => { try { if (typeof cleanup === 'function') cleanup() } finally { el.textContent = '' } }
-  }, [renderer, item, sel.size, sel.milk, sel.sugar]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [renderer, item, sel.size, sel.milk, sel.syrupId, sel.syrupPumps]) // eslint-disable-line react-hooks/exhaustive-deps
   if (renderer) return <div ref={host} className="item-host" style={{ width: '100%', height: '100%' }} />
   if (ml.assets.models[item.id]) return <ModelStage item={item} sel={sel} src={ml.assets.models[item.id]} />
   return <ItemArt item={item} opts={stageOpts(item, sel)} uid="main" />
@@ -64,7 +63,7 @@ export function SceneArt({ kind, time }: { kind: 'hero' | 'mini'; time: TimeKey 
  * and stays for good if it fails (old browser, no WebGL, missing file), so the stage is never empty.
  * The viewer library is a separate chunk, downloaded only when an item actually has a model.
  */
-function ModelStage({ item, sel, src }: { item: MenuItem; sel: { size: string; milk: number; sugar: number }; src: string }) {
+function ModelStage({ item, sel, src }: { item: MenuItem; sel: Selection; src: string }) {
   const { t } = useI18n()
   const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading')
   const el = useRef<HTMLElement | null>(null)

@@ -1,5 +1,5 @@
-import type { CafeEvent, LedgerEntry, MenuItem, Offer, Order, OrderStatus, PlaceOrderInput } from '../types'
-import { DEFAULT_REWARD_EVERY, DELIVERY_FEE, DRINK_SIZES, initialMenu, isDrinkCategory } from '../data/catalog'
+import type { CafeEvent, LedgerEntry, MenuItem, Offer, Order, OrderStatus, PlaceOrderInput, Syrup } from '../types'
+import { DEFAULT_REWARD_EVERY, DELIVERY_FEE, DEMO_SYRUPS, DRINK_SIZES, initialMenu, isDrink, isDrinkCategory } from '../data/catalog'
 import { awardForOrder, balanceOf, cancelOrder, earnOfOrder, rewardCostOf, spendRewards } from '../lib/coins'
 import { orderTotals } from '../lib/pricing'
 import { OrderError, type AdminItem, type Customer, type LedgerRow, type Repos, type Settings } from './types'
@@ -23,6 +23,7 @@ export function createMockRepos(): Repos {
   const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb) } }
 
   let menu: MenuItem[] = initialMenu()
+  const syrups = DEMO_SYRUPS
   const dayOffset = (k: number) => { const d = new Date(); d.setDate(d.getDate() + k); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
   let events: CafeEvent[] = [
     { id: 'e1', icon: 'cake', title: { en: 'Cake Decorating Night', fa: 'شب تزئین کیک' }, desc: { en: 'Pipe, layer and crown your own little cake. Aprons on, sprinkles out.', fa: 'کیک کوچک خودتان را کرم بزنید، لایه کنید و تاج‌گذاری کنید.' }, place: { en: 'Our pastry kitchen', fa: 'آشپزخانهٔ شیرینی‌پزی' }, day: dayOffset(3), time: '18:00', hours: 2, capacity: 10, held: 2, booked: 3, published: true },
@@ -73,6 +74,9 @@ export function createMockRepos(): Repos {
         for (const l of input.lines) {
           const m = menu.find((x) => x.id === l.itemId)
           if (!m || !m.available) throw new OrderError('item-unavailable')
+          if (l.syrupPumps < 0 || l.syrupPumps > 2 || (l.syrupPumps === 0 && l.syrupId !== null) ||
+            (l.syrupPumps > 0 && (!isDrink(m) || !syrups.some((s) => s.id === l.syrupId && s.active))) ||
+            (l.free && l.syrupPumps > 0)) throw new OrderError('bad-option')
           want.set(m.id, (want.get(m.id) ?? 0) + (l.free ? 1 : l.qty))
         }
         for (const [id, q] of want) { const st = menu.find((x) => x.id === id)!.stock; if (st !== null && st < q) throw new OrderError('out-of-stock') }
@@ -81,10 +85,10 @@ export function createMockRepos(): Repos {
         const taken: Record<string, number> = {}
         menu = menu.map((m) => { const q = want.get(m.id); if (q && m.stock !== null) { taken[m.id] = q; return { ...m, stock: m.stock - q } } return m })
         stockTaken.set(n, taken)
-        const totals = orderTotals(input.lines, menu, offers, input.mode, settings.deliveryFee)
+        const totals = orderTotals(input.lines, menu, offers, input.mode, settings.deliveryFee, syrups)
         const order: Order = {
           n, mode: input.mode, table: input.mode === 'table' ? input.table : undefined, address: input.mode === 'delivery' ? input.address?.trim() : undefined,
-          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free, coin: l.free ? 0 : menu.find((m) => m.id === l.itemId)?.coinsEarned ?? 0 })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
+          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free, syrupId: l.syrupId ?? undefined, syrupPumps: l.syrupPumps, coin: l.free ? 0 : menu.find((m) => m.id === l.itemId)?.coinsEarned ?? 0 })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
         }
         orders = [order, ...orders]
         emit()
@@ -127,6 +131,7 @@ export function createMockRepos(): Repos {
       listActive: async () => offers.filter((o) => o.active),
       markAllRead: async () => { offers = offers.map((o) => ({ ...o, read: true })); emit() },
     },
+    syrups: { subscribe, list: async () => syrups.map((s: Syrup) => ({ ...s, name: { ...s.name } })) },
     settings: { subscribe, get: async () => ({ ...settings }) },
     events: {
       subscribe,
@@ -165,7 +170,7 @@ export function createMockRepos(): Repos {
       },
       addItem: async (i) => {
         const id = `x-${Date.now().toString(36)}`
-        menu = [...menu, { id, cat: i.cat, price: i.price, art: i.cat === 'goods' ? 'mug' : i.cat === 'sweet' || i.cat === 'breakfast' || i.cat === 'food' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso', milk: i.milk, available: true, rewardEligible: i.rewardEligible, coinsEarned: i.coinsEarned ?? 1, rewardCost: i.rewardCost ?? settings.rewardEvery, stock: i.stock ?? null,
+        menu = [...menu, { id, cat: i.cat, price: i.price, art: i.cat === 'goods' ? 'mug' : i.cat === 'sweet' || i.cat === 'breakfast' || i.cat === 'food' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso', milk: i.milk, syrupOptions: i.syrupOptions && isDrinkCategory(i.cat), available: true, rewardEligible: i.rewardEligible, coinsEarned: i.coinsEarned ?? 1, rewardCost: i.rewardCost ?? settings.rewardEvery, stock: i.stock ?? null,
           sizes: isDrinkCategory(i.cat) ? DRINK_SIZES : [{ key: 'piece1', mult: 1, scale: 1 }], tags: [], name: i.name, desc: i.desc }]
         emit()
         return id

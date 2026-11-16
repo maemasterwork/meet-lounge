@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { CafeEvent, EventInput, LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput } from '../types'
+import type { CafeEvent, EventInput, LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput, Syrup } from '../types'
 import { isDrinkCategory } from '../data/catalog'
 import { OrderError, SCENE_EVENTS, SEASONS, type AdminItem, type Customer, type LedgerRow, type OrderErrorCode, type Repos, type Settings } from './types'
 
@@ -31,7 +31,7 @@ const fromEvent = (e: EventInput) => ({
   day: e.day, start_time: e.time, hours: e.hours, capacity: e.capacity, held: e.held, published: e.published,
 })
 const toMenu = (r: any, pub: (path: string | null) => string | undefined): MenuItem => ({
-  id: r.id, cat: r.category, price: r.base_price, art: r.art, milk: r.milk_options, available: r.available,
+  id: r.id, cat: r.category, price: r.base_price, art: r.art, milk: r.milk_options, syrupOptions: r.syrup_options, available: r.available,
   rewardEligible: r.reward_eligible, coinsEarned: r.coins_earned ?? 1, rewardCost: r.reward_cost ?? 6, stock: r.stock ?? null, sizes: r.sizes, tags: r.tags ?? [],
   name: { fa: r.name_fa, en: r.name_en }, desc: { fa: r.description_fa, en: r.description_en },
   image: pub(r.image_path), archived: r.archived,
@@ -45,13 +45,14 @@ const toOffer = (r: any, read: number[]): Offer => ({
   id: r.id, title: { fa: r.title_fa, en: r.title_en || r.title_fa }, body: { fa: r.body_fa, en: r.body_en || r.body_fa },
   itemId: r.item_id, pct: r.discount_pct, audience: r.audience, active: r.active, read: read.includes(r.id),
 })
+const toSyrup = (r: any): Syrup => ({ id: r.id, name: { fa: r.name_fa, en: r.name_en }, pricePerPump: r.price_per_pump, active: r.active })
 const toOrder = (r: any, uid: string | null): Order => ({
   n: r.number, mode: r.mode as OrderMode, table: r.table_no ?? undefined, address: r.address ?? undefined,
-  items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, coin: i.coin_each })),
+  items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, syrupId: i.syrup_id ?? undefined, syrupPumps: i.syrup_pumps ?? 0, coin: i.coin_each })),
   subtotal: r.subtotal, fee: r.delivery_fee, total: r.total, status: r.status as OrderStatus, paid: !!r.paid_at,
   mine: r.customer_id === uid, who: r.profiles?.display_name || r.guest_phone || r.profiles?.phone || String(r.customer_id).slice(0, 6), at: r.created_at,
 })
-const ORDER_SELECT = '*, order_items(item_id, qty, is_reward, coin_each), profiles(display_name, phone)'
+const ORDER_SELECT = '*, order_items(item_id, qty, is_reward, coin_each, syrup_id, syrup_pumps), profiles(display_name, phone)'
 
 export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string | null): Repos {
   const listeners = new Set<() => void>()
@@ -75,7 +76,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
   const ensureChannel = () => {
     if (channel) return
     channel = sb.channel('meet-lounge')
-    for (const table of ['orders', 'coin_ledger', 'offers', 'menu_items', 'settings', 'events']) {
+    for (const table of ['orders', 'coin_ledger', 'offers', 'menu_items', 'settings', 'events', 'syrups']) {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, emit)
     }
     channel.subscribe()
@@ -139,7 +140,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         return allCache
       },
       async place(input: PlaceOrderInput) {
-        const items = input.lines.map((l) => ({ item_id: l.itemId, size: l.size, milk: l.milk, sugar: l.sugar, qty: l.free ? 1 : l.qty, reward: l.free }))
+        const items = input.lines.map((l) => ({ item_id: l.itemId, size: l.size, milk: l.milk, syrup_id: l.syrupId, syrup_pumps: l.syrupPumps, qty: l.free ? 1 : l.qty, reward: l.free }))
         const r = await sb.rpc('create_order', { p_items: items, p_mode: input.mode, p_table: input.mode === 'table' ? input.table ?? null : null, p_address: input.mode === 'delivery' ? input.address ?? null : null, p_phone: input.phone ?? null })
         const row: any = ok(r)
         const full = ok(await sb.from('orders').select(ORDER_SELECT).eq('id', row.id).single())
@@ -191,6 +192,10 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         try { localStorage.setItem(READ_KEY, JSON.stringify(rows.map((r: any) => r.id))) } catch { /* private mode: badge simply returns */ }
         emit()
       },
+    },
+    syrups: {
+      subscribe: sub,
+      async list() { return ok(await sb.from('syrups').select('*').order('sort')).map(toSyrup) },
     },
     events: {
       subscribe: sub,
@@ -246,7 +251,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         const sizes = isDrinkCategory(i.cat) ? [{ key: 'small', mult: 1, scale: 0.9 }, { key: 'medium', mult: 1.15, scale: 1 }, { key: 'large', mult: 1.3, scale: 1.08 }] : [{ key: 'piece1', mult: 1, scale: 1 }]
         const art = i.cat === 'goods' ? 'mug' : i.cat === 'sweet' || i.cat === 'breakfast' || i.cat === 'food' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso'
         const sort = Number((await sb.from('menu_items').select('sort').order('sort', { ascending: false }).limit(1)).data?.[0]?.sort ?? 0) + 1
-        ok(await sb.from('menu_items').insert({ id, category: i.cat, name_fa: i.name.fa, name_en: i.name.en, description_fa: i.desc.fa, description_en: i.desc.en, base_price: i.price, sizes, milk_options: i.milk, reward_eligible: i.rewardEligible, coins_earned: i.coinsEarned ?? 1, reward_cost: i.rewardCost ?? 6, stock: i.stock ?? null, art, sort }).select('id'))
+        ok(await sb.from('menu_items').insert({ id, category: i.cat, name_fa: i.name.fa, name_en: i.name.en, description_fa: i.desc.fa, description_en: i.desc.en, base_price: i.price, sizes, milk_options: i.milk, syrup_options: i.syrupOptions && isDrinkCategory(i.cat), reward_eligible: i.rewardEligible, coins_earned: i.coinsEarned ?? 1, reward_cost: i.rewardCost ?? 6, stock: i.stock ?? null, art, sort }).select('id'))
         emit(); return id
       },
       async setItemImage(id, file) {
