@@ -21,6 +21,17 @@ const steam = (y) =>
     )
     .join('')
 
+const mangoTop = (y) =>
+  [[118, -27, -12], [138, -29, 10], [128, -38, 4]]
+    .map((m) => `<g transform="rotate(${m[2]} ${m[0]} ${y + m[1]})"><rect x="${m[0] - 8}" y="${y + m[1] - 8}" width="16" height="16" rx="3" fill="#F6A81C" stroke="${INK}" stroke-width="1.6"/><path d="M${m[0] - 4} ${y + m[1] - 4} h6" stroke="#FFE08A" stroke-width="2.5" stroke-linecap="round"/></g>`)
+    .join('')
+
+const berryTop = (cx, ty) =>
+  `<path d="M${cx} ${ty + 26} C${cx - 14} ${ty + 16} ${cx - 16} ${ty - 2} ${cx} ${ty} C${cx + 16} ${ty - 2} ${cx + 14} ${ty + 16} ${cx} ${ty + 26}Z" fill="#E0414B" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>` +
+  `<path d="M${cx - 9} ${ty + 8} q-1 6 2 10" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>` +
+  [[-6, 9], [6, 9], [0, 15], [-5, 20], [5, 20]].map((p) => `<circle cx="${cx + p[0]}" cy="${ty + p[1]}" r="1.3" fill="#FFE7A8"/>`).join('') +
+  `<path d="M${cx} ${ty + 1} q-10 -9 -16 -2 q8 7 16 2 q10 5 16 -2 q-6 -7 -16 2Z" fill="#6F9A5E" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>`
+
 const heart = (y, s) =>
   `M130 ${y + 4 * s} C${130 - 13 * s} ${y - 2 * s} ${130 - 9 * s} ${y - 9 * s} 130 ${y - 4 * s} C${130 + 9 * s} ${y - 9 * s} ${130 + 13 * s} ${y - 2 * s} 130 ${y + 4 * s}Z`
 
@@ -40,17 +51,82 @@ function cup(c, tint) {
   if (c.crema) s += `<ellipse cx="130" cy="${rimY}" rx="${hw - 14}" ry="${ry - 3}" fill="${c.crema}"/><ellipse cx="122" cy="${rimY - 1}" rx="10" ry="2.5" fill="#fff" opacity=".25"/>`
   if (c.ring) s += `<ellipse cx="130" cy="${rimY}" rx="${hw - 10}" ry="${ry - 3}" fill="none" stroke="${c.ring}" stroke-width="3" opacity=".85"/><path d="M${130 - hw * 0.45} ${rimY - 2} q10 -4 22 -2" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round"/>`
   if (c.heart) s +=`<path d="${heart(rimY + 1, 0.95)}" fill="#FFF3E0"/><path d="${heart(rimY + 1, 0.6)}" fill="${coffee}" opacity=".6"/><path d="${heart(rimY + 1, 0.3)}" fill="#FFF3E0"/>`
+  if (c.drizzle) s += `<path d="M${130 - hw * 0.5} ${rimY - 1} q7 -8 14 0 t14 0 t14 0 t14 0 t14 0" fill="none" stroke="${c.drizzle}" stroke-width="3.2" stroke-linecap="round"/><circle cx="${130 + hw * 0.5 + 6}" cy="${rimY + 3}" r="2.4" fill="${c.drizzle}"/>`
+  if (c.marsh) {
+    s += [[112, -17, -14, '#FFF6EE'], [133, -19, 10, '#FFD6DE'], [122, -9, 4, '#FFF6EE']]
+      .map((m) => `<g transform="rotate(${m[2]} ${m[0] + 10} ${rimY + m[1] + 8})"><rect x="${m[0]}" y="${rimY + m[1]}" width="20" height="16" rx="5" fill="${m[3]}" stroke="${INK}" stroke-width="1.8"/><path d="M${m[0] + 4} ${rimY + m[1] + 5} h6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/></g>`)
+      .join('')
+    sy = rimY - 28
+  }
   if (c.dome) {
     s += `<path d="M${x1 + 5} ${rimY} C${x1 + 9} ${rimY - 32} ${x2 - 9} ${rimY - 32} ${x2 - 5} ${rimY} A${hw - 5} ${ry - 1} 0 0 1 ${x1 + 5} ${rimY}Z" fill="#FFF3E0" stroke="${INK}" stroke-width="2"/>`
     s += [[118, -17], [132, -22], [146, -16], [126, -9], [141, -9]].map((p) => `<circle cx="${p[0]}" cy="${rimY + p[1]}" r="2.2" fill="#7A4A32"/>`).join('')
     sy = rimY - 40
   }
   if (c.cream) {
-    s += [[6, 14, 9], [16, 28, 8], [25, 42, 7]].map((a) => `<ellipse cx="130" cy="${rimY - a[0]}" rx="${hw - a[1]}" ry="${a[2]}" fill="#FFF6E8" stroke="${INK}" stroke-width="2"/>`).join('')
-    s += `<path d="M${x1 + 22} ${rimY - 14} q12 8 24 0 t24 0 t24 0" fill="none" stroke="#5B3322" stroke-width="3" stroke-linecap="round"/>`
-    sy = rimY - 44
+    s += [[6, 14, 9], [16, 28, 8], [25, 42, 7]].map((a) => `<ellipse cx="130" cy="${rimY - a[0]}" rx="${hw - a[1]}" ry="${a[2]}" fill="${c.creamFill || '#FFF6E8'}" stroke="${INK}" stroke-width="2"/>`).join('')
+    const sauce = c.topping === 'mango' ? '#F6A81C' : c.topping === 'strawberry' ? '#E0414B' : '#5B3322'
+    s += `<path d="M${x1 + 22} ${rimY - 14} q12 8 24 0 t24 0 t24 0" fill="none" stroke="${sauce}" stroke-width="3" stroke-linecap="round"/>`
+    if (c.topping === 'mango') s += mangoTop(rimY)
+    if (c.topping === 'strawberry') s += berryTop(130, rimY - 56)
+    sy = rimY - (c.topping ? 52 : 44)
   }
   return s + steam(sy)
+}
+
+// ── herbal tea: clear glass mug + tea bag tag + fruit garnish ──
+const slice = (cx, cy, r, rind, pith, flesh) =>
+  `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${rind}" stroke="${INK}" stroke-width="1.6"/><circle cx="${cx}" cy="${cy}" r="${r - 2.5}" fill="${pith}"/><circle cx="${cx}" cy="${cy}" r="${r - 4.5}" fill="${flesh}"/>` +
+  [0, 60, 120, 180, 240, 300]
+    .map((a) => `<path d="M${cx} ${cy} L${(cx + (r - 4.5) * Math.cos((a * Math.PI) / 180)).toFixed(1)} ${(cy + (r - 4.5) * Math.sin((a * Math.PI) / 180)).toFixed(1)}" stroke="${pith}" stroke-width="1.6" stroke-linecap="round"/>`)
+    .join('')
+
+const halfSlice = (cx, cy, r, rind, pith, flesh, spokes) =>
+  `<path d="M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}Z" fill="${rind}" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M${cx - r + 3} ${cy} A${r - 3} ${r - 3} 0 0 1 ${cx + r - 3} ${cy}Z" fill="${pith}"/><path d="M${cx - r + 6} ${cy} A${r - 6} ${r - 6} 0 0 1 ${cx + r - 6} ${cy}Z" fill="${flesh}"/>` +
+  (spokes
+    ? [210, 240, 270, 300, 330].map((a) => `<path d="M${cx} ${cy} L${(cx + (r - 6) * Math.cos((a * Math.PI) / 180)).toFixed(1)} ${(cy + (r - 6) * Math.sin((a * Math.PI) / 180)).toFixed(1)}" stroke="${pith}" stroke-width="1.6" stroke-linecap="round"/>`).join('')
+    : `<ellipse cx="${cx - 3}" cy="${cy - 7}" rx="1.6" ry="2.6" fill="#5A3524"/><ellipse cx="${cx + 3}" cy="${cy - 7}" rx="1.6" ry="2.6" fill="#5A3524"/>`)
+
+const berry = (cx, cy, r, col, ink) =>
+  `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}"${ink ? ` stroke="${INK}" stroke-width="1.8"` : ''}/><circle cx="${cx - r * 0.3}" cy="${cy - r * 0.3}" r="${r * 0.28}" fill="#fff" opacity=".45"/>`
+
+const TEAS = {
+  queenberry: {
+    tea: '#A81F55', top: '#D4558A',
+    mark: `<path d="M80 101 l1.5 -7 l4.5 4 l4.5 -4 l1.5 7Z" fill="#E3A72F" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
+    inside: berry(112, 150, 7, '#5B1A44') + berry(134, 162, 7, '#4B2A6B') + berry(120, 174, 6, '#5B1A44') + berry(142, 134, 5, '#C2305F'),
+    back: '',
+    garnish: berry(156, 84, 8, '#7A1F4B', true) + berry(172, 88, 8, '#C2305F', true) + berry(164, 76, 7, '#4B2A6B', true) + `<path d="M164 69 q-8 -8 -14 -2 q7 6 14 2 q8 4 13 -3 q-6 -6 -13 3Z" fill="#6F9A5E" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>`,
+  },
+  appleparadise: {
+    tea: '#D9922B', top: '#F2BC5C',
+    mark: `<path d="M87 94 q-7 3 -5 10 q7 -1 5 -10Z" fill="#6F9A5E" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`,
+    inside: slice(116, 142, 12, '#C93B3B', '#FFF1C4', '#FFF8DC') + slice(142, 160, 11, '#C93B3B', '#FFF1C4', '#FFF8DC'),
+    back: `<g transform="rotate(10 112 120)"><rect x="106" y="66" width="10" height="100" rx="5" fill="#A5683A" stroke="${INK}" stroke-width="1.8"/><path d="M109 74 V158" stroke="#C98B55" stroke-width="2.4" stroke-linecap="round"/></g>`,
+    garnish: halfSlice(168, 90, 17, '#C93B3B', '#FFF1C4', '#FFF8DC', false),
+  },
+  vitaminc: {
+    tea: '#EE8A1B', top: '#FFB65A',
+    mark: `<circle cx="86" cy="99" r="4" fill="#F08A1C" stroke="${INK}" stroke-width="1.2"/><path d="M86 91v3M86 104v3M78 99h3M91 99h3" stroke="${INK}" stroke-width="1.2" stroke-linecap="round"/>`,
+    inside: slice(118, 138, 14, '#F7D64B', '#FFF3B0', '#FBE67A') + slice(142, 162, 13, '#F08A1C', '#FFE0A8', '#FFB347'),
+    back: '',
+    garnish: halfSlice(168, 90, 17, '#F08A1C', '#FFE0A8', '#FFB347', true),
+  },
+}
+
+function teaGlass(t, u) {
+  const gp = 'M92 84 H168 L163 172 Q162 190 146 190 H114 Q98 190 97 172 Z', id = 'tc' + u
+  const hd = 'M166 102 C200 98 200 158 162 156'
+  let s = plate()
+  s += `<path d="${hd}" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${hd}" fill="none" stroke="var(--ml-glass)" stroke-width="7" stroke-linecap="round"/>`
+  s += `<path d="${gp}" fill="var(--ml-glass)"/><clipPath id="${id}"><path d="${gp}"/></clipPath>`
+  s += `<g clip-path="url(#${id})"><rect x="86" y="100" width="90" height="100" fill="${t.tea}"/><ellipse cx="130" cy="100" rx="37" ry="5" fill="${t.top}" stroke="${INK}" stroke-opacity=".5" stroke-width="1.4"/>${t.inside}<path d="M152 90 L148 190" stroke="#2A1608" stroke-opacity=".16" stroke-width="10"/></g>`
+  s += t.back
+  s += `<path d="M104 112 L106 168" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="round" fill="none"/>`
+  s += `<path d="${gp}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="130" cy="84" rx="38" ry="6" fill="none" stroke="${INK}" stroke-width="2.2"/>`
+  s += `<path d="M128 104 C128 88 112 80 88 86" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/><g transform="rotate(-12 86 98)"><rect x="78" y="88" width="16" height="20" rx="2" fill="var(--ml-cup)" stroke="${INK}" stroke-width="1.6"/>${t.mark}</g>`
+  s += t.garnish
+  return s + steam(70)
 }
 
 const ice = () =>
@@ -64,7 +140,7 @@ const ice = () =>
 function glass(g, u, tint) {
   const gp = 'M90 50 H170 L160 184 Q159 192 151 192 H109 Q101 192 100 184 Z', id = 'gc' + u
   const layers = g.layers.map((l) => `<rect x="80" y="${l[1]}" width="100" height="${200 - l[1]}" fill="${tint && l[2] && TINT[tint] ? TINT[tint] : l[0]}"/>`).join('')
-  let s = `<path d="${gp}" fill="var(--ml-glass)"/><clipPath id="${id}"><path d="${gp}"/></clipPath><g clip-path="url(#${id})">${layers}${ice()}<path d="M150 60 L142 190" stroke="#2A1608" stroke-opacity=".14" stroke-width="9"/></g>`
+  let s = `<path d="${gp}" fill="var(--ml-glass)"/><clipPath id="${id}"><path d="${gp}"/></clipPath><g clip-path="url(#${id})">${layers}${g.drip ? `<path d="M80 ${g.drip[1]} q10 8 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="${g.drip[0]}" stroke-width="4.5" stroke-linecap="round"/>` : ''}${ice()}<path d="M150 60 L142 190" stroke="#2A1608" stroke-opacity=".14" stroke-width="9"/></g>`
   s += `<path d="M98 66 L106 170" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="round" fill="none"/><path d="${gp}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`
   s += `<g fill="#fff" opacity=".6"><ellipse cx="157" cy="96" rx="2.2" ry="3.2"/><ellipse cx="154" cy="128" rx="1.8" ry="2.6"/><ellipse cx="108" cy="150" rx="2" ry="3"/></g>`
   s += `<path d="M142 8 L124 172" stroke="var(--ml-accent)" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M141 14 L124 168" stroke="#fff" stroke-width="8" stroke-dasharray="7 11" opacity=".6" fill="none"/>`
@@ -115,6 +191,15 @@ export function art(it, o, u) {
   switch (it.art) {
     case 'espresso': b = cup({ hw: 44, rimY: 132, h: 58, coffee: '#3B2013', crema: '#B07A4B' }, 0); break
     case 'americano': b = cup({ hw: 56, rimY: 112, h: 78, coffee: '#2B170C', ring: '#9A6A3E' }, 0); break
+    case 'cortado': b = cup({ hw: 50, rimY: 122, h: 66, coffee: '#B88A58', heart: true, milky: true }, tint); break
+    case 'syruplatte': b = cup({ hw: 62, rimY: 104, h: 86, coffee: '#CBA074', heart: true, drizzle: '#C9772B', milky: true }, tint); break
+    case 'syrupicedlatte': b = glass({ layers: [['#E8D2B2', 80, true], ['#5A3524', 132], ['#C9772B', 170]], drip: ['#C9772B', 84] }, u, tint); break
+    case 'hotchoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#4A2415', marsh: true }, 0); break
+    case 'mangochoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#4A2415', cream: true, creamFill: '#FFF0C9', topping: 'mango' }, 0); break
+    case 'berrychoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#5A2A24', cream: true, creamFill: '#FFE3E8', topping: 'strawberry' }, 0); break
+    case 'queenberry': b = teaGlass(TEAS.queenberry, u); break
+    case 'appleparadise': b = teaGlass(TEAS.appleparadise, u); break
+    case 'vitaminc': b = teaGlass(TEAS.vitaminc, u); break
     case 'latte': b = cup({ hw: 62, rimY: 104, h: 86, coffee: '#CBA074', heart: true, milky: true }, tint); break
     case 'cappuccino': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#C69A6E', dome: true, milky: true }, tint); break
     case 'mocha': b = cup({ hw: 62, rimY: 106, h: 84, coffee: '#6B3E2A', cream: true }, 0); break
