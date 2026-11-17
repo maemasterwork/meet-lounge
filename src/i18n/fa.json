@@ -190,6 +190,8 @@
   "me.tabOrders": "سفارش‌ها",
   "me.tabCoins": "سکه و جایزه",
   "me.tabFavs": "علاقه‌مندی‌ها",
+  "me.confirmDelivery": "سفارش را دریافت کردم",
+  "me.deliveryConfirmed": "دریافت سفارش تأیید شد. نوش جان!",
   "me.ordersEmpty": "هنوز سفارشی نداری. از منو شروع کن.",
   "me.orderN": "سفارش {n}",
   "me.favsEmpty": "هنوز چیزی را نپسندیده‌ای. روی قلب کنار هر آیتم بزن.",

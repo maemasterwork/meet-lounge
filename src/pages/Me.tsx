@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { CancelOrder } from '../components/CancelOrder'
 import { useI18n } from '../i18n'
 import { useShop } from '../data/context'
 import { go } from '../lib/route'
 import { useUi, type MeTab } from '../store/ui'
 import { useCart } from '../store/cart'
+import { repos } from '../repos'
 import { Frame, LoadState } from '../components/Frame'
 import { Icon } from '../components/icons'
 import { ItemArt } from '../art/ItemArt'
@@ -33,6 +35,7 @@ export function MePage() {
   const select = useUi((s) => s.select)
   const toast = useUi((s) => s.toast)
   const cart = useCart()
+  const [confirmingDelivery, setConfirmingDelivery] = useState<number | null>(null)
   const frame = (c: React.ReactNode) => <Frame title={t('me.title')} caps={t('me.sub')}>{c}</Frame>
   if (!data) return frame(<LoadState error={error} onRetry={reload} />)
 
@@ -59,6 +62,16 @@ export function MePage() {
               }).join(lang === 'fa' ? '، ' : ', ')}</div>
               <CancelOrder order={o} />
               {o.status !== 'cancelled' && <div className="stepper">{st.map((s, i) => <div key={s} className={`s${i < ci ? ' on' : ''}${i === ci ? ' cur' : ''}`}>{t(`status.${s}`)}</div>)}</div>}
+              {o.mine && o.mode === 'delivery' && o.status === 'out' && <button type="button" className="btn sm" disabled={confirmingDelivery !== null}
+                onClick={() => {
+                  setConfirmingDelivery(o.n)
+                  void repos.orders.confirmDelivery(o.n)
+                    .then(() => toast(t('me.deliveryConfirmed')))
+                    .catch(() => toast(t('err.generic')))
+                    .finally(() => setConfirmingDelivery(null))
+                }}>
+                {t(confirmingDelivery === o.n ? 'loading' : 'me.confirmDelivery')}
+              </button>}
             </div>)
         })}
       </div>)

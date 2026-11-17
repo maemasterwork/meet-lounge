@@ -93,6 +93,21 @@ describe('supabase repos', () => {
     expect(rpc.mock.calls[0][0]).toBe('archive_all_orders')
     expect(await orders.listAll()).toMatchObject([{ archived: true }, { archived: true }])
   })
+  it('confirms delivery via the customer RPC and reloads the completed order', async () => {
+    const rpc = vi.fn(async (_name: string, args: { p_order_number: number }) => ({
+      data: { id: 'u1', number: args.p_order_number }, error: null,
+    }))
+    const sb = fake({
+      'select:orders': (s: any) => ({
+        data: s.single ? row({ status: 'done' }) : [row({ status: 'out', mode: 'delivery' })],
+        error: null,
+      }),
+    })
+    sb.rpc = rpc
+    const result = await createSupabaseRepos(sb, () => 'me').orders.confirmDelivery(200)
+    expect(rpc.mock.calls[0]).toEqual(['confirm_delivery', { p_order_number: 200 }])
+    expect(result).toMatchObject({ n: 200, status: 'done' })
+  })
   it('persists item order using the menu sort column', async () => {
     const updates: Array<{ id: string; sort: number }> = []
     const sb = fake({

@@ -196,6 +196,14 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         emit()
         return count
       },
+      async confirmDelivery(n) {
+        const row: any = ok(await sb.rpc('confirm_delivery', { p_order_number: n }))
+        const full = ok(await sb.from('orders').select(ORDER_SELECT).eq('id', row.id).single())
+        const updated = toOrder(full, getUserId())
+        if (allCache) allCache = allCache.map((o) => o.n === n ? updated : o)
+        emit()
+        return updated
+      },
     },
     coins: {
       subscribe: sub,

@@ -136,6 +136,17 @@ export function createMockRepos(): Repos {
         if (count) emit()
         return count
       },
+      confirmDelivery: async (n) => {
+        const o = get(n)
+        if (!o.mine) throw new OrderError('not-allowed')
+        if (o.mode !== 'delivery' || (o.status !== 'out' && o.status !== 'done')) throw new OrderError('order-closed')
+        if (o.status === 'done') return o
+        const updated = { ...o, status: 'done' as const }
+        replace(updated)
+        ledger = awardForOrder(ledger, n, clock(), earnOfOrder(o))
+        emit()
+        return updated
+      },
     },
     coins: { subscribe, balance: async () => balanceOf(ledger), ledger: async () => ledger.slice() },
     offers: {

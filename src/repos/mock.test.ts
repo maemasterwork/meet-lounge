@@ -18,6 +18,22 @@ describe('mock repos', () => {
     await r.orders.advance(o.n) // no-op after done
     expect(await r.coins.balance()).toBe(6)
   })
+  it('lets the customer confirm their delivery after it is on the way', async () => {
+    const r = createMockRepos()
+    const o = await r.orders.place({ lines: [latte], mode: 'delivery', address: 'Home' })
+    await expect(r.orders.confirmDelivery(o.n)).rejects.toMatchObject({ code: 'order-closed' })
+    await r.orders.markPaid(o.n)
+    await r.orders.advance(o.n)
+    await r.orders.advance(o.n)
+    expect((await r.orders.listMine())[0].status).toBe('ready')
+    await r.orders.advance(o.n)
+    expect((await r.orders.listMine())[0].status).toBe('out')
+    const delivered = await r.orders.confirmDelivery(o.n)
+    expect(delivered.status).toBe('done')
+    expect(await r.coins.balance()).toBe(6)
+    await r.orders.confirmDelivery(o.n)
+    expect(await r.coins.balance()).toBe(6)
+  })
   it('retains the selected milk and syrup in the order summary', async () => {
     const r = createMockRepos()
     const order = await r.orders.place({

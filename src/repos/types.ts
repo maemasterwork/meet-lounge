@@ -25,6 +25,8 @@ export interface OrderRepo extends Subscribable {
   setArchived(n: number, archived: boolean): Promise<Order>
   /** Staff: archive all currently unarchived orders. */
   archiveAll(): Promise<number>
+  /** Customer: confirm receipt of their delivery after it is marked on the way. */
+  confirmDelivery(n: number): Promise<Order>
 }
 
 export interface CoinRepo extends Subscribable {

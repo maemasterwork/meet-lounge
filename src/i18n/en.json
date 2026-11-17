@@ -190,6 +190,8 @@
   "me.tabOrders": "Orders",
   "me.tabCoins": "Coins & rewards",
   "me.tabFavs": "Favorites",
+  "me.confirmDelivery": "Confirm received",
+  "me.deliveryConfirmed": "Delivery confirmed. Enjoy!",
   "me.ordersEmpty": "No orders yet. Start from the menu.",
   "me.orderN": "Order {n}",
   "me.favsEmpty": "Nothing saved yet. Tap the heart next to any item.",
