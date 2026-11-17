@@ -173,7 +173,7 @@ function blockArt(f) {
 const RINGS = (x, y, r, w) =>
   `<circle cx="${x - r * 0.55}" cy="${y}" r="${r}" fill="none" stroke="#E3A72F" stroke-width="${w}"/><circle cx="${x + r * 0.55}" cy="${y}" r="${r}" fill="none" stroke="#8FA68A" stroke-width="${w}"/>`
 
-function goodsBody(k) {
+function goodsBody(k, u) {
   switch (k) {
     case 'mug': {
       const hd = 'M176 112 C214 108 214 168 172 164'
@@ -183,6 +183,21 @@ function goodsBody(k) {
       return `<ellipse cx="130" cy="206" rx="76" ry="8" fill="var(--ml-plate-2)"/><path d="M96 104 C96 50 164 50 164 104" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><path d="M70 100 H190 L198 204 H62 Z" fill="#EAD7B7" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M70 100 H190 L192 118 H68 Z" fill="#2A1608" opacity=".08"/><path d="M80 120 L74 196" stroke="#fff" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/>${RINGS(130, 138, 17, 4)}<path d="M104 162 h52 v8 a22 22 0 0 1 -22 22 h-8 a22 22 0 0 1 -22 -22z" fill="var(--ml-accent)" stroke="${INK}" stroke-width="2"/>`
     case 'beans':
       return `<ellipse cx="130" cy="208" rx="62" ry="7" fill="var(--ml-plate-2)"/><path d="M82 74 H178 L186 204 Q186 210 180 210 H80 Q74 210 74 204 Z" fill="#3B2A20" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M86 84 L82 200" stroke="#fff" stroke-opacity=".22" stroke-width="4" stroke-linecap="round"/><rect x="80" y="62" width="100" height="14" rx="3" fill="#2B1F17" stroke="${INK}" stroke-width="2.2"/><rect x="94" y="102" width="72" height="78" rx="8" fill="var(--ml-cup)"/>${RINGS(130, 128, 10, 3)}<rect x="106" y="152" width="48" height="5" rx="2.5" fill="#3B2A20" opacity=".5"/><rect x="112" y="163" width="36" height="5" rx="2.5" fill="#3B2A20" opacity=".5"/>`
+    case 'syrupbottle': {
+      // empty glass pump bottle: transparent body, only thin caramel residue left on the glass
+      const bp = 'M96 104 Q96 94 106 92 H154 Q164 94 164 104 V190 Q164 200 154 200 H106 Q96 200 96 190 Z', id = 'sb' + u
+      return `<ellipse cx="130" cy="206" rx="58" ry="7" fill="var(--ml-plate-2)"/>` +
+        `<path d="${bp}" fill="var(--ml-glass)"/><clipPath id="${id}"><path d="${bp}"/></clipPath>` +
+        `<g clip-path="url(#${id})"><path d="M150 96 L148 200" stroke="#2A1608" stroke-opacity=".12" stroke-width="10"/>` +
+        `<path d="M100 192 q8 -5 16 0 t16 0 t16 0 t16 0" fill="none" stroke="#C9772B" stroke-width="4" stroke-linecap="round" opacity=".85"/>` +
+        `<path d="M108 120 V150 M108 150 q0 6 -3 6" fill="none" stroke="#C9772B" stroke-width="3" stroke-linecap="round" opacity=".55"/><circle cx="105" cy="162" r="2.6" fill="#C9772B" opacity=".7"/>` +
+        `<path d="M154 128 V142" fill="none" stroke="#C9772B" stroke-width="2.5" stroke-linecap="round" opacity=".45"/></g>` +
+        `<path d="M104 112 L106 186" stroke="#fff" stroke-opacity=".6" stroke-width="5" stroke-linecap="round" fill="none"/><path d="${bp}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>` +
+        `<rect x="106" y="128" width="48" height="36" rx="4" fill="var(--ml-cup)" stroke="${INK}" stroke-width="1.8"/>${RINGS(130, 142, 7, 2.4)}<rect x="114" y="154" width="32" height="4" rx="2" fill="${INK}" opacity=".45"/>` +
+        `<rect x="104" y="84" width="52" height="12" rx="3" fill="#3B2A20" stroke="${INK}" stroke-width="2.2"/><path d="M110 88 h8" stroke="#fff" stroke-opacity=".3" stroke-width="2.5" stroke-linecap="round"/>` +
+        `<rect x="123" y="58" width="14" height="28" rx="3" fill="#2B1F17" stroke="${INK}" stroke-width="2.2"/>` +
+        `<path d="M130 60 H166 Q174 60 174 68 V74" fill="none" stroke="${INK}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="M130 60 H166 Q174 60 174 68 V74" fill="none" stroke="#2B1F17" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`
+    }
     case 'note':
       return `<ellipse cx="130" cy="208" rx="70" ry="7" fill="var(--ml-plate-2)"/><g transform="rotate(-8 130 140)"><rect x="82" y="62" width="100" height="144" rx="8" fill="var(--ml-accent)" stroke="${INK}" stroke-width="2.5"/>${[0, 1, 2, 3, 4, 5, 6].map((i) => `<ellipse cx="82" cy="${78 + i * 19}" rx="8" ry="4.5" fill="var(--ml-cup)" stroke="${INK}" stroke-width="1.8"/>`).join('')}<rect x="102" y="92" width="64" height="54" rx="6" fill="var(--ml-cup)"/>${RINGS(134, 118, 11, 3)}<rect x="170" y="62" width="7" height="144" fill="#3B2A20"/><path d="M104 160 h50 M104 172 h36" stroke="#fff" stroke-opacity=".6" stroke-width="3" stroke-linecap="round"/></g>`
   }
@@ -240,7 +255,7 @@ export function art(it, o, u) {
           .map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="8" ry="6" fill="#4A2C1D"/><ellipse cx="${p[0] - 2}" cy="${p[1] - 2}" rx="3" ry="1.8" fill="#fff" opacity=".25"/>`)
           .join('')
       break
-    default: b = goodsBody(it.art)
+    default: b = goodsBody(it.art, u)
   }
   if (syrupColor && isDrink(it) && it.art !== 'syruplatte') {
     const y = SYRUP_Y[it.art] || (it.cat === 'tea' ? 100 : it.cat === 'cold' ? 80 : 112)
