@@ -12,6 +12,8 @@ describe('computeStats', () => {
     const s = computeStats([o(1, 9, 100000), o(2, 9, 200000), o(3, 14, 60000, 'cancelled'), o(4, 11, 90000)], now)
     expect(s.sales).toBe(390000); expect(s.count).toBe(3); expect(s.basket).toBe(130000); expect(s.cancelled).toBe(1)
     expect(s.hourly[9]).toBe(300000); expect(s.peakHour).toBe(9)
+    expect(s.lifetime).toEqual({ sales: 390000, count: 3, cancelled: 1 })
+    expect(s.month).toMatchObject({ sales: 390000, count: 3, cancelled: 1, statuses: { done: 3, cancelled: 1 } })
   })
   it('ranks best sellers by quantity and does not count free reward items as sold', () => {
     const s = computeStats([o(1, 9, 1, 'done', [{ itemId: 'latte', qty: 3, free: false }, { itemId: 'mocha', qty: 1, free: false }]), o(2, 9, 0, 'done', [{ itemId: 'latte', qty: 1, free: true }])], now)
@@ -21,6 +23,8 @@ describe('computeStats', () => {
     const s = computeStats([o(1, 9, 50000), o(2, 9, 70000, 'done', undefined, 2), o(3, 9, 10000, 'done', undefined, 9)], now)
     expect(s.days).toHaveLength(7); expect(s.days[6].sales).toBe(50000); expect(s.days[4].sales).toBe(70000)
     expect(s.sales).toBe(50000)
+    expect(s.lifetime.sales).toBe(130000)
+    expect(s.month.sales).toBe(130000)
   })
   it('is all zero with no orders', () => {
     const s = computeStats([], now)

@@ -19,23 +19,28 @@ import { BrandTab } from './BrandTab'
 type Tab = 'orders' | 'menu' | 'coins' | 'events' | 'offers' | 'stats' | 'brand'
 const TABS: [Tab, string][] = [['orders', 'admin.tabOrders'], ['menu', 'admin.tabMenu'], ['coins', 'admin.tabCoins'], ['events', 'admin.tabEvents'], ['offers', 'admin.tabOffers'], ['stats', 'admin.tabStats'], ['brand', 'admin.tabBrand']]
 
-const COLS: OrderStatus[] = ['new', 'prep', 'ready', 'out', 'done']
+const COLS: OrderStatus[] = ['new', 'prep', 'ready', 'out', 'done', 'cancelled']
 const NEXT: Record<string, string> = { new: 'admin.startPrep', prep: 'admin.markReady', ready: 'admin.markDone', out: 'admin.markDone' }
+const MILKS = ['milk.whole', 'milk.almond', 'milk.oat']
 
 /**
  * Management dashboard: live order board for staff, plus menu, coins, offers, stats and brand tabs.
  * Staff see orders and stats; the owner role (enforced by the database, not just hidden here) manages everything.
  */
 export default function Admin() {
-  const { t, n, price } = useI18n()
+  const { t, n, price, lang } = useI18n()
   const auth = useAuth()
   const staff = !auth.configured || auth.role === 'staff' || auth.role === 'owner'
   const orders = useRepo(() => (staff ? repos.orders.listAll() : Promise.resolve([])), [repos.orders])
+  const menu = useRepo(() => (staff ? repos.admin.items() : Promise.resolve([])), [repos.admin])
+  const syrups = useRepo(() => repos.syrups.list(), [repos.syrups])
   const settings = useRepo(() => repos.settings.get(), [repos.settings])
   const [busy, setBusy] = useState(false)
   const [tab, setTab] = useState<Tab>('orders')
   const owner = !auth.configured || auth.role === 'owner'
   const shopAct = useAct()
+  const archiveAct = useAct()
+  const [showArchived, setShowArchived] = useState(false)
   const act = async (fn: () => Promise<Order>) => { setBusy(true); try { await fn() } finally { setBusy(false) } }
   const list = orders.data ?? []
   if (!staff) return (
@@ -48,7 +53,21 @@ export default function Admin() {
         <AuthPanel mode="staff" note={auth.email ? t('auth.noAccess') : t('auth.staffOnly')} onClose={() => go('home')} />
       </div>
     </section>)
-  const fresh = list.filter((o) => o.status === 'new').length
+  const fresh = list.filter((o) => !o.archived && o.status === 'new').length
+  const unarchivedCount = list.filter((o) => !o.archived).length
+  const visibleOrders = list.filter((o) => !!o.archived === showArchived)
+  const itemLabel = (item: Order['items'][number]) => {
+    const details: string[] = []
+    if (item.syrupId && (item.syrupPumps ?? 0) > 0) {
+      const name = syrups.data?.find((s) => s.id === item.syrupId)?.name[lang] ?? item.syrupId
+      details.push(t('menu.syrupSummary', { name, n: n(item.syrupPumps ?? 0) }))
+    }
+    const menuItem = menu.data?.find((m) => m.id === item.itemId)
+    const milkIndex = item.milk ?? (menuItem?.milk ? 0 : undefined)
+    const milk = milkIndex !== undefined && (milkIndex > 0 || menuItem?.milk) ? MILKS[milkIndex] : undefined
+    if (milk) details.push(t(milk))
+    return `${n(item.qty)}× ${t(`item.${item.itemId}.name`)}${details.length ? ` (${details.join(' · ')})` : ''}`
+  }
   return (
     <section className="admin" aria-label={t('admin.title', { brand: t('brand.name') })}>
       <div className="ahead">
@@ -77,13 +96,22 @@ export default function Admin() {
       {tab === 'orders' && <div className="apane order-pane">
         <div className="order-tools">
           {orders.error && <span className="muted sm" role="alert">{t('err.loadFailed')}</span>}
+          {(menu.error || syrups.error) && !orders.error && <span className="muted sm" role="alert">{t('err.loadFailed')}</span>}
+          <Msg msg={archiveAct.msg} />
+          <button type="button" className="btn ghost sm" aria-pressed={showArchived} onClick={() => setShowArchived((v) => !v)}>
+            {t(showArchived ? 'admin.showUnarchivedOrders' : 'admin.showArchivedOrders', { n: n(list.filter((o) => o.archived).length) })}
+          </button>
+          {!showArchived && unarchivedCount > 0 && <button type="button" className="btn ghost sm" disabled={archiveAct.busy || orders.loading}
+            onClick={() => { if (window.confirm(t('admin.confirmArchiveAll', { n: n(unarchivedCount) }))) void archiveAct.run(() => repos.orders.archiveAll()) }}>
+            {t('admin.archiveAllOrders', { n: n(unarchivedCount) })}
+          </button>}
           <button type="button" className="btn ghost sm" disabled={orders.loading} onClick={orders.reload}>
             <Icon name="refresh" size={16} />{t('common.refreshOrders')}
           </button>
         </div>
         <div className="board">
           {COLS.map((c) => {
-            const L = list.filter((o) => o.status === c)
+            const L = visibleOrders.filter((o) => o.status === c)
             return (
               <div className="col" key={c}>
                 <h3>{t(`status.${c}`)}<em>{n(L.length)}</em></h3>
@@ -91,13 +119,17 @@ export default function Admin() {
                 {L.map((o) => (
                   <div key={o.n} className={`ocard${o.mine ? ' mine' : ''}`}>
                     <div className="h"><span>#{n(o.n)}</span><span className="pillst">{t(`bag.mode${o.mode[0].toUpperCase()}${o.mode.slice(1)}`)}{o.table ? ` ${n(+o.table)}` : ''}</span></div>
-                    <div className="sm">{o.items.map((i) => `${n(i.qty)}× ${t(`item.${i.itemId}.name`)}`).join(', ')}</div>
+                    <div className="sm">{o.items.map(itemLabel).join(', ')}</div>
                     <div className="muted sm">{o.who} · {price(o.total)}</div>
+                    <time className="muted sm" dateTime={o.at}>{new Date(o.at).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</time>
                     {o.address && <div className="muted sm">{o.address}</div>}
                     {c === 'new' && !o.paid && <span className="pillst await">{t('dep.awaiting')}</span>}
                     {c === 'new' && !o.paid && <button type="button" className="btn sm" disabled={busy} onClick={() => act(() => repos.orders.markPaid(o.n))}>{t('dep.received')}</button>}
                     {NEXT[c] && !(c === 'new' && !o.paid) && <button type="button" className="btn sm" disabled={busy} onClick={() => act(() => repos.orders.advance(o.n))}>{t(NEXT[c])}</button>}
-                    {c !== 'done' && <button type="button" className="btn ghost sm" disabled={busy} onClick={() => act(() => repos.orders.cancel(o.n))}>{t('admin.cancelOrder')}</button>}
+                    {c !== 'done' && c !== 'cancelled' && <button type="button" className="btn ghost sm" disabled={busy} onClick={() => act(() => repos.orders.cancel(o.n))}>{t('admin.cancelOrder')}</button>}
+                    <button type="button" className="btn ghost sm" disabled={archiveAct.busy} onClick={() => void archiveAct.run(() => repos.orders.setArchived(o.n, !o.archived))}>
+                      {t(o.archived ? 'admin.restoreOrder' : 'admin.archiveOrder')}
+                    </button>
                   </div>))}
               </div>)
           })}

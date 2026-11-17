@@ -88,7 +88,7 @@ export function createMockRepos(): Repos {
         const totals = orderTotals(input.lines, menu, offers, input.mode, settings.deliveryFee, syrups)
         const order: Order = {
           n, mode: input.mode, table: input.mode === 'table' ? input.table : undefined, address: input.mode === 'delivery' ? input.address?.trim() : undefined,
-          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free, syrupId: l.syrupId ?? undefined, syrupPumps: l.syrupPumps, coin: l.free ? 0 : menu.find((m) => m.id === l.itemId)?.coinsEarned ?? 0 })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
+          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free, milk: l.milk, syrupId: l.syrupId ?? undefined, syrupPumps: l.syrupPumps, coin: l.free ? 0 : menu.find((m) => m.id === l.itemId)?.coinsEarned ?? 0 })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
         }
         orders = [order, ...orders]
         emit()
@@ -123,6 +123,18 @@ export function createMockRepos(): Repos {
         if (back) { menu = menu.map((m) => (back[m.id] && m.stock !== null ? { ...m, stock: m.stock + back[m.id] } : m)); stockTaken.delete(n) }
         emit()
         return updated
+      },
+      setArchived: async (n, archived) => {
+        const updated = { ...get(n), archived }
+        replace(updated)
+        emit()
+        return updated
+      },
+      archiveAll: async () => {
+        const count = orders.filter((o) => !o.archived).length
+        orders = orders.map((o) => o.archived ? o : { ...o, archived: true })
+        if (count) emit()
+        return count
       },
     },
     coins: { subscribe, balance: async () => balanceOf(ledger), ledger: async () => ledger.slice() },

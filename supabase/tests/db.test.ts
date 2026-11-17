@@ -149,6 +149,23 @@ describe('row level security', () => {
     expect((await as(db, null, 'select status from public.orders where id=$1', [o.id]))[0].status).toBe('new')
     await expect(as(db, alice, 'update public.order_items set unit_price=0')).rejects.toThrow(/permission denied/)
   })
+  it('only staff can archive or restore orders', async () => {
+    const o = await order(alice)
+    expect(await as(db, alice, 'update public.orders set archived=true where id=$1 returning archived', [o.id])).toEqual([])
+    expect((await as(db, staff, 'update public.orders set archived=true where id=$1 returning archived', [o.id]))[0].archived).toBe(true)
+    expect((await as(db, staff, 'update public.orders set archived=false where id=$1 returning archived', [o.id]))[0].archived).toBe(false)
+  })
+  it('only staff can archive every unarchived order in one operation', async () => {
+    await as(db, staff, 'select public.archive_all_orders()')
+    const first = await order(alice)
+    const second = await order(bob)
+    await as(db, staff, 'update public.orders set archived=true where id=$1', [first.id])
+    await expect(as(db, alice, 'select public.archive_all_orders()')).rejects.toThrow(/not-allowed/)
+    expect((await as(db, staff, 'select public.archive_all_orders() as count'))[0].count).toBe(1)
+    expect((await as(db, staff, 'select archived from public.orders where id=$1', [first.id]))[0].archived).toBe(true)
+    expect((await as(db, staff, 'select archived from public.orders where id=$1', [second.id]))[0].archived).toBe(true)
+    expect((await as(db, staff, 'select public.archive_all_orders() as count'))[0].count).toBe(0)
+  })
   it('a customer cannot write the coin ledger or call owner tools', async () => {
     await expect(as(db, alice, "insert into public.coin_ledger (customer_id,delta,reason) values ($1,100,'adjust')", [alice.id])).rejects.toThrow(/permission denied|row-level/)
     await expect(as(db, alice, 'update public.coin_ledger set delta=100')).rejects.toThrow(/permission denied/)

@@ -18,6 +18,14 @@ describe('mock repos', () => {
     await r.orders.advance(o.n) // no-op after done
     expect(await r.coins.balance()).toBe(6)
   })
+  it('retains the selected milk and syrup in the order summary', async () => {
+    const r = createMockRepos()
+    const order = await r.orders.place({
+      lines: [{ ...latte, milk: 2, syrupId: 'vanilla', syrupPumps: 1 }],
+      mode: 'pickup',
+    })
+    expect(order.items[0]).toMatchObject({ milk: 2, syrupId: 'vanilla', syrupPumps: 1 })
+  })
   it('spends N coins for a reward line and refunds on cancel', async () => {
     const r = createMockRepos()
     const earn = await r.orders.place({ lines: [latte], mode: 'pickup' })
@@ -42,6 +50,21 @@ describe('mock repos', () => {
     const o = await r.orders.place({ lines: [latte], mode: 'delivery', address: ' Valiasr St ' })
     expect(o.fee).toBe(30000)
     expect(o.address).toBe('Valiasr St')
+  })
+  it('archives and restores an order without changing its status', async () => {
+    const r = createMockRepos()
+    const order = (await r.orders.listAll()).find((o) => o.n === 100)!
+    const archived = await r.orders.setArchived(order.n, true)
+    expect(archived).toMatchObject({ archived: true, status: 'done' })
+    expect((await r.orders.listAll()).find((o) => o.n === order.n)?.archived).toBe(true)
+    expect((await r.orders.setArchived(order.n, false)).archived).toBe(false)
+  })
+  it('archives every unarchived order and reports how many changed', async () => {
+    const r = createMockRepos()
+    const before = await r.orders.listAll()
+    expect(await r.orders.archiveAll()).toBe(before.length)
+    expect((await r.orders.listAll()).every((o) => o.archived)).toBe(true)
+    expect(await r.orders.archiveAll()).toBe(0)
   })
   it('earns each item\'s own coins per unit, and none for reward lines', async () => {
     const r = createMockRepos()

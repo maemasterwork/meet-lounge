@@ -48,11 +48,11 @@ const toOffer = (r: any, read: number[]): Offer => ({
 const toSyrup = (r: any): Syrup => ({ id: r.id, name: { fa: r.name_fa, en: r.name_en }, pricePerPump: r.price_per_pump, active: r.active })
 const toOrder = (r: any, uid: string | null): Order => ({
   n: r.number, mode: r.mode as OrderMode, table: r.table_no ?? undefined, address: r.address ?? undefined,
-  items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, syrupId: i.syrup_id ?? undefined, syrupPumps: i.syrup_pumps ?? 0, coin: i.coin_each })),
+  items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, milk: i.milk, syrupId: i.syrup_id ?? undefined, syrupPumps: i.syrup_pumps ?? 0, coin: i.coin_each })),
   subtotal: r.subtotal, fee: r.delivery_fee, total: r.total, status: r.status as OrderStatus, paid: !!r.paid_at,
-  mine: r.customer_id === uid, who: r.profiles?.display_name || r.guest_phone || r.profiles?.phone || String(r.customer_id).slice(0, 6), at: r.created_at,
+  archived: !!r.archived, mine: r.customer_id === uid, who: r.profiles?.display_name || r.guest_phone || r.profiles?.phone || String(r.customer_id).slice(0, 6), at: r.created_at,
 })
-const ORDER_SELECT = '*, order_items(item_id, qty, is_reward, coin_each, syrup_id, syrup_pumps), profiles(display_name, phone)'
+const ORDER_SELECT = '*, order_items(item_id, qty, is_reward, coin_each, milk, syrup_id, syrup_pumps), profiles(display_name, phone)'
 
 export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string | null): Repos {
   const listeners = new Set<() => void>()
@@ -136,7 +136,14 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
       },
       async listAll() {
         const uid = getUserId()
-        allCache = ok(await sb.from('orders').select(ORDER_SELECT).order('number', { ascending: false }).limit(300)).map((r) => toOrder(r, uid))
+        const rows: any[] = []
+        const pageSize = 500
+        for (let offset = 0; ; offset += pageSize) {
+          const page = ok(await sb.from('orders').select(ORDER_SELECT).order('number', { ascending: false }).range(offset, offset + pageSize - 1))
+          rows.push(...page)
+          if (page.length < pageSize) break
+        }
+        allCache = rows.map((r) => toOrder(r, uid))
         return allCache
       },
       async place(input: PlaceOrderInput) {
@@ -172,6 +179,22 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
           emit()
           return toOrder(full, getUserId())
         } catch (e) { if (prev) { allCache = prev; emit() }; throw e }
+      },
+      async setArchived(n, archived) {
+        const r = await sb.from('orders').update({ archived }).eq('number', n).select(ORDER_SELECT).maybeSingle()
+        const row = ok(r)
+        if (!row) throw new OrderError('not-allowed')
+        const updated = toOrder(row, getUserId())
+        if (allCache) allCache = allCache.map((o) => o.n === n ? updated : o)
+        emit()
+        return updated
+      },
+      async archiveAll() {
+        const count = ok<number>(await sb.rpc('archive_all_orders'))
+        if (!Number.isInteger(count) || count < 0) throw new Error('archive-count-invalid')
+        if (allCache) allCache = allCache.map((o) => o.archived ? o : { ...o, archived: true })
+        emit()
+        return count
       },
     },
     coins: {

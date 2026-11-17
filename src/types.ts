@@ -62,7 +62,7 @@ export interface CartLine {
   free: boolean
 }
 
-export interface OrderItemSummary { itemId: string; qty: number; free: boolean; syrupId?: string; syrupPumps?: number; /** coins earned per unit, fixed when the order was placed */ coin?: number }
+export interface OrderItemSummary { itemId: string; qty: number; free: boolean; milk?: number; syrupId?: string; syrupPumps?: number; /** coins earned per unit, fixed when the order was placed */ coin?: number }
 
 export interface Order {
   n: number
@@ -76,6 +76,7 @@ export interface Order {
   status: OrderStatus
   /** The cafe has confirmed the deposit (or there was nothing to pay). Preparation starts only after this. */
   paid: boolean
+  archived?: boolean
   mine: boolean
   who: string
   at: string

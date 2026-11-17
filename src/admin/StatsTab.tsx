@@ -1,6 +1,7 @@
 import { useI18n } from '../i18n'
 import { repos } from '../repos'
 import { useRepo } from '../lib/useRepo'
+import { downloadOrdersCsv } from './export-orders'
 import { computeStats } from './stats'
 
 export function StatsTab() {
@@ -17,6 +18,22 @@ export function StatsTab() {
   const weekday = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString(lang === 'fa' ? 'fa-IR' : 'en-GB', { weekday: 'short' })
   return (
     <div className="apane" style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
+      <div className="kpis">
+        <div className="kpi"><small>{t('admin.totalSales')}</small><b>{price(s.lifetime.sales)}</b><small>{t('admin.totalOrders', { n: n(s.lifetime.count), cancelled: n(s.lifetime.cancelled) })}</small></div>
+        <div className="kpi"><small>{t('admin.monthSales')}</small><b>{price(s.month.sales)}</b><small>{t('admin.totalOrders', { n: n(s.month.count), cancelled: n(s.month.cancelled) })}</small></div>
+      </div>
+      <div className="order-tools">
+        {orders.error && <span className="muted sm" role="alert">{t('err.loadFailed')}</span>}
+        <button type="button" className="btn ghost sm" disabled={orders.loading || !orders.data?.length} onClick={() => downloadOrdersCsv(orders.data ?? [])}>
+          {t('admin.exportOrders')}
+        </button>
+      </div>
+      <div className="panel">
+        <h3>{t('admin.monthStatus')}</h3>
+        <div className="chips">{Object.entries(s.month.statuses).map(([status, count]) => (
+          <span className="pillst" key={status}>{t(`status.${status}`)}: {n(count)}</span>
+        ))}</div>
+      </div>
       <div className="kpis">
         <div className="kpi"><small>{t('admin.kpiSales')}</small><b>{price(s.sales)}</b></div>
         <div className="kpi"><small>{t('admin.kpiOrders')}</small><b>{n(s.count)}</b>{s.cancelled > 0 && <small>{t('a2.cancelled')}: {n(s.cancelled)}</small>}</div>

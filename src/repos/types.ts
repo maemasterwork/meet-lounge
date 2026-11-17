@@ -21,6 +21,10 @@ export interface OrderRepo extends Subscribable {
   /** Staff: the deposit arrived. Preparation can start after this. */
   markPaid(n: number): Promise<Order>
   cancel(n: number): Promise<Order>
+  /** Staff: hide or restore an order in the active orders board. */
+  setArchived(n: number, archived: boolean): Promise<Order>
+  /** Staff: archive all currently unarchived orders. */
+  archiveAll(): Promise<number>
 }
 
 export interface CoinRepo extends Subscribable {

@@ -43,6 +43,56 @@ describe('supabase repos', () => {
     const after = await r.orders.listAll()
     expect(after[0].status).toBe('new')
   })
+  it('persists order archiving and updates the returned order', async () => {
+    let archived = false
+    const sb = fake({
+      'select:orders': (s: any) => {
+        if (s.update) archived = s.update[0].archived
+        return { data: s.update || s.maybeSingle ? row({ archived }) : [row({ archived })], error: null }
+      },
+    })
+    const r = createSupabaseRepos(sb, () => 'me')
+    await r.orders.listAll()
+    await expect(r.orders.setArchived(200, true)).resolves.toMatchObject({ n: 200, archived: true })
+    expect(await r.orders.listAll()).toMatchObject([{ archived: true }])
+  })
+  it('loads every page of the staff order history', async () => {
+    let pages = 0
+    const sb = fake({
+      'select:orders': (s: any) => {
+        pages++
+        return { data: s.range[0] === 0
+          ? Array.from({ length: 500 }, (_, i) => row({ number: 1000 - i }))
+          : [row({ number: 500 })], error: null }
+      },
+    })
+    const orders = await createSupabaseRepos(sb, () => 'me').orders.listAll()
+    expect(orders).toHaveLength(501)
+    expect(pages).toBe(2)
+  })
+  it('loads milk and syrup choices into each order item summary', async () => {
+    let projection = ''
+    const sb = fake({
+      'select:orders': (s: any) => {
+        projection = s.select[0]
+        return { data: [row({ order_items: [{ item_id: 'latte', qty: 1, is_reward: false, milk: 2, syrup_id: 'vanilla', syrup_pumps: 1 }] })], error: null }
+      },
+    })
+    const [order] = await createSupabaseRepos(sb, () => 'me').orders.listAll()
+    expect(order.items[0]).toMatchObject({ milk: 2, syrupId: 'vanilla', syrupPumps: 1 })
+    expect(projection).toContain('milk')
+  })
+  it('archives all orders through the staff-only RPC and updates its cache', async () => {
+    let archived = false
+    const rpc = vi.fn(async (_name: string) => { archived = true; return { data: 2, error: null } })
+    const sb = fake({ 'select:orders': () => ({ data: [row({ number: 200, archived }), row({ number: 199, archived })], error: null }) })
+    sb.rpc = rpc
+    const orders = createSupabaseRepos(sb, () => 'me').orders
+    await orders.listAll()
+    await expect(orders.archiveAll()).resolves.toBe(2)
+    expect(rpc.mock.calls[0][0]).toBe('archive_all_orders')
+    expect(await orders.listAll()).toMatchObject([{ archived: true }, { archived: true }])
+  })
   it('persists item order using the menu sort column', async () => {
     const updates: Array<{ id: string; sort: number }> = []
     const sb = fake({
