@@ -7,6 +7,7 @@ describe('table QR codes', () => {
     expect(tableUrl('https://x.github.io/meet-lounge/?table=3#bag', 7)).toBe('https://x.github.io/meet-lounge/?table=7#menu')
   })
   it('renders an SVG', () => { expect(qrSvg('https://a.b/?table=1')).toMatch(/^<svg/) })
+  it('renders a card-number QR for scanning', () => { expect(qrSvg('6037991234567890')).toMatch(/^<svg/) })
   it('decodes back to the same address for every table up to 200', () => {
     for (const t of [1, 9, 12, 99, 200]) {
       const url = tableUrl('https://namvaran.github.io/meet-lounge/', t)

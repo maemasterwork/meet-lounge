@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { useUi } from '../store/ui'
 import { go } from '../lib/route'
@@ -6,6 +6,7 @@ import { fmtCard } from '../lib/card'
 import { CancelOrder } from '../components/CancelOrder'
 import { earnOfOrder } from '../lib/coins'
 import { Icon } from '../components/icons'
+import { qrSvg } from '../admin/qr'
 import type { Order } from '../types'
 import type { Settings } from '../repos/types'
 
@@ -27,6 +28,7 @@ export function Placed({ order, lines, settings, onDone }: { order: Order; lines
   const setMeTab = useUi((s) => s.setMeTab)
   const [copied, setCopied] = useState(false)
   const card = settings.paymentCard
+  const cardQr = useMemo(() => card && /^\d{16}$/.test(card) ? qrSvg(card) : null, [card])
   const needsDeposit = settings.requireDeposit && order.total > 0
   const paid = order.paid
   const cancelled = order.status === 'cancelled'
@@ -46,6 +48,10 @@ export function Placed({ order, lines, settings, onDone }: { order: Order; lines
               <small>{t('dep.cardTitle')}</small>
               <div className="cardno ltr" dir="ltr" data-testid="card-number">{fmtCard(card).replace(/\d/g, (d) => (lang === 'fa' ? n(+d) : d))}</div>
               {settings.paymentHolder && <span className="holder">{settings.paymentHolder}</span>}
+              {cardQr && <div className="dep-qr">
+                <div role="img" aria-label={t('dep.scanCard')} dangerouslySetInnerHTML={{ __html: cardQr }} />
+                <span className="muted sm">{t('dep.scanCard')}</span>
+              </div>}
               <button type="button" className="btn sm" onClick={() => copy(card, t('dep.copied'))}>{copied ? t('dep.copied') : t('dep.copy')}</button>
             </>
           ) : <span className="muted sm">{t('dep.noCard')}</span>}

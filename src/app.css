@@ -83,7 +83,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tagcard .ti svg{width:100%;height:auto;display:block}
 .tagcard p{margin:0;font-family:var(--ml-font-serif);font-size:clamp(14px,2vh,18px);line-height:1.5;color:var(--ml-ink);font-weight:500}
 .hr{position:absolute;right:max(var(--ml-gutter-end),3.8%);top:4.4%;bottom:2.6%;width:33%;min-width:330px;z-index:2;display:grid;grid-template-rows:1.42fr 1.27fr 1fr;gap:clamp(10px,2.4vh,24px)}
-.hr .card{min-height:0;overflow:hidden}
+.hr .card{min-height:0;}
 .season{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:clamp(12px,2.4vh,26px) clamp(14px,1.6vw,28px);background:linear-gradient(100deg,var(--ml-surface) 0%,var(--ml-surface) 36%,var(--ml-blush) 100%);position:relative}
 .season .tx{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0}
 .kick{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--ml-ink-2)}
@@ -384,6 +384,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .depbox .amt{font-size:26px;line-height:1.1}
 .depbox .cardno{font-size:clamp(19px,3.2vh,25px);font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;user-select:all}
 .depbox .holder{font-size:13px}.depbox .note{margin-top:2px}
+.depbox .dep-qr{display:none}
+.depbox .dep-qr svg{display:block;width:132px;height:132px}
+.depbox .dep-qr>div{padding:8px;background:#fff;border-radius:8px}
+.depbox .dep-qr>span{text-align:center}
+@media (min-width:861px){.depbox .dep-qr{display:grid;justify-items:center;gap:4px;margin:4px 0}}
 .rcpt{border-top:1px dashed var(--ml-line);padding-top:8px;display:grid;gap:3px;font-size:13px}
 .rcpt .rh{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.08em;opacity:.75}
 .rcpt .rl{display:flex;justify-content:space-between;gap:10px}.rcpt .rl em{font-size:11px;opacity:.7;text-transform:uppercase;font-style:normal}
