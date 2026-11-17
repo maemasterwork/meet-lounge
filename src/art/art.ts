@@ -194,13 +194,14 @@ function goodsBody(k) {
 export function art(it, o, u) {
   o = o || {}
   const sc = o.scale || 1, tint = o.tint || 0
+  const syrupColor = SYRUP_COLORS[o.syrupId]
   let b = ''
   switch (it.art) {
     case 'espresso': b = cup({ hw: 44, rimY: 132, h: 58, coffee: '#3B2013', crema: '#B07A4B' }, 0); break
     case 'americano': b = cup({ hw: 56, rimY: 112, h: 78, coffee: '#2B170C', ring: '#9A6A3E' }, 0); break
     case 'cortado': b = cup({ hw: 50, rimY: 122, h: 66, coffee: '#B88A58', heart: true, milky: true }, tint); break
-    case 'syruplatte': b = cup({ hw: 62, rimY: 104, h: 86, coffee: '#CBA074', heart: true, drizzle: '#C9772B', milky: true }, tint); break
-    case 'syrupicedlatte': b = glass({ layers: [['#E8D2B2', 80, true], ['#5A3524', 132], ['#C9772B', 170]], drip: ['#C9772B', 84] }, u, tint); break
+    case 'syruplatte': b = cup({ hw: 62, rimY: 104, h: 86, coffee: '#CBA074', heart: true, drizzle: syrupColor || '#C9772B', milky: true }, tint); break
+    case 'syrupicedlatte': b = glass({ layers: [['#E8D2B2', 80, true], ['#5A3524', 132], [syrupColor || '#C9772B', 170]], drip: [syrupColor || '#C9772B', 84] }, u, tint); break
     case 'hotchoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#4A2415', marsh: true }, 0); break
     case 'mangochoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#4A2415', cream: true, creamFill: '#FFF0C9', topping: 'mango' }, 0); break
     case 'berrychoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#5A2A24', cream: true, creamFill: '#FFE3E8', topping: 'strawberry' }, 0); break
@@ -241,8 +242,7 @@ export function art(it, o, u) {
       break
     default: b = goodsBody(it.art)
   }
-  const syrupColor = SYRUP_COLORS[o.syrupId]
-  if (syrupColor && isDrink(it)) {
+  if (syrupColor && isDrink(it) && it.art !== 'syruplatte') {
     const y = SYRUP_Y[it.art] || (it.cat === 'tea' ? 100 : it.cat === 'cold' ? 80 : 112)
     b += `<path d="M104 ${y} q8 -6 16 0 t16 0 t16 0 t16 0" fill="none" stroke="${syrupColor}" stroke-width="4" stroke-linecap="round"/><circle cx="170" cy="${y + 3}" r="2.4" fill="${syrupColor}"/>`
   }
