@@ -57,8 +57,18 @@ function cup(c, tint) {
   let sy = rimY - 14
   if (c.crema) s += `<ellipse cx="130" cy="${rimY}" rx="${hw - 14}" ry="${ry - 3}" fill="${c.crema}"/><ellipse cx="122" cy="${rimY - 1}" rx="10" ry="2.5" fill="#fff" opacity=".25"/>`
   if (c.ring) s += `<ellipse cx="130" cy="${rimY}" rx="${hw - 10}" ry="${ry - 3}" fill="none" stroke="${c.ring}" stroke-width="3" opacity=".85"/><path d="M${130 - hw * 0.45} ${rimY - 2} q10 -4 22 -2" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round"/>`
-  if (c.heart) s +=`<path d="${heart(rimY + 1, 0.95)}" fill="#FFF3E0"/><path d="${heart(rimY + 1, 0.6)}" fill="${coffee}" opacity=".6"/><path d="${heart(rimY + 1, 0.3)}" fill="#FFF3E0"/>`
+  if (c.heart) s +=`<path d="${heart(rimY + 1, 0.95)}" fill="${c.heartFill || '#FFF3E0'}"/><path d="${heart(rimY + 1, 0.6)}" fill="${coffee}" opacity=".6"/><path d="${heart(rimY + 1, 0.3)}" fill="${c.heartFill || '#FFF3E0'}"/>`
   if (c.drizzle) s += `<path d="M${130 - hw * 0.5} ${rimY - 1} q7 -8 14 0 t14 0 t14 0 t14 0 t14 0" fill="none" stroke="${c.drizzle}" stroke-width="3.2" stroke-linecap="round"/><circle cx="${130 + hw * 0.5 + 6}" cy="${rimY + 3}" r="2.4" fill="${c.drizzle}"/>`
+  if (c.pistachio) {
+    // crushed pistachio on the foam + whole shells on the plate
+    s += [[104, -1, 0], [111, 4, 30], [120, 7, -20], [141, 6, 15], [150, 2, -35], [157, -2, 10], [96, 3, 40], [164, 3, -10]]
+      .map((p) => `<ellipse cx="${p[0]}" cy="${rimY + p[1]}" rx="2.8" ry="1.8" transform="rotate(${p[2]} ${p[0]} ${rimY + p[1]})" fill="#8DB255"/>`)
+      .join('')
+    s += dots([[108, rimY + 1], [135, rimY + 8], [153, rimY + 5], [100, rimY + 5]], 1.5, '#C5DE8C')
+    s += [[58, 196, -20], [76, 203, 15], [204, 199, 25]]
+      .map((p) => `<g transform="rotate(${p[2]} ${p[0]} ${p[1]})"><ellipse cx="${p[0]}" cy="${p[1]}" rx="9" ry="5.6" fill="#E9D9AE" stroke="${INK}" stroke-width="1.6"/><path d="M${p[0] - 6} ${p[1]} Q${p[0]} ${p[1] - 3} ${p[0] + 6} ${p[1]}" fill="#9CC25F" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/></g>`)
+      .join('')
+  }
   if (c.marsh) {
     s += [[112, -17, -14, '#FFF6EE'], [133, -19, 10, '#FFD6DE'], [122, -9, 4, '#FFF6EE']]
       .map((m) => `<g transform="rotate(${m[2]} ${m[0] + 10} ${rimY + m[1] + 8})"><rect x="${m[0]}" y="${rimY + m[1]}" width="20" height="16" rx="5" fill="${m[3]}" stroke="${INK}" stroke-width="1.8"/><path d="M${m[0] + 4} ${rimY + m[1] + 5} h6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/></g>`)
@@ -79,6 +89,227 @@ function cup(c, tint) {
     sy = rimY - (c.topping ? 52 : 44)
   }
   return s + steam(sy)
+}
+
+// ── croissant: five overlapping dough bands (tips, shoulders, centre), long axis across the crescent ──
+function croissant() {
+  const seg = (cx, cy, rx, ry, rot) =>
+    `<g transform="rotate(${rot} ${cx} ${cy})"><ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#E5A24A" stroke="${INK}" stroke-width="2.5"/>` +
+    `<path d="M${cx - rx * 0.75} ${cy + ry * 0.4} Q${cx} ${cy + ry * 1.2} ${cx + rx * 0.75} ${cy + ry * 0.4}" fill="none" stroke="#B9751F" stroke-width="5" stroke-linecap="round" opacity=".4"/>` +
+    `<path d="M${cx - rx * 0.6} ${cy - ry * 0.6} Q${cx - rx * 0.1} ${cy - ry * 0.95} ${cx + rx * 0.4} ${cy - ry * 0.75}" fill="none" stroke="#F6C77A" stroke-width="4" stroke-linecap="round"/>` +
+    `<path d="M${cx - rx * 0.35} ${cy - ry * 0.75} Q${cx - rx * 0.1} ${cy} ${cx - rx * 0.35} ${cy + ry * 0.75} M${cx + rx * 0.35} ${cy - ry * 0.7} Q${cx + rx * 0.6} ${cy} ${cx + rx * 0.35} ${cy + ry * 0.75}" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" opacity=".7"/></g>`
+  return (
+    plate() +
+    `<ellipse cx="130" cy="192" rx="84" ry="7" fill="#2A1608" opacity=".15"/>` +
+    `<g transform="translate(0 8)">` +
+    seg(60, 172, 15, 22, -55) + seg(200, 172, 15, 22, 55) +
+    seg(90, 146, 22, 30, -25) + seg(170, 146, 22, 30, 25) +
+    seg(130, 138, 34, 30, 0) +
+    `<ellipse cx="116" cy="122" rx="12" ry="4.5" transform="rotate(-20 116 122)" fill="#fff" opacity=".32"/>` +
+    `<path d="M104 152 Q130 160 156 152" fill="none" stroke="#B9751F" stroke-width="3" stroke-linecap="round" opacity=".35"/>` +
+    `</g>` +
+    dots([[56, 193], [196, 195], [90, 200], [170, 201], [212, 190]], 1.6, '#E5A24A') +
+    dots([[64, 198], [150, 203]], 1.2, '#F6C77A')
+  )
+}
+
+// ── brownie / carrot cake (isometric blocks) and muffins ──
+const nut = (x, y, r = 0) =>
+  `<g transform="rotate(${r} ${x} ${y})"><path d="M${x} ${y} q6 -6 12 -1 q3 6 -3 9 q-8 2 -12 -2z" fill="#C9996B" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><path d="M${x + 3} ${y + 1} q4 -2 6 1" fill="none" stroke="#8F6638" stroke-width="1.2" stroke-linecap="round"/></g>`
+
+function brownie() {
+  return blockArt({
+    top: '#6B3A24', side: '#3F2216',
+    front: [[118, 62, '#4E2B1C'], [130, 5, '#6A3B27'], [146, 4, '#6A3B27'], [160, 5, '#6A3B27']],
+    extra:
+      `<path d="M100 112 l12 -6 l6 -5 M128 114 l8 -7 l10 2 M150 108 l10 -6 M178 112 l10 -8" fill="none" stroke="#33170D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>` +
+      `<path d="M96 114 L112 104 M142 102 L156 100" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>` +
+      nut(112, 108, -10) + nut(148, 112, 15) + nut(170, 104, -5) +
+      [[96, 136], [126, 152], [150, 134], [110, 166], [160, 164]]
+        .map((p) => `<rect x="${p[0]}" y="${p[1]}" width="8" height="6" rx="1.5" fill="#2B140C"/><rect x="${p[0] + 1}" y="${p[1] + 1}" width="3" height="1.6" rx=".8" fill="#fff" opacity=".25"/>`)
+        .join('') +
+      dots([[104, 150], [138, 158], [164, 146], [120, 134]], 1.6, '#33170D', 0.7),
+  })
+}
+
+function carrotCake() {
+  const sideLayer = (a, b) => `<polygon points="172,${a} 204,${a - 20} 204,${b - 20} 172,${b}" fill="#FFF3DA"/><polygon points="172,${a} 204,${a - 20} 204,${b - 20} 172,${b}" fill="#2A1608" opacity=".14"/>`
+  return blockArt({
+    top: '#FFF1D6', side: '#C98544',
+    front: [[118, 10, '#FFF3DA'], [128, 14, '#C98544'], [142, 8, '#FFF3DA'], [150, 14, '#C98544'], [164, 6, '#FFF3DA'], [170, 10, '#C98544']],
+    extra:
+      sideLayer(118, 128) + sideLayer(142, 150) + sideLayer(164, 170) +
+      `<path d="M204 98 V160" stroke="${INK}" stroke-width="2.3" fill="none"/>` +
+      `<path d="M82 118 H172 V124 q-7 9 -14 0 q-6 7 -12 0 q-8 11 -16 0 q-6 6 -12 0 q-8 10 -16 0 q-5 5 -8 0 L82 124Z" fill="#FFF3DA" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>` +
+      [[94, 134], [118, 136], [146, 134], [104, 158], [130, 156], [156, 158], [112, 174], [150, 175]].map((p) => `<path d="M${p[0]} ${p[1]} l4 -1" stroke="#E8782A" stroke-width="2.4" stroke-linecap="round"/>`).join('') +
+      dots([[102, 135], [134, 134], [96, 157], [142, 157], [122, 174], [160, 174]], 1.8, '#7A4A2A') +
+      `<path d="M104 110 q10 -6 20 -2 M168 110 q10 -5 18 -1" fill="none" stroke="#E8D2A8" stroke-width="2" stroke-linecap="round"/>` +
+      nut(112, 104, -10) + nut(176, 104, 12) +
+      `<path d="M132 108 Q150 96 164 100 Q164 110 150 111 Q140 112 132 108Z" fill="#F08A2C" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/><path d="M146 102 l-2 7 M154 100 l-2 8" stroke="#C45F14" stroke-width="1.4" stroke-linecap="round"/><path d="M164 100 q8 -9 14 -7 M164 101 q9 -1 14 3 M164 100 q4 -11 9 -12" fill="none" stroke="#6F9A5E" stroke-width="3" stroke-linecap="round"/>`,
+  })
+}
+
+function muffinOne(x, y, kind) {
+  const pos = kind === 'chip' ? [[-16, -52], [8, -62], [18, -46], [-4, -42], [-26, -38], [24, -36]] : [[-14, -54], [10, -60], [20, -44], [-2, -44], [-26, -40], [26, -38]]
+  const top =
+    kind === 'chip'
+      ? pos.map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="3.2" ry="2.5" fill="#3B1E12"/><ellipse cx="${p[0] - 1}" cy="${p[1] - 1}" rx="1.2" ry=".8" fill="#fff" opacity=".3"/>`).join('')
+      : pos.map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="4.2" fill="#4B3F8C" stroke="${INK}" stroke-width="1.2"/><circle cx="${p[0]}" cy="${p[1]}" r="1.3" fill="#2E2860"/><circle cx="${p[0] - 1.5}" cy="${p[1] - 1.8}" r="1" fill="#8E82D6"/>`).join('') + dots([[-8, -48], [14, -52], [-20, -46]], 1.8, '#6C5BB0', 0.7)
+  return (
+    `<g transform="translate(${x} ${y}) scale(1.05)">` +
+    `<ellipse cx="0" cy="3" rx="31" ry="5" fill="#2A1608" opacity=".15"/>` +
+    `<path d="M-23 0 L-30 -34 H30 L23 0 Q0 5 -23 0Z" fill="#EAD3A8" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/>` +
+    `<path d="M-23 0 L-30 -34 M-12 2 L-14 -34 M0 3 V-34 M12 2 L14 -34 M23 0 L30 -34" stroke="${INK}" stroke-width="1.4" opacity=".45" fill="none"/>` +
+    `<path d="M-24 -8 H24" stroke="var(--ml-accent)" stroke-width="4" opacity=".75"/>` +
+    `<path d="M-34 -30 C-42 -52 -22 -72 0 -72 C22 -72 42 -52 34 -30 Q0 -22 -34 -30Z" fill="#D8964A" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/>` +
+    `<path d="M-30 -30 Q0 -22 30 -30" fill="none" stroke="#B9751F" stroke-width="4" stroke-linecap="round" opacity=".5"/>` +
+    `<path d="M-24 -50 Q-18 -62 -6 -65" fill="none" stroke="#F6C77A" stroke-width="4" stroke-linecap="round"/>` +
+    `<path d="M-4 -70 q-3 8 2 15 q-1 5 3 8" fill="none" stroke="#B9751F" stroke-width="1.8" stroke-linecap="round"/>` +
+    top +
+    `</g>`
+  )
+}
+
+function muffins() {
+  return plate() + muffinOne(164, 188, 'blueberry') + muffinOne(96, 196, 'chip')
+}
+
+// ── toast: a bread slice lying on the plate. Drawn flat, then squashed into perspective;
+//    non-scaling-stroke keeps outline widths equal to the other items. ──
+const VE = 'vector-effect="non-scaling-stroke"'
+const BREAD = 'M-58 70 V22 C-80 20 -84 -22 -70 -46 C-58 -68 -32 -66 -20 -68 H20 C32 -66 58 -68 70 -46 C84 -22 80 20 58 22 V70 Q58 76 52 76 H-52 Q-58 76 -58 70Z'
+const slicePath = (d, fill, stroke, w, extra = '') => `<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${w}" stroke-linejoin="round" ${VE} ${extra}/>`
+const bananaSlice = (cx, cy, r) =>
+  `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#F4D56E" stroke="${INK}" stroke-width="1.8" ${VE}/><circle cx="${cx}" cy="${cy}" r="${r - 3.4}" fill="#FBEBB0"/>` +
+  dots([[cx - 1.6, cy - 0.8], [cx + 1.8, cy + 0.6], [cx, cy + 2]], 1, '#7A5A2E')
+
+function toast(f) {
+  const rows = [[-26, -36], [0, -36], [26, -36], [-39, -8], [-13, -8], [13, -8], [39, -8], [-26, 20], [0, 20], [26, 20]]
+  return (
+    plate() +
+    `<ellipse cx="130" cy="190" rx="78" ry="8" fill="#2A1608" opacity=".15"/>` +
+    `<g transform="translate(130 160) scale(1 .5) rotate(-6)">` +
+    slicePath(BREAD, '#A8692A', INK, 2.5, 'transform="translate(0 16)"') +
+    slicePath(BREAD, '#B8742E', INK, 2.5) +
+    slicePath(BREAD, f.crumb, '#C98A3A', 3, 'transform="scale(.88)"') +
+    slicePath(BREAD, f.spread, f.spreadEdge, 1.6, 'transform="scale(.76)"') +
+    `<path d="M-40 -50 Q-20 -58 0 -56" fill="none" stroke="${f.spreadHi}" stroke-width="4" stroke-linecap="round" ${VE}/>` +
+    `<path d="M-30 38 q15 8 30 0 t30 0" fill="none" stroke="${f.spreadEdge}" stroke-width="2.4" stroke-linecap="round" opacity=".7" ${VE}/>` +
+    rows.map((p) => bananaSlice(p[0], p[1], 13)).join('') +
+    `<path d="M-46 -22 q10 -8 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="${f.spreadEdge}" stroke-width="3" stroke-linecap="round" ${VE}/>` +
+    [[-50, -24, -20], [46, -30, 25], [-6, 12, 10], [52, 14, -15]]
+      .map((n) => `<ellipse cx="${n[0]}" cy="${n[1]}" rx="6" ry="4" transform="rotate(${n[2]} ${n[0]} ${n[1]})" fill="#D9A55E" stroke="${INK}" stroke-width="1.4" ${VE}/>`)
+      .join('') +
+    `<path d="M-66 -42 C-58 -60 -42 -64 -26 -64" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round" ${VE}/>` +
+    `</g>`
+  )
+}
+
+const TOASTS = {
+  pbbananatoast: { crumb: '#E8BF76', spread: '#B8793F', spreadEdge: '#8F5A2B', spreadHi: '#E0A767' },
+}
+
+// ── sandwiches: split roll + filling + paper wrap on the right half ──
+const frill = (x0, x1, y, col, amp = 7) => {
+  const n = Math.round((x1 - x0) / 14), st = (x1 - x0) / n
+  let d = `M${x0} ${y + 6}`
+  for (let i = 0; i < n; i++) d += ` q${st / 2} ${-2 * amp} ${st} 0`
+  return `<path d="${d} L${x1} ${y + 14} L${x0} ${y + 14}Z" fill="${col}" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>`
+}
+const dots = (pts, r, col, op = 1) => pts.map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="${col}" opacity="${op}"/>`).join('')
+const tomato = (cx, cy) =>
+  `<circle cx="${cx}" cy="${cy}" r="8.5" fill="#D9453A" stroke="${INK}" stroke-width="1.8"/><circle cx="${cx}" cy="${cy}" r="5.5" fill="#EE6F5E"/>${dots([[cx - 2, cy - 1], [cx + 2, cy + 1], [cx, cy - 3]], 0.9, '#FFE7A8')}`
+const fry = (x1, y1, x2, y2) =>
+  `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${INK}" stroke-width="8" stroke-linecap="round"/><path d="M${x1} ${y1} L${x2} ${y2}" stroke="#F2C94C" stroke-width="4.5" stroke-linecap="round"/>`
+
+const SAND = {
+  kookoosandwich: {
+    bun: '#E4AC62',
+    deco: `<path d="M88 96 l10 14 M118 92 l10 18 M148 96 l10 14" fill="none" stroke="#B7721F" stroke-width="3" stroke-linecap="round" opacity=".7"/>`,
+    fill:
+      frill(40, 220, 142, '#8DBE63') +
+      [[58, 124, -4], [104, 122, 3], [150, 124, -3]]
+        .map((s) => `<g transform="rotate(${s[2]} ${s[0] + 22} ${s[1] + 12})"><rect x="${s[0]}" y="${s[1]}" width="44" height="24" rx="6" fill="#4F7A33" stroke="${INK}" stroke-width="2"/>${dots([[s[0] + 8, s[1] + 7], [s[0] + 20, s[1] + 15], [s[0] + 33, s[1] + 8], [s[0] + 14, s[1] + 18], [s[0] + 37, s[1] + 17]], 2.2, '#9CC05A')}${dots([[s[0] + 12, s[1] + 10], [s[0] + 28, s[1] + 6], [s[0] + 26, s[1] + 18]], 1.6, '#EBD36B')}</g>`)
+        .join('') +
+      tomato(90, 141) + tomato(176, 141),
+  },
+  schnitzelsandwich: {
+    bun: '#E8B36A',
+    deco: dots([[80, 100], [100, 94], [124, 98], [146, 93], [168, 100], [112, 108], [140, 108], [90, 112], [160, 112], [184, 108]], 2.4, '#FFF3D6'),
+    fill:
+      frill(40, 220, 142, '#8DBE63') +
+      `<path d="M38 140 Q34 126 52 124 H196 Q222 124 214 142 Q208 152 190 150 H56 Q40 152 38 140Z" fill="#DB9A3F" stroke="${INK}" stroke-width="2.3" stroke-linejoin="round"/>` +
+      `<path d="M46 130 Q60 126 90 126" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3.5" stroke-linecap="round"/>` +
+      dots([[62, 134], [84, 142], [108, 132], [132, 140], [152, 131], [176, 140], [198, 133], [120, 146], [70, 146]], 2, '#B7721F', 0.8) +
+      dots([[76, 130], [98, 138], [144, 136], [166, 130], [188, 142]], 1.8, '#F2C46B') +
+      `<path d="M60 128 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#FFF1C4" stroke-width="3.2" stroke-linecap="round"/><path d="M92 134 q8 -6 16 0 t16 0 t16 0 t16 0" fill="none" stroke="#D9453A" stroke-width="3" stroke-linecap="round"/>` +
+      [[84, 148], [128, 150], [172, 148]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="6.5" fill="#9DB35A" stroke="${INK}" stroke-width="1.6"/><circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#C9D88A"/>`).join(''),
+  },
+  cutletsandwich: {
+    bun: '#E2A95E',
+    deco: `<path d="M84 98 q10 -6 20 0 M124 94 q10 -6 20 0 M156 100 q10 -6 20 0" fill="none" stroke="#B7721F" stroke-width="2.6" stroke-linecap="round" opacity=".6"/>`,
+    fill:
+      frill(40, 220, 142, '#8DBE63') +
+      [[82, 136, -4], [156, 135, 3]]
+        .map((c) => `<g transform="rotate(${c[2]} ${c[0]} ${c[1]})"><ellipse cx="${c[0]}" cy="${c[1]}" rx="38" ry="14" fill="#8F5429" stroke="${INK}" stroke-width="2.2"/><ellipse cx="${c[0]}" cy="${c[1] - 2}" rx="31" ry="9.5" fill="#B97A43"/><path d="M${c[0] - 26} ${c[1] - 6} Q${c[0] - 12} ${c[1] - 11} ${c[0] + 4} ${c[1] - 10}" fill="none" stroke="#E0A66E" stroke-width="3" stroke-linecap="round" opacity=".8"/>${dots([[c[0] - 16, c[1] + 1], [c[0] + 2, c[1] - 3], [c[0] + 16, c[1] + 2], [c[0] - 4, c[1] + 6], [c[0] + 24, c[1] - 2]], 2, '#6B3A1B', 0.8)}${dots([[c[0] - 8, c[1] - 5], [c[0] + 10, c[1] - 5], [c[0] + 20, c[1] + 5]], 1.4, '#D8A56B')}</g>`)
+        .join('') +
+      tomato(120, 145) + tomato(203, 140) +
+      `<path d="M58 127 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#D9453A" stroke-width="3" stroke-linecap="round"/><path d="M70 131 q8 -5 16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#FFF1C4" stroke-width="2.6" stroke-linecap="round"/>` +
+      [[58, 148], [140, 151], [182, 149]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="6.5" fill="#9DB35A" stroke="${INK}" stroke-width="1.6"/><circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#C9D88A"/>`).join(''),
+  },
+  falafelsandwich: {
+    bun: '#E6B068',
+    deco:
+      `<path d="M92 96 l9 13 M128 92 l9 17 M162 97 l9 12" fill="none" stroke="#B7721F" stroke-width="2.8" stroke-linecap="round" opacity=".6"/>` +
+      dots([[108, 98], [144, 96], [178, 104], [78, 106]], 2.2, '#FFF3D6'),
+    fill: (() => {
+      // whole balls are crisp brown; cut balls show the green herb interior
+      const ball = (x, y, cut) =>
+        cut
+          ? `<circle cx="${x}" cy="${y}" r="13" fill="#A8631F" stroke="${INK}" stroke-width="2"/><circle cx="${x}" cy="${y}" r="9.5" fill="#B9C86E"/>${dots([[x - 3, y - 2], [x + 3, y + 2], [x - 1, y + 4], [x + 4, y - 3], [x - 5, y + 3]], 1.2, '#6E8A3A')}${dots([[x + 1, y - 1], [x - 4, y - 5]], 1, '#E9E0A8')}`
+          : `<circle cx="${x}" cy="${y}" r="13" fill="#A8631F" stroke="${INK}" stroke-width="2"/><path d="M${x - 8} ${y - 5} Q${x - 4} ${y - 10} ${x + 2} ${y - 10}" fill="none" stroke="#D49A52" stroke-width="2.6" stroke-linecap="round"/>${dots([[x + 3, y + 2], [x - 4, y + 4], [x + 6, y - 3], [x, y + 7], [x - 7, y]], 1.3, '#6B3A1B', 0.85)}`
+      return (
+        frill(40, 220, 142, '#8DBE63') +
+        ball(66, 135, false) + ball(96, 133, true) + ball(126, 136, false) + ball(156, 133, true) + ball(186, 136, false) +
+        tomato(80, 146) + tomato(171, 147) +
+        [[112, 151], [200, 150]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="6.5" fill="#9DB35A" stroke="${INK}" stroke-width="1.6"/><circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#C9D88A"/>`).join('') +
+        `<path d="M56 124 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#FFF1C4" stroke-width="3.2" stroke-linecap="round"/>` +
+        `<path d="M80 129 q8 -5 16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#D9453A" stroke-width="2.8" stroke-linecap="round"/>`
+      )
+    })(),
+  },
+  bandarisandwich: {
+    bun: '#E0A55A',
+    deco: `<path d="M92 100 Q130 90 168 100" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="4" stroke-linecap="round"/>`,
+    fill:
+      frill(40, 220, 144, '#D9E6B0') +
+      dots([[60, 148], [90, 150], [120, 148], [150, 150], [180, 148], [205, 149]], 2.4, '#A56AA0') +
+      fry(188, 134, 228, 112) + fry(196, 138, 234, 124) + fry(180, 132, 220, 102) +
+      [[68, 134], [100, 138], [132, 134], [164, 138], [196, 134]].map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="14" ry="10" fill="#C9603F" stroke="${INK}" stroke-width="1.8"/><ellipse cx="${p[0]}" cy="${p[1]}" rx="8" ry="5.5" fill="#E58B6A"/>`).join('') +
+      `<path d="M48 124 Q70 118 96 126 T150 125 T206 125 L210 131 Q150 136 90 132 T48 131Z" fill="#C42B22" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>` +
+      `<path d="M84 131 v10 q0 4 4 4 q4 0 4 -4 v-10Z M148 132 v14 q0 4 4 4 q4 0 4 -4 v-14Z M190 131 v8 q0 4 4 4 q4 0 4 -4 v-8Z" fill="#C42B22" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>` +
+      dots([[70, 126], [112, 128], [168, 127], [128, 129], [198, 128]], 1.4, '#7A140F') +
+      `<path d="M58 122 Q72 119 88 123" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.5" stroke-linecap="round"/>`,
+  },
+}
+
+function sandwich(f) {
+  const topP = 'M46 124 Q40 88 92 84 H168 Q220 88 214 124Z'
+  const botP = 'M48 148 H212 Q220 150 216 162 Q210 178 190 179 H70 Q50 178 44 162 Q40 150 48 148Z'
+  let zig = 'M112 156'
+  for (let i = 0; i < 13; i++) zig += ' l4 -5 l4 5'
+  const paper = `<path d="${zig} V182 Q216 186 200 186 H128 Q112 186 112 176Z" fill="var(--ml-cup)" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/><path d="M112 170 H216" stroke="var(--ml-accent)" stroke-width="4" opacity=".8"/><path d="M119 160 V178" stroke="#fff" stroke-opacity=".5" stroke-width="3.5" stroke-linecap="round"/><path d="M210 158 V182" stroke="#2A1608" stroke-opacity=".12" stroke-width="6" stroke-linecap="round"/>`
+  return (
+    plate() +
+    `<ellipse cx="130" cy="190" rx="86" ry="6" fill="#2A1608" opacity=".15"/>` +
+    `<g transform="translate(0 8)">` +
+    `<path d="${botP}" fill="#D99E4C" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M60 170 Q100 176 150 174" fill="none" stroke="#2A1608" stroke-opacity=".12" stroke-width="6" stroke-linecap="round"/>` +
+    f.fill +
+    `<path d="${topP}" fill="${f.bun || '#E6B068'}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M47 116 H213 L214 124 H46Z" fill="#B7721F" opacity=".3"/><path d="M62 108 Q64 94 92 90" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/>` +
+    f.deco +
+    paper +
+    `</g>`
+  )
 }
 
 // ── herbal tea: clear glass mug + tea bag tag + fruit garnish ──
@@ -220,9 +451,16 @@ export function art(it, o, u) {
     case 'hotchoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#4A2415', marsh: true }, 0); break
     case 'mangochoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#4A2415', cream: true, creamFill: '#FFF0C9', topping: 'mango' }, 0); break
     case 'berrychoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#5A2A24', cream: true, creamFill: '#FFE3E8', topping: 'strawberry' }, 0); break
+    case 'pbbananatoast': b = toast(TOASTS.pbbananatoast); break
+    case 'falafelsandwich': b = sandwich(SAND.falafelsandwich); break
+    case 'cutletsandwich': b = sandwich(SAND.cutletsandwich); break
+    case 'kookoosandwich': b = sandwich(SAND.kookoosandwich); break
+    case 'schnitzelsandwich': b = sandwich(SAND.schnitzelsandwich); break
+    case 'bandarisandwich': b = sandwich(SAND.bandarisandwich); break
     case 'queenberry': b = teaGlass(TEAS.queenberry, u); break
     case 'appleparadise': b = teaGlass(TEAS.appleparadise, u); break
     case 'vitaminc': b = teaGlass(TEAS.vitaminc, u); break
+    case 'pistachiolatte': b = cup({ hw: 62, rimY: 104, h: 86, coffee: '#BDB67E', heart: true, heartFill: '#F4F1D0', drizzle: '#8DB255', pistachio: true }, 0); break
     case 'latte': b = cup({ hw: 62, rimY: 104, h: 86, coffee: '#CBA074', heart: true, milky: true }, tint); break
     case 'cappuccino': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#C69A6E', dome: true, milky: true }, tint); break
     case 'mocha': b = cup({ hw: 62, rimY: 106, h: 84, coffee: '#6B3E2A', cream: true }, 0); break
@@ -237,17 +475,10 @@ export function art(it, o, u) {
         extra: `<polygon points="172,162 204,142 204,160 172,180" fill="#A9714B" stroke="${INK}" stroke-width="2"/><circle cx="130" cy="108" r="6.5" fill="#4B3F8C" stroke="${INK}" stroke-width="1.6"/><circle cx="152" cy="106" r="6.5" fill="#4B3F8C" stroke="${INK}" stroke-width="1.6"/><circle cx="176" cy="104" r="6.5" fill="#4B3F8C" stroke="${INK}" stroke-width="1.6"/><path d="M138 102c2-8 9-10 12-7-4 1-8 3-12 7Z" fill="#6F9A5E" stroke="${INK}" stroke-width="1.4"/>`,
       })
       break
-    case 'brownie':
-      b = blockArt({
-        top: '#7A4A32', side: '#4A2C1F',
-        front: [[118, 62, '#5A3727'], [134, 5, '#6E4632'], [152, 5, '#6E4632']],
-        extra: `<path d="M96 108 q10 -7 20 0 t20 0 t20 0 t18 -2" fill="none" stroke="#FFF3E0" stroke-width="3" stroke-linecap="round"/><polygon points="106,103 116,99 120,106 111,110" fill="#C9996B" stroke="${INK}" stroke-width="1.4"/><polygon points="150,106 160,102 165,108 156,112" fill="#C9996B" stroke="${INK}" stroke-width="1.4"/>`,
-      })
-      break
-    case 'croissant':
-      b = plate() +
-        `<path d="M52 176 C42 126 84 78 130 78 C176 78 218 126 208 176 C198 184 188 176 186 164 C178 134 156 120 130 120 C104 120 82 134 74 164 C72 176 60 184 52 176Z" fill="#E5A24A" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M74 164 C82 134 104 120 130 120 C156 120 178 134 186 164 C170 150 150 142 130 142 C110 142 90 150 74 164Z" fill="#B9751F" opacity=".4"/><path d="M88 124 C98 112 108 106 118 102M130 98 L130 120M172 124 C162 112 152 106 142 102M64 150 C70 140 76 134 82 130M196 150 C190 140 184 134 178 130" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/><path d="M104 96 C116 88 144 88 156 96" fill="none" stroke="#F6C77A" stroke-width="4" stroke-linecap="round"/><path d="M62 156 C66 140 74 128 86 118" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>`
-      break
+    case 'brownie': b = brownie(); break
+    case 'croissant': b = croissant(); break
+    case 'carrotcake': b = carrotCake(); break
+    case 'muffin': b = muffins(); break
     case 'cookie':
       b = plate() +
         `<ellipse cx="130" cy="150" rx="68" ry="46" fill="#B9834C" stroke="${INK}" stroke-width="2.5"/><ellipse cx="130" cy="140" rx="68" ry="46" fill="#D9A66C" stroke="${INK}" stroke-width="2.5"/><path d="M92 112 C104 102 120 98 134 98" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/><path d="M110 160 q8 -5 13 2 M146 126 q6 4 12 0" fill="none" stroke="#9A6A38" stroke-width="2" stroke-linecap="round"/>` +
