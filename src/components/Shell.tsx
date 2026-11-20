@@ -70,10 +70,10 @@ export function FootBar({ view }: { view: View }) {
   const nextView = VIEWS[(VIEWS.indexOf(view3d ?? 'above') + 1) % VIEWS.length]
   return (
     <footer className="foot ltr" id="foot">
-      <div className="namvaran-credit ltr">
+      {/* <div className="namvaran-credit ltr">
         <NamvaranLogoMark className="namvaran-mark" />
         <span>{t('foot.namvaran')}</span>
-      </div>
+      </div> */}
       <div className="fb ltr">
         <LogoMark className="" />
         <span><b>{t('brand.name')}</b><small>{t('brand.tagline')}</small></span>
