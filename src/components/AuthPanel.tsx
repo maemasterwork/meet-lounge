@@ -86,7 +86,7 @@ export function AuthPanel({ mode, note, onClose, email: initialEmail, phone: ini
             if (registering && !staffMode) {
               void run(() => a.signUpPassword(email.trim().toLowerCase(), pw, {
                 fullName: fullName.trim(), seat: seat.trim(), phone: phone.trim(),
-              }), t('auth.accountCreated'))
+              }), t('auth.accountCreated')).then((ok) => { if (ok) onClose() })
             } else {
               void run(() => a.signInPassword(email.trim(), pw)).then((ok) => { if (ok && signInOnly) onClose() })
             }

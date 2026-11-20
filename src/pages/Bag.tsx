@@ -31,9 +31,8 @@ export function BagPage() {
   const shopTables = useShop().data?.settings.tableCount ?? 12
   const auth = useAuth()
   const guest = auth.configured && auth.isGuest
+  const needsAccount = auth.configured && !auth.email
   const requestAuth = useUi((s) => s.requestAuth)
-  const [phone, setPhone] = useState('')
-  const [phoneLookupBusy, setPhoneLookupBusy] = useState(false)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [placed, setPlaced] = useState<{ order: Order; lines: ReceiptLine[] } | null>(null)
@@ -65,29 +64,24 @@ export function BagPage() {
   const earn = earnFor(cart.lines, data.menu)
 
   const place = async () => {
+    if (needsAccount) {
+      requestAuth({
+        phone: auth.profile?.phone ?? '',
+        seat: cart.mode === 'delivery' ? cart.address : auth.profile?.seat ?? '',
+        registering: true,
+        note: 'auth.guestNote',
+      })
+      return
+    }
     setBusy(true); setErr('')
     try {
       const snap: ReceiptLine[] = cart.lines.map((l) => ({ name: t(`item.${l.itemId}.name`), size: lineLabel(l), qty: l.qty, free: l.free, price: lineTotal(l, data.menu, data.offers, data.syrups) }))
-      const o = await repos.orders.place({ lines: cart.lines, mode: cart.mode, table: cart.table, address: cart.address, phone: guest ? phone : undefined })
+      const o = await repos.orders.place({ lines: cart.lines, mode: cart.mode, table: cart.table, address: cart.address })
       cart.clear(); setPlaced({ order: o, lines: snap }); toast(t('bag.orderPlaced', { n: n(o.n) }))
     } catch (e) {
       setErr(t(e instanceof OrderError ? ERR[e.code] ?? 'err.generic' : 'err.network'))
     } finally { setBusy(false) }
   }
-  const importCustomer = async () => {
-    setPhoneLookupBusy(true); setErr('')
-    let result: Awaited<ReturnType<typeof auth.lookupCustomerEmail>>
-    try { result = await auth.lookupCustomerEmail(phone.trim()) }
-    catch { setErr(t('bag.customerLookupFailed')); return }
-    finally { setPhoneLookupBusy(false) }
-    if (result.error) { setErr(t('bag.customerLookupFailed')); return }
-    if (result.email) {
-      requestAuth({ email: result.email, signInOnly: true, note: 'auth.phoneAccountFound' })
-    } else {
-      requestAuth({ phone: phone.trim(), seat: cart.mode === 'delivery' ? cart.address : '', registering: true, note: 'auth.phoneNoAccount' })
-    }
-  }
-
   const treats = cart.lines.reduce((a, l) => a + l.qty, 0)
   const rewardLines = cart.lines.filter((l) => l.free)
   const lineSub = (l: CartLine) => {
@@ -157,13 +151,6 @@ export function BagPage() {
           <label className="field">{t('bag.addressLabel')}
             <textarea rows={2} value={cart.address} placeholder={t('bag.addressHint')} onChange={(e) => cart.setAddress(e.target.value)} maxLength={300} />
           </label>)}
-        {guest && (
-          <label className="field">{t('bag.phoneLabel')}
-            <input type="tel" inputMode="tel" dir="ltr" autoComplete="tel" value={phone} placeholder="09123456789" onChange={(e) => setPhone(e.target.value)} maxLength={20} />
-          </label>)}
-        {guest && <button type="button" className="btn ghost sm" style={{ alignSelf: 'start' }} disabled={phoneLookupBusy || !/^\+?[0-9 ()-]{6,20}$/.test(phone.trim())} onClick={() => void importCustomer()}>
-          {phoneLookupBusy ? t('bag.customerLookupBusy') : t('bag.importCustomer')}
-        </button>}
         {err && <p className="err" role="alert">{err}</p>}
         <div className="sum">
           <div><span>{t('bag.subtotal')}</span><span>{price(totals.subtotal)}</span></div>
@@ -172,7 +159,7 @@ export function BagPage() {
         </div>
         <div className="btot ltr">
           <div className="tt"><small>{t('bag.total')}</small><b className="script tot">{price(totals.total)}</b></div>
-          <button type="button" className="btn checkout" onClick={place} disabled={!cart.lines.length || busy || unavailable || overRewards || (guest && phone.trim().length < 6)}>{t('bag.checkout')} <Icon name="arrowL" size={16} /></button>
+          <button type="button" className="btn checkout" onClick={place} disabled={!cart.lines.length || busy || unavailable || overRewards}>{t('bag.checkout')} <Icon name="arrowL" size={16} /></button>
         </div>
         {earn > 0 && <p className="earn sm"><Icon name="heart" size={12} />{t('bag.willEarn', { n: n(earn) })}</p>}
         <p className="muted sm cash">{data.settings.requireDeposit ? t('dep.bagNote') : t('bag.cashNote')}</p>

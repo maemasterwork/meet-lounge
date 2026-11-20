@@ -189,11 +189,11 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
           {item.syrupOptions && syrups.length > 0 && (
             <div className="list syrup-options">
               <div className="opt" role="group" aria-label={t('menu.optSyrup')}>
-                {syrups.map((s) => <button key={s.id} type="button" aria-pressed={syrupId === s.id} onClick={() => setSyrupId(s.id)}>{s.name[lang]}</button>)}
+                {syrups.map((s) => <button key={s.id} type="button" disabled={syrupPumps === 0} aria-pressed={syrupPumps > 0 && syrupId === s.id} onClick={() => setSyrupId(s.id)}>{s.name[lang]}</button>)}
               </div>
               <div className="opt" role="group" aria-label={t('menu.optSyrupPumps')}>
                 {Array.from({ length: MAX_SYRUP_PUMPS + 1 }, (_, pumps) => (
-                  <button key={pumps} type="button" aria-pressed={syrupPumps === pumps} onClick={() => setSyrupPumps(pumps)}>
+                  <button key={pumps} type="button" aria-pressed={syrupPumps === pumps} onClick={() => { setSyrupPumps(pumps); if (pumps === 0) setSyrupId('') }}>
                     {pumps === 0 ? t('menu.noSyrup') : t('menu.syrupPumps', { n: n(pumps) })}
                   </button>
                 ))}
