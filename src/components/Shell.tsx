@@ -5,7 +5,9 @@ import { useUi } from '../store/ui'
 import { useCart } from '../store/cart'
 import { go, type View } from '../lib/route'
 import { useShop } from '../data/context'
-import { Coin, Icon, LogoMark, NamvaranLogoMark } from './icons'
+import { Coin, Icon, LogoMark, 
+  // NamvaranLogoMark 
+} from './icons'
 import { repos } from '../repos'
 import { useInstall } from '../lib/pwa'
 import { disablePush, enablePush, pushSupported } from '../lib/push'
