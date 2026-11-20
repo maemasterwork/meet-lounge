@@ -23,7 +23,7 @@ export function createMockRepos(): Repos {
   const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb) } }
 
   let menu: MenuItem[] = initialMenu()
-  const syrups = DEMO_SYRUPS
+  let syrups = DEMO_SYRUPS.map((s) => ({ ...s, name: { ...s.name } }))
   const dayOffset = (k: number) => { const d = new Date(); d.setDate(d.getDate() + k); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
   let events: CafeEvent[] = [
     { id: 'e1', icon: 'cake', title: { en: 'Cake Decorating Night', fa: 'شب تزئین کیک' }, desc: { en: 'Pipe, layer and crown your own little cake. Aprons on, sprinkles out.', fa: 'کیک کوچک خودتان را کرم بزنید، لایه کنید و تاج‌گذاری کنید.' }, place: { en: 'Our pastry kitchen', fa: 'آشپزخانهٔ شیرینی‌پزی' }, day: dayOffset(3), time: '18:00', hours: 2, capacity: 10, held: 2, booked: 3, published: true },
@@ -193,12 +193,23 @@ export function createMockRepos(): Repos {
       },
       addItem: async (i) => {
         const id = `x-${Date.now().toString(36)}`
-        menu = [...menu, { id, cat: i.cat, price: i.price, art: i.cat === 'goods' ? 'mug' : i.cat === 'sweet' || i.cat === 'breakfast' || i.cat === 'food' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso', milk: i.milk, syrupOptions: i.syrupOptions && isDrinkCategory(i.cat), available: true, rewardEligible: i.rewardEligible, coinsEarned: i.coinsEarned ?? 1, rewardCost: i.rewardCost ?? settings.rewardEvery, stock: i.stock ?? null,
-          sizes: isDrinkCategory(i.cat) ? DRINK_SIZES : [{ key: 'piece1', mult: 1, scale: 1 }], tags: [], name: i.name, desc: i.desc }]
+        menu = [...menu, { id, cat: i.cat, price: i.price, art: i.art || (i.cat === 'goods' ? 'mug' : i.cat === 'sweet' || i.cat === 'breakfast' || i.cat === 'food' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso'), milk: i.milk, syrupOptions: i.syrupOptions && isDrinkCategory(i.cat), available: true, rewardEligible: i.rewardEligible, coinsEarned: i.coinsEarned ?? 1, rewardCost: i.rewardCost ?? settings.rewardEvery, stock: i.stock ?? null,
+          sizes: i.sizes ?? (isDrinkCategory(i.cat) ? DRINK_SIZES : [{ key: 'piece1', mult: 1, scale: 1 }]), tags: i.tags ?? [], name: i.name, desc: i.desc }]
         emit()
         return id
       },
       setItemImage: async (id, file) => { menu = menu.map((m) => (m.id === id ? { ...m, image: file ? URL.createObjectURL(file) : undefined } : m)); emit() },
+      saveSyrups: async (changes) => {
+        const patches = new Map(changes.map(({ id, patch }) => [id, patch]))
+        syrups = syrups.map((s) => ({ ...s, ...patches.get(s.id) }))
+        emit()
+      },
+      addSyrup: async (syrup) => {
+        if (syrups.some((s) => s.id === syrup.id)) throw new Error('duplicate-syrup')
+        syrups = [...syrups, { ...syrup, name: { ...syrup.name } }]
+        emit()
+      },
+      deleteSyrup: async (id) => { syrups = syrups.filter((s) => s.id !== id); emit() },
       events: async () => events.slice().sort(byDate).map((e) => ({ ...e })),
       saveEvent: async (id, input) => {
         if (id) {

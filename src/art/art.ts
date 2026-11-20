@@ -437,6 +437,16 @@ function goodsBody(k, u) {
 }
 
 /** `u` must be unique per rendered instance (it namespaces SVG ids such as the glass clipPath). */
+export const ARTWORK_IDS = [
+  'espresso', 'americano', 'cortado', 'syruplatte', 'syrupicedlatte',
+  'hotchoc', 'mangochoc', 'berrychoc', 'pbbananatoast',
+  'falafelsandwich', 'cutletsandwich', 'kookoosandwich', 'schnitzelsandwich', 'bandarisandwich',
+  'queenberry', 'appleparadise', 'vitaminc', 'pistachiolatte',
+  'latte', 'cappuccino', 'mocha', 'icedlatte', 'iceamer', 'coldbrew', 'shake',
+  'cheesecake', 'brownie', 'croissant', 'carrotcake', 'muffin', 'cookie',
+  'mug', 'tote', 'beans', 'syrupbottle', 'note',
+] as const
+
 export function art(it, o, u) {
   o = o || {}
   const sc = o.scale || 1, tint = o.tint || 0

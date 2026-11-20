@@ -106,12 +106,18 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
 
   const updateItem = async (id: string, p: Parameters<Repos['admin']['saveItem']>[1]) => {
     const u: Record<string, unknown> = {}
+     if (p.cat !== undefined) u.category = p.cat
     if (p.price !== undefined) u.base_price = p.price
+     if (p.art !== undefined) u.art = p.art
+     if (p.milk !== undefined) u.milk_options = p.milk
+     if (p.syrupOptions !== undefined) u.syrup_options = p.syrupOptions
     if (p.available !== undefined) u.available = p.available
     if (p.rewardEligible !== undefined) u.reward_eligible = p.rewardEligible
     if (p.coinsEarned !== undefined) u.coins_earned = p.coinsEarned
     if (p.rewardCost !== undefined) u.reward_cost = p.rewardCost
     if (p.stock !== undefined) u.stock = p.stock
+    if (p.sizes !== undefined) u.sizes = p.sizes
+    if (p.tags !== undefined) u.tags = p.tags
     if (p.archived !== undefined) u.archived = p.archived
     if (p.name) { u.name_fa = p.name.fa; u.name_en = p.name.en }
     if (p.desc) { u.description_fa = p.desc.fa; u.description_en = p.desc.en }
@@ -282,12 +288,34 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         const sizes = isDrinkCategory(i.cat) ? [{ key: 'small', mult: 1, scale: 0.9 }, { key: 'medium', mult: 1.15, scale: 1 }, { key: 'large', mult: 1.3, scale: 1.08 }] : [{ key: 'piece1', mult: 1, scale: 1 }]
         const art = i.cat === 'goods' ? 'mug' : i.cat === 'sweet' || i.cat === 'breakfast' || i.cat === 'food' ? 'cookie' : i.cat === 'cold' ? 'iceamer' : 'espresso'
         const sort = Number((await sb.from('menu_items').select('sort').order('sort', { ascending: false }).limit(1)).data?.[0]?.sort ?? 0) + 1
-        ok(await sb.from('menu_items').insert({ id, category: i.cat, name_fa: i.name.fa, name_en: i.name.en, description_fa: i.desc.fa, description_en: i.desc.en, base_price: i.price, sizes, milk_options: i.milk, syrup_options: i.syrupOptions && isDrinkCategory(i.cat), reward_eligible: i.rewardEligible, coins_earned: i.coinsEarned ?? 1, reward_cost: i.rewardCost ?? 6, stock: i.stock ?? null, art, sort }).select('id'))
+        ok(await sb.from('menu_items').insert({ id, category: i.cat, name_fa: i.name.fa, name_en: i.name.en, description_fa: i.desc.fa, description_en: i.desc.en, base_price: i.price, sizes: i.sizes ?? sizes, milk_options: i.milk, syrup_options: i.syrupOptions && isDrinkCategory(i.cat), reward_eligible: i.rewardEligible, coins_earned: i.coinsEarned ?? 1, reward_cost: i.rewardCost ?? 6, stock: i.stock ?? null, tags: i.tags ?? [], art: i.art || art, sort }).select('id'))
         emit(); return id
       },
       async setItemImage(id, file) {
         const path = file ? await upload('items', id, file) : null
         ok(await sb.from('menu_items').update({ image_path: path }).eq('id', id).select('id')); emit()
+      },
+      async saveSyrups(changes) {
+        await Promise.all(changes.map(async ({ id, patch }) => {
+          const u: Record<string, unknown> = {}
+          if (patch.name) { u.name_fa = patch.name.fa; u.name_en = patch.name.en }
+          if (patch.pricePerPump !== undefined) u.price_per_pump = patch.pricePerPump
+          if (patch.active !== undefined) u.active = patch.active
+          const r = await sb.from('syrups').update(u).eq('id', id).select('id')
+          if (!r.error && !r.data?.length) throw new OrderError('not-allowed')
+          ok(r)
+        }))
+        emit()
+      },
+      async addSyrup(syrup) {
+        const sort = Number((await sb.from('syrups').select('sort').order('sort', { ascending: false }).limit(1)).data?.[0]?.sort ?? 0) + 1
+        ok(await sb.from('syrups').insert({ id: syrup.id, name_fa: syrup.name.fa, name_en: syrup.name.en, price_per_pump: syrup.pricePerPump, active: syrup.active, sort }).select('id'))
+        emit()
+      },
+      async deleteSyrup(id) {
+        const r = await sb.from('syrups').delete().eq('id', id).select('id')
+        if (!r.error && !r.data?.length) throw new OrderError('not-allowed')
+        ok(r); emit()
       },
       async offers() { const read = readIds(); return ok(await sb.from('offers').select('*').order('id', { ascending: false })).map((r: any) => toOffer(r, read)) },
       async addOffer(o) {
