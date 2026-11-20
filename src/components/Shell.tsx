@@ -6,7 +6,7 @@ import { useCart } from '../store/cart'
 import { go, type View } from '../lib/route'
 import { useShop } from '../data/context'
 import { Coin, Icon, LogoMark, 
-  // NamvaranLogoMark 
+  // NamvaranLogoMark
 } from './icons'
 import { repos } from '../repos'
 import { useInstall } from '../lib/pwa'
