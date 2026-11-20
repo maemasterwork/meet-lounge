@@ -136,7 +136,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   }, [item.id])
 
   const sel = { size: item.sizes.some((z) => z.key === size) ? size : item.sizes[0].key, milk, syrupId: syrupPumps > 0 ? syrupId : null, syrupPumps }
-  const artSel = item.syrupOptions ? { ...sel, syrupId: syrupId || null } : { ...sel, syrupId: null, syrupPumps: 0 }
+  const artSel = item.syrupOptions ? sel : { ...sel, syrupId: null, syrupPumps: 0 }
   const offers = data?.offers ?? []
   const off = offerFor(item.id, offers)
   const p = unitPrice(item, sel, offers, syrups), b = basePrice(item, sel) + syrupPrice(sel, syrups)

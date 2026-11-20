@@ -70,9 +70,9 @@ function Editor({ item, onClose, onStage, act }: { item: AdminItem; onClose: () 
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <section className="panel admin-modal-card">
-        <header className="row" style={{ alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <header className="admin-modal-head">
           <h3 id="edit-item-title" style={{ margin: 0 }}>{t('common.edit')}</h3>
-          <button type="button" className="btn ghost sm" aria-label={t('common.close')} onClick={onClose}>×</button>
+          <button type="button" className="admin-modal-close" aria-label={t('common.close')} onClick={onClose}>×</button>
         </header>
         <div className="twocol">
         <label className="field">{t('admin.nameFa')}<input value={f.nameFa} maxLength={80} onChange={set('nameFa')} /></label>
@@ -88,7 +88,7 @@ function Editor({ item, onClose, onStage, act }: { item: AdminItem; onClose: () 
           <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.milk} onChange={(e) => setF({ ...f, milk: e.target.checked })} />{t('menu.optMilk')}</label>
           <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.syrupOptions} onChange={(e) => setF({ ...f, syrupOptions: e.target.checked })} />{t('admin.syrupOptions')}</label>
         </div>}
-        <div className="row" style={{ gap: 8 }}>
+        <div className="admin-modal-footer">
           <button type="button" className="btn sm" disabled={act.busy || !ok} onClick={() => { onStage({ name: { fa: f.nameFa.trim(), en: f.nameEn.trim() }, desc: { fa: f.descFa.trim(), en: f.descEn.trim() }, cat: f.cat, art: f.art.trim(), milk: f.milk && isDrinkCategory(f.cat), syrupOptions: f.syrupOptions && isDrinkCategory(f.cat), sizes: sizes ?? item.sizes, tags: f.tags.split(',').map((tag) => tag.trim()).filter(Boolean) }); onClose() }}>{t('a2.doneEditing')}</button>
           <button type="button" className="btn ghost sm" onClick={onClose}>{t('common.cancel')}</button>
         </div>
@@ -122,9 +122,9 @@ function NewItem({ act, onClose }: { act: ReturnType<typeof useAct>; onClose: ()
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <section className="panel admin-modal-card">
-        <header className="row" style={{ alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <header className="admin-modal-head">
           <h3 id="new-item-title" style={{ margin: 0 }}>{t('a2.newItem')}</h3>
-          <button type="button" className="btn ghost sm" aria-label={t('common.close')} onClick={onClose}>×</button>
+          <button type="button" className="admin-modal-close" aria-label={t('common.close')} onClick={onClose}>×</button>
         </header>
         <div className="twocol">
         <label className="field">{t('admin.nameFa')}<input value={f.nameFa} maxLength={80} onChange={(e) => setF({ ...f, nameFa: e.target.value })} /></label>
@@ -142,7 +142,7 @@ function NewItem({ act, onClose }: { act: ReturnType<typeof useAct>; onClose: ()
         <label className="field">{t('a2.stock')}<input type="number" dir="ltr" min={0} placeholder={t('a2.unlimited')} value={f.stock} onChange={(e) => setF({ ...f, stock: e.target.value })} /><small className="muted">{t('a2.stockHelp')}</small></label>
         {f.reward && <label className="field">{t('a2.rewardCost')}<input type="number" dir="ltr" min={1} max={200} value={f.cost} onChange={(e) => setF({ ...f, cost: e.target.value })} /><small className="muted">{t('a2.rewardCostHelp')}</small></label>}
         </div>
-        <div className="row" style={{ gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="admin-modal-footer">
         {isDrinkCategory(f.cat) && <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.milk} onChange={(e) => setF({ ...f, milk: e.target.checked })} />{t('milk.whole')} / {t('milk.oat')}</label>}
         {isDrinkCategory(f.cat) && <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.syrupOptions} onChange={(e) => setF({ ...f, syrupOptions: e.target.checked })} />{t('admin.syrupOptions')}</label>}
         <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.reward} onChange={(e) => setF({ ...f, reward: e.target.checked })} />{t('admin.rewardEligible')}</label>

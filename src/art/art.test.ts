@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { art } from './art'
 
 describe('syrup artwork', () => {
+  it('does not add syrup artwork when no syrup is selected', () => {
+    const syruplatte = { id: 'syruplatte', cat: 'hot', name: 'Syrup latte', art: 'syruplatte' }
+    const syrupIcedLatte = { id: 'syrupicedlatte', cat: 'cold', name: 'Syrup iced latte', art: 'syrupicedlatte' }
+
+    expect(art(syruplatte, { syrupId: null }, 'none-plate')).not.toContain('drizzle')
+    expect(art(syrupIcedLatte, { syrupId: null }, 'none-iced')).not.toContain('#C9772B')
+  })
+
   it('uses a distinct flavor color in the drink illustration', () => {
     const item = { id: 'latte', cat: 'hot', name: 'Latte', art: 'latte' }
     const vanilla = art(item, { syrupId: 'vanilla' }, 'vanilla')

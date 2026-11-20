@@ -10,8 +10,8 @@ const PAIR: SizeOption[] = [{ key: 'piece1', mult: 1, scale: 1 }, { key: 'piece2
 
 export const MILKS = [
   { key: 'milk.whole', add: 0 },
-  { key: 'milk.almond', add: 15000 },
-  { key: 'milk.oat', add: 20000 },
+  { key: 'milk.lactoseFree', add: 5000 },
+  // { key: 'milk.oat', add: 20000 },
 ] as const
 export const MAX_SYRUP_PUMPS = 2
 export const DEMO_SYRUPS: Syrup[] = [
