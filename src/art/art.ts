@@ -174,6 +174,32 @@ function muffins() {
   return plate() + muffinOne(164, 188, 'blueberry') + muffinOne(96, 196, 'chip')
 }
 
+// ── affogato: short glass with espresso at the bottom, two vanilla scoops, espresso poured over, wafer stick ──
+function affogato(u) {
+  const gp = 'M80 116 H180 L166 180 Q164 190 152 190 H108 Q96 190 94 180 Z', id = 'af' + u
+  const scoop = (cx, cy) =>
+    `<ellipse cx="${cx}" cy="${cy + 17}" rx="21" ry="6.5" fill="#F2E2BF" stroke="${INK}" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="24" fill="#FFF3D6" stroke="${INK}" stroke-width="2.2"/>` +
+    `<path d="M${cx - 15} ${cy - 11} Q${cx - 9} ${cy - 19} ${cx} ${cy - 18}" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="3.4" stroke-linecap="round"/>` +
+    dots([[cx - 9, cy + 4], [cx + 6, cy + 8], [cx + 12, cy - 2], [cx - 2, cy - 6]], 1.1, '#C9A86B', 0.8)
+  return (
+    plate() +
+    `<path d="${gp}" fill="var(--ml-glass)"/>` +
+    `<clipPath id="${id}"><path d="${gp}"/></clipPath>` +
+    `<g clip-path="url(#${id})"><rect x="70" y="130" width="120" height="72" fill="#3B2013"/><ellipse cx="130" cy="130" rx="52" ry="4.5" fill="#B07A4B"/><path d="M70 158 Q130 166 190 158" fill="none" stroke="var(--ml-accent)" stroke-width="2.6" opacity=".55"/><path d="M164 130 L154 190" stroke="#2A1608" stroke-opacity=".2" stroke-width="9"/></g>` +
+    `<path d="M80 116 A50 7 0 0 1 180 116" fill="none" stroke="${INK}" stroke-width="2.2"/>` +
+    scoop(116, 104) + scoop(148, 100) +
+    `<path d="M172 52 L150 106" stroke="${INK}" stroke-width="9" stroke-linecap="round"/><path d="M172 52 L150 106" stroke="#E0B878" stroke-width="5.4" stroke-linecap="round"/><path d="M172 52 L150 106" stroke="#B98440" stroke-width="5.4" stroke-dasharray="2 4" opacity=".55"/>` +
+    // espresso poured over the scoops
+    `<ellipse cx="148" cy="80" rx="14" ry="5.5" fill="#3B2013"/><ellipse cx="116" cy="86" rx="11" ry="4.5" fill="#3B2013"/>` +
+    `<path d="M138 84 Q142 100 135 114 M158 82 Q166 98 159 110 M112 88 Q108 100 113 112" fill="none" stroke="#3B2013" stroke-width="5.4" stroke-linecap="round"/>` +
+    `<path d="M139 88 Q141 98 138 106 M112 92 Q110 98 112 104" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="1.8" stroke-linecap="round"/>` +
+    dots([[132, 96], [160, 114], [124, 100]], 1.8, '#7A4A2A', 0.6) +
+    `<path d="M80 116 A50 7 0 0 0 180 116" fill="none" stroke="${INK}" stroke-width="2.2"/>` +
+    `<path d="M88 124 L98 176" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="round"/>` +
+    `<path d="${gp}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`
+  )
+}
+
 // ── toast: a bread slice lying on the plate. Drawn flat, then squashed into perspective;
 //    non-scaling-stroke keeps outline widths equal to the other items. ──
 const VE = 'vector-effect="non-scaling-stroke"'
@@ -257,6 +283,21 @@ const SAND = {
       `<path d="M58 127 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#D9453A" stroke-width="3" stroke-linecap="round"/><path d="M70 131 q8 -5 16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#FFF1C4" stroke-width="2.6" stroke-linecap="round"/>` +
       [[58, 148], [140, 151], [182, 149]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="6.5" fill="#9DB35A" stroke="${INK}" stroke-width="1.6"/><circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#C9D88A"/>`).join(''),
   },
+  olivesandwich: {
+    bun: '#E6B068',
+    // an olive on a toothpick stuck in the roll
+    deco:
+      `<path d="M126 106 L152 64" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path d="M126 106 L152 64" stroke="#E8C98B" stroke-width="2.6" stroke-linecap="round"/>` +
+      `<ellipse cx="156" cy="60" rx="9" ry="7" transform="rotate(-25 156 60)" fill="#8E9A3A" stroke="${INK}" stroke-width="1.8"/><circle cx="159" cy="58" r="2.6" fill="#D9453A"/><path d="M149 57 q3 -3 6 -3" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>` +
+      dots([[78, 104], [100, 98], [172, 100], [192, 108]], 2.2, '#FFF3D6'),
+    fill:
+      frill(40, 220, 142, '#8DBE63') +
+      `<path d="M46 134 Q70 126 100 132 T160 132 T214 132 V144 H46Z" fill="#FFF6E0" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>` +
+      [[66, 130, '#8E9A3A'], [92, 134, '#3A3430'], [120, 130, '#8E9A3A'], [148, 134, '#3A3430'], [176, 130, '#8E9A3A'], [200, 134, '#3A3430']]
+        .map((o) => `<circle cx="${o[0]}" cy="${o[1]}" r="9" fill="${o[2]}" stroke="${INK}" stroke-width="1.6"/><circle cx="${o[0]}" cy="${o[1]}" r="4" fill="#FFF6E0" stroke="${INK}" stroke-width="1.2"/><path d="M${o[0] - 6} ${o[1] - 3} q2 -4 6 -5" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.6" stroke-linecap="round"/>`)
+        .join('') +
+      tomato(80, 146) + tomato(171, 147),
+  },
   falafelsandwich: {
     bun: '#E6B068',
     deco:
@@ -310,6 +351,87 @@ function sandwich(f) {
     paper +
     `</g>`
   )
+}
+
+// ── "meal" items: a kraft-paper takeaway bowl with the food mounded above the rim ──
+const KRAFT = '#C9A271'
+const rnd = (i, m, k = 9301) => (((i * k + 49297) % 233280) / 233280) * m
+
+function kraftBowl(f) {
+  const t = f.top
+  const mound = `M56 96 C56 ${t + 8} 100 ${t} 130 ${t} C160 ${t} 204 ${t + 8} 204 96 A74 14 0 0 1 56 96Z`
+  const body = 'M56 96 A74 14 0 0 0 204 96 L186 178 Q184 190 170 190 H90 Q76 190 74 178 Z'
+  return (
+    `<ellipse cx="130" cy="192" rx="78" ry="7" fill="#2A1608" opacity=".15"/>` +
+    `<ellipse cx="130" cy="96" rx="76" ry="15" fill="#D8B484" stroke="${INK}" stroke-width="2.5"/><ellipse cx="130" cy="96" rx="68" ry="11" fill="#6E5230"/>` +
+    `<path d="${mound}" fill="${f.color}" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/>` +
+    f.deco +
+    `<path d="${body}" fill="${KRAFT}" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    `<path d="M190 104 L180 172 Q178 184 168 186" fill="none" stroke="#6B4A22" stroke-width="9" stroke-linecap="round" opacity=".22"/>` +
+    `<path d="M66 108 L80 170" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="5" stroke-linecap="round"/>` +
+    `<path d="M56 96 A74 14 0 0 0 204 96" fill="none" stroke="#E4C99B" stroke-width="5"/><path d="M56 96 A74 14 0 0 0 204 96" fill="none" stroke="${INK}" stroke-width="2.5"/>` +
+    `<path d="M60 104 A70 13 0 0 0 200 104" fill="none" stroke="#A98355" stroke-width="3" opacity=".6"/>` +
+    dots([[88, 128], [112, 168], [150, 172], [170, 138], [96, 150], [140, 122], [176, 160]], 1.4, '#A98355', 0.7) +
+    `<rect x="98" y="132" width="64" height="38" rx="6" fill="var(--ml-cup)" stroke="${INK}" stroke-width="1.8"/>${RINGS(130, 150, 8, 2.4)}<rect x="108" y="160" width="44" height="4" rx="2" fill="${INK}" opacity=".4"/>` +
+    (f.steam ? steam(f.steam) : '')
+  )
+}
+
+const parsley = (x, y) => `<path d="M${x} ${y} q-6 -8 -12 -4 q4 8 12 4 q2 -8 10 -8 q-2 8 -10 8Z" fill="#6F9A5E" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`
+
+const MEALS = {
+  mealcutlet: {
+    top: 70, color: '#FFF3D6',
+    deco:
+      Array.from({ length: 34 }, (_, i) => `<path d="M${72 + ((i * 47) % 116)} ${76 + ((i * 29) % 18)} l5 -2" stroke="#E6D3A4" stroke-width="1.6" stroke-linecap="round"/>`).join('') +
+      [[88, 82, -15, 9], [172, 80, 10, 10], [146, 87, 0, 7]].map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="${p[3]}" ry="4" transform="rotate(${p[2]} ${p[0]} ${p[1]})" fill="#F2C94C" opacity=".85"/>`).join('') +
+      [[108, 66, -12], [152, 62, 10]]
+        .map((c) => `<g transform="rotate(${c[2]} ${c[0]} ${c[1]})"><ellipse cx="${c[0]}" cy="${c[1]}" rx="27" ry="12" fill="#8F5429" stroke="${INK}" stroke-width="2"/><ellipse cx="${c[0]}" cy="${c[1] - 2}" rx="21" ry="7.5" fill="#B97A43"/><path d="M${c[0] - 18} ${c[1] - 5} Q${c[0] - 8} ${c[1] - 9} ${c[0]} ${c[1] - 8}" fill="none" stroke="#E0A66E" stroke-width="2.6" stroke-linecap="round" opacity=".8"/>${dots([[c[0] - 11, c[1] + 1], [c[0] + 2, c[1] - 2], [c[0] + 12, c[1] + 2], [c[0] - 3, c[1] + 4]], 1.8, '#6B3A1B', 0.8)}</g>`)
+        .join('') +
+      tomato(178, 85) + parsley(84, 72),
+  },
+  mealpotatokookoo: {
+    // potato kookoo (Persian potato frittata): two golden slices on herbs, with a yogurt dollop, tomato and pickle
+    top: 74, color: '#8DBE63',
+    deco:
+      `<path d="M62 90 q10 -10 20 0 t20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="#6F9A5E" stroke-width="3" stroke-linecap="round" opacity=".8"/>` +
+      [[104, 70, -8], [152, 68, 8]]
+        .map((c) => `<g transform="rotate(${c[2]} ${c[0]} ${c[1]})"><ellipse cx="${c[0]}" cy="${c[1] + 7}" rx="29" ry="12" fill="#B97A2A" stroke="${INK}" stroke-width="2"/><ellipse cx="${c[0]}" cy="${c[1]}" rx="29" ry="12" fill="#E8B84A" stroke="${INK}" stroke-width="2"/><ellipse cx="${c[0]}" cy="${c[1]}" rx="22" ry="8" fill="#F0CB6A"/>${[[-18, -2], [-8, 2], [2, -4], [12, 1], [-12, 5], [6, 5], [16, -3], [-2, -6]].map((k) => `<path d="M${c[0] + k[0]} ${c[1] + k[1]} l5 -1.4" stroke="#C98A2A" stroke-width="1.5" stroke-linecap="round"/>`).join('')}${dots([[c[0] - 14, c[1] + 1], [c[0] + 4, c[1] + 2], [c[0] + 18, c[1] - 1]], 1.3, '#FBE9A8')}<path d="M${c[0] - 22} ${c[1] - 5} Q${c[0] - 10} ${c[1] - 10} ${c[0]} ${c[1] - 9}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.4" stroke-linecap="round"/></g>`)
+        .join('') +
+      `<ellipse cx="130" cy="86" rx="11" ry="5.5" fill="#FFF6E0" stroke="${INK}" stroke-width="1.6"/>${dots([[126, 85], [131, 84], [135, 86]], 1, '#4F7F3A')}` +
+      tomato(178, 86) + `<circle cx="84" cy="85" r="6.5" fill="#9DB35A" stroke="${INK}" stroke-width="1.6"/><circle cx="84" cy="85" r="3.5" fill="#C9D88A"/>`,
+  },
+  mealbeans: {
+    // stewed beans in tomato sauce
+    top: 82, color: '#B5472A', steam: 78,
+    deco:
+      `<path d="M78 90 Q96 82 118 88 M122 84 Q144 78 166 86 M96 94 Q130 88 170 94" fill="none" stroke="#E0714A" stroke-width="2.2" stroke-linecap="round" opacity=".8"/>` +
+      Array.from({ length: 38 }, (_, i) => {
+        const x = 70 + ((i * 53) % 122), y = 82 + ((i * 31) % 12), r = (i * 47) % 180
+        return `<g transform="rotate(${r} ${x} ${y})"><ellipse cx="${x}" cy="${y}" rx="5.4" ry="3.4" fill="#EBD3A2" stroke="#8F4A2A" stroke-width=".9"/><ellipse cx="${x - 1}" cy="${y - 1}" rx="2.6" ry="1.3" fill="#fff" opacity=".45"/><circle cx="${x + 2}" cy="${y + 1}" r=".9" fill="#A64A2C"/></g>`
+      }).join('') +
+      dots([[96, 84], [128, 80], [152, 90], [112, 92], [176, 88], [84, 92]], 1.8, '#4F7F3A') +
+      parsley(138, 82),
+  },
+  meallentils: {
+    top: 84, color: '#8A6A2E', steam: 80,
+    deco:
+      Array.from({ length: 70 }, (_, i) => `<circle cx="${68 + ((i * 53) % 124)}" cy="${84 + ((i * 31) % 12)}" r="2.4" fill="${['#B5893A', '#6B7A2E', '#8F5A2B'][i % 3]}"/>`).join('') +
+      `<path d="M92 88 q10 -9 20 0 M122 86 q10 -9 20 0 M150 90 q10 -9 20 0 M106 94 q8 -6 16 0 M138 94 q8 -6 16 0" fill="none" stroke="#D79A2B" stroke-width="3.4" stroke-linecap="round"/>` +
+      `<path d="M94 86 q8 -6 14 -1 M124 84 q8 -6 14 -1 M152 88 q8 -6 14 -1" fill="none" stroke="#F2C96B" stroke-width="1.2" stroke-linecap="round"/>` +
+      parsley(120, 82) +
+      `<path d="M172 99 A11 11 0 0 1 194 99Z" fill="#F2D24B" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/><path d="M183 99 L183 90 M183 99 L176 92 M183 99 L190 92" stroke="#FFF3B0" stroke-width="1.4" stroke-linecap="round"/>`,
+  },
+  mealashreshteh: {
+    top: 84, color: '#6B8A30', steam: 80,
+    deco:
+      `<path d="M72 92 q8 -8 16 0 t16 0 t16 0 t16 0 t16 0 M80 86 q8 -7 16 0 t16 0 t16 0 t16 0" fill="none" stroke="#F1DCA0" stroke-width="2.4" stroke-linecap="round"/>` +
+      [[92, 90], [126, 88], [158, 90], [112, 94], [176, 92]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="3.3" fill="#D8B070" stroke="#8A6A2E" stroke-width=".8"/>`).join('') +
+      [[104, 86], [140, 92], [166, 86], [84, 93]].map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="3.4" ry="2.4" fill="#8E2F2A"/>`).join('') +
+      `<path d="M84 88 q10 -9 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="#FFF6E0" stroke-width="3.6" stroke-linecap="round"/>` +
+      [[100, 84], [132, 82], [152, 86], [120, 92], [174, 90]].map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="4" ry="2" fill="#D79A2B"/>`).join('') +
+      dots([[96, 80], [122, 78], [146, 80], [170, 82], [110, 90]], 2, '#2E5B22') + dots([[134, 90], [160, 94], [90, 94]], 1.6, '#C8601E'),
+  },
 }
 
 // ── herbal tea: clear glass mug + tea bag tag + fruit garnish ──
@@ -438,9 +560,11 @@ function goodsBody(k, u) {
 
 /** `u` must be unique per rendered instance (it namespaces SVG ids such as the glass clipPath). */
 export const ARTWORK_IDS = [
+  'affogato',
   'espresso', 'americano', 'cortado', 'syruplatte', 'syrupicedlatte',
   'hotchoc', 'mangochoc', 'berrychoc', 'pbbananatoast',
-  'falafelsandwich', 'cutletsandwich', 'kookoosandwich', 'schnitzelsandwich', 'bandarisandwich',
+  'olivesandwich', 'falafelsandwich', 'cutletsandwich', 'kookoosandwich', 'schnitzelsandwich', 'bandarisandwich',
+  'mealcutlet', 'mealpotatokookoo', 'mealbeans', 'meallentils', 'mealashreshteh',
   'queenberry', 'appleparadise', 'vitaminc', 'pistachiolatte',
   'latte', 'cappuccino', 'mocha', 'icedlatte', 'iceamer', 'coldbrew', 'shake',
   'cheesecake', 'brownie', 'croissant', 'carrotcake', 'muffin', 'cookie',
@@ -465,6 +589,13 @@ export function art(it, o, u) {
     case 'mangochoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#4A2415', cream: true, creamFill: '#FFF0C9', topping: 'mango' }, 0); break
     case 'berrychoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#5A2A24', cream: true, creamFill: '#FFE3E8', topping: 'strawberry' }, 0); break
     case 'pbbananatoast': b = toast(TOASTS.pbbananatoast); break
+    case 'affogato': b = affogato(u); break
+    case 'olivesandwich': b = sandwich(SAND.olivesandwich); break
+    case 'mealcutlet': b = kraftBowl(MEALS.mealcutlet); break
+    case 'mealpotatokookoo': b = kraftBowl(MEALS.mealpotatokookoo); break
+    case 'mealbeans': b = kraftBowl(MEALS.mealbeans); break
+    case 'meallentils': b = kraftBowl(MEALS.meallentils); break
+    case 'mealashreshteh': b = kraftBowl(MEALS.mealashreshteh); break
     case 'falafelsandwich': b = sandwich(SAND.falafelsandwich); break
     case 'cutletsandwich': b = sandwich(SAND.cutletsandwich); break
     case 'kookoosandwich': b = sandwich(SAND.kookoosandwich); break
