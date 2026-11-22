@@ -163,8 +163,12 @@
 [data-time="night"]   { --ml-sky-1: #1E2747; --ml-sky-2: #3C3A63; }
 
 /* ---------- 4. Base ---------- */
-html { box-sizing: border-box; height: 100%; }
+html { box-sizing: border-box; height: 100%; scrollbar-color: var(--ml-accent) var(--ml-bg-2); scrollbar-width: thin; }
 *, *::before, *::after { box-sizing: inherit; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: var(--ml-bg-2); }
+*::-webkit-scrollbar-thumb { border: 3px solid var(--ml-bg-2); border-radius: var(--ml-radius-pill); background: var(--ml-accent); }
+*::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--ml-accent) 82%, var(--ml-ink)); }
 body {
   margin: 0; height: 100%; background: var(--ml-bg); color: var(--ml-ink);
   font: var(--ml-text-md)/var(--ml-leading-body) var(--ml-font-body);

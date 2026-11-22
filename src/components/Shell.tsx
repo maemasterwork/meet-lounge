@@ -28,6 +28,7 @@ export function TopBar({ view }: { view: View }) {
     <header className="top ltr" id="top">
       <button className="brand ltr" type="button" onClick={() => go('home')} aria-label={t('nav.home')}>
         <LogoMark />
+        <NamvaranLogoMark className="namvaran-mobile-mark" />
         <span className="wm"><b>{t('brand.name')}</b><small>{t('brand.tagline')}</small></span>
       </button>
       <nav className="topnav" aria-label={t('nav.main')}>

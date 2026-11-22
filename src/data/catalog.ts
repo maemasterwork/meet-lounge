@@ -5,6 +5,11 @@ export const DRINK_SIZES: SizeOption[] = [
   { key: 'medium', mult: 1.15, scale: 1 },
   { key: 'large', mult: 1.3, scale: 1.08 },
 ]
+export const normalizeSizes = (sizes: SizeOption[] | null | undefined): SizeOption[] => {
+  const first = sizes?.[0]
+  if (sizes?.length === 1 && first && typeof first === 'object' && Object.keys(first).length === 0) return []
+  return sizes ?? []
+}
 const ONE: SizeOption[] = [{ key: 'piece1', mult: 1, scale: 1 }]
 const PAIR: SizeOption[] = [{ key: 'piece1', mult: 1, scale: 1 }, { key: 'piece2', mult: 1.9, scale: 1.06 }]
 

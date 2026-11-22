@@ -6,7 +6,7 @@ import { useUi } from '../store/ui'
 import { Icon } from '../components/icons'
 import { ItemArt } from '../art/ItemArt'
 import { HomeScene } from '../components/HomeScene'
-import { basePrice } from '../lib/pricing'
+import { basePrice, sizeKeyOf } from '../lib/pricing'
 
 const BEST = ['latte', 'cappuccino', 'croissant', 'icedlatte']
 
@@ -39,7 +39,7 @@ export function Home() {
               <button key={id} type="button" className="tile" onClick={() => open(id)} disabled={!isAvailable(m)}>
                 <span className="im"><ItemArt item={m} uid={`b${id}`} /></span>
                 <span className="nm">{t(`item.${id}.name`)}</span>
-                <span className="pr">{price(basePrice(m, { size: m.sizes[0].key, milk: 0 }))}</span>
+                <span className="pr">{price(basePrice(m, { size: sizeKeyOf(m), milk: 0 }))}</span>
               </button>) })}
           </div>
         </article>

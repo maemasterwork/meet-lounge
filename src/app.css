@@ -21,6 +21,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .top{display:flex;align-items:center;gap:clamp(14px,3vw,56px);padding:clamp(8px,2.2vh,24px) max(var(--ml-gutter-end),4.6%) clamp(6px,1.2vh,12px) max(var(--ml-gutter-start),5.3%)}
 .brand{display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;color:inherit;flex:0 0 auto;min-width:clamp(200px,19%,330px)}
 .brand .logo{width:46px;height:46px;flex:none}
+.brand .namvaran-mobile-mark{display:none}
 .wm b{display:block;font-family:var(--ml-font-script);font-weight:700;font-size:clamp(24px,3.4vh,34px);line-height:1.15}
 .wm small{display:block;font-size:11.5px;color:var(--ml-ink-2)}
 .topnav{display:flex;gap:clamp(18px,2.4vw,44px)}
@@ -263,7 +264,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 @media (max-width:860px){
   .top{padding:10px 14px 6px;gap:8px}
-  .brand{min-width:0;flex:0 0 auto}.wm{display:none}.brand .logo{width:38px;height:38px}
+  .brand{min-width:0;flex:0 0 auto}.wm{display:none}.brand .logo{width:38px;height:38px}.brand .namvaran-mobile-mark{display:block;width:34px;height:34px;flex:none}
   .topnav{display:none}
   .top-end{gap:2px;min-width:0}.ibtn{width:36px;height:36px}.pill2{height:38px;padding:0 6px 0 12px;gap:6px}
   .home .hero-art{width:100%;height:46%;bottom:auto}

@@ -1,9 +1,11 @@
-import type { CartLine, MenuItem, Offer, OrderMode, Syrup } from '../types'
+import type { CartLine, MenuItem, Offer, OrderMode, SizeOption, Syrup } from '../types'
 import { MILKS } from '../data/catalog'
 
 const roundK = (n: number) => Math.round(n / 1000) * 1000
+const DEFAULT_SIZE: SizeOption = { key: '', mult: 1, scale: 1 }
 
-export const sizeOf = (item: MenuItem, key: string) => item.sizes.find((s) => s.key === key) ?? item.sizes[0]
+export const sizeKeyOf = (item: MenuItem) => item.sizes[0]?.key ?? ''
+export const sizeOf = (item: MenuItem, key: string): SizeOption => item.sizes.find((s) => s.key === key) ?? item.sizes[0] ?? DEFAULT_SIZE
 
 export interface Selection { size: string; milk: number; syrupId?: string | null; syrupPumps?: number }
 

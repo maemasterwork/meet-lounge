@@ -24,6 +24,10 @@ describe('basePrice', () => {
     expect(basePrice(by('cheesecake'), { size: 'wholeCake', milk: 0 })).toBe(1225000)
     expect(basePrice(by('cookie'), { size: 'piece3', milk: 0 })).toBe(176000) // 175,500
   })
+  it('uses the base price when no sizes are configured', () => {
+    const item = { ...by('latte'), sizes: [] }
+    expect(basePrice(item, { size: '', milk: 0 })).toBe(item.price)
+  })
 })
 
 describe('offers', () => {

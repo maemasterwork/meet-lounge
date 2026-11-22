@@ -6,10 +6,26 @@ import { ItemArt } from '../art/ItemArt'
 import { IMAGE_ACCEPT, Msg, NumInput, Switch, useAct } from './common'
 import type { Category, SizeOption, Syrup } from '../types'
 import { swapVisibleItems } from './item-order'
-import { isDrinkCategory } from '../data/catalog'
+import { isDrinkCategory, normalizeSizes } from '../data/catalog'
 import { art, ARTWORK_IDS } from '../art/art'
 
 const CATS: Category[] = ['hot', 'cold', 'tea', 'breakfast', 'food', 'sweet', 'goods']
+const isSizeOption = (size: unknown): size is SizeOption =>
+  typeof size === 'object' && size !== null && !Array.isArray(size) &&
+  'key' in size && typeof size.key === 'string' && !!size.key &&
+  'mult' in size && typeof size.mult === 'number' && Number.isFinite(size.mult) && size.mult > 0 &&
+  'scale' in size && typeof size.scale === 'number' && Number.isFinite(size.scale) && size.scale > 0
+
+function parseSizes(text: string): SizeOption[] | null {
+  try {
+    const parsed: unknown = JSON.parse(text)
+    if (!Array.isArray(parsed)) return null
+    const sizes = normalizeSizes(parsed)
+    return sizes.every(isSizeOption) ? sizes : null
+  } catch {
+    return null
+  }
+}
 
 function ArtworkPicker({ value, cat, onChange }: { value: string; cat: Category; onChange: (artId: string) => void }) {
   const { t } = useI18n()
@@ -55,11 +71,7 @@ function Editor({ item, onClose, onStage, act }: { item: AdminItem; onClose: () 
   const [f, setF] = useState({ nameFa: item.name.fa, nameEn: item.name.en, descFa: item.desc.fa, descEn: item.desc.en, cat: item.cat, art: item.art, milk: item.milk, syrupOptions: item.syrupOptions, tags: item.tags.join(', ') })
   const [sizesText, setSizesText] = useState(JSON.stringify(item.sizes, null, 2))
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value })
-  let sizes: SizeOption[] | null = null
-  try {
-    const parsed = JSON.parse(sizesText)
-    if (Array.isArray(parsed) && parsed.length > 0 && parsed.every((s) => typeof s.key === 'string' && s.key && Number.isFinite(s.mult) && s.mult > 0 && Number.isFinite(s.scale) && s.scale > 0)) sizes = parsed
-  } catch { /* invalid JSON */ }
+  const sizes = parseSizes(sizesText)
   const ok = f.nameFa.trim() && f.nameEn.trim() && f.art.trim() && sizes
   return (
     <dialog
@@ -107,11 +119,7 @@ function NewItem({ act, onClose }: { act: ReturnType<typeof useAct>; onClose: ()
   const thousands = Number(f.price)
   const price = thousands * 1000
   const coins = Math.round(Number(f.coins)), cost = Math.round(Number(f.cost)), stock = f.stock.trim() === '' ? null : Math.round(Number(f.stock))
-  let sizes: SizeOption[] | null = null
-  try {
-    const parsed = JSON.parse(f.sizesText)
-    if (Array.isArray(parsed) && parsed.length > 0 && parsed.every((s) => typeof s.key === 'string' && s.key && Number.isFinite(s.mult) && s.mult > 0 && Number.isFinite(s.scale) && s.scale > 0)) sizes = parsed
-  } catch { /* invalid JSON */ }
+  const sizes = parseSizes(f.sizesText)
   const ok = f.nameFa.trim() && f.nameEn.trim() && f.art.trim() && Number.isInteger(thousands) && thousands > 0 && coins >= 0 && coins <= 50 && cost >= 1 && cost <= 200 && (stock === null || (Number.isFinite(stock) && stock >= 0)) && sizes
   return (
     <dialog

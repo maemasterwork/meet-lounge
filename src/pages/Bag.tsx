@@ -50,7 +50,7 @@ export function BagPage() {
   const lineLabel = (l: CartLine) => {
     const it = data.byId(l.itemId)
     if (!it) return ''
-    const parts = [t(`size.${l.size}`)]
+    const parts = l.size ? [t(`size.${l.size}`)] : []
     if (it.milk) parts.push(t(MILKS[l.milk].key))
     if (l.syrupPumps > 0) {
       const syrup = data.syrups.find((s) => s.id === l.syrupId)
@@ -87,7 +87,10 @@ export function BagPage() {
   const lineSub = (l: CartLine) => {
     const it = data.byId(l.itemId)
     if (!it) return ''
-    return l.free ? t('bag.rewardSub', { n: n(it.rewardCost) }) : `${lineLabel(l)} · ${t('bag.each', { price: price(lineTotal({ ...l, qty: 1 }, data.menu, data.offers, data.syrups)) })}`
+    if (l.free) return t('bag.rewardSub', { n: n(it.rewardCost) })
+    const label = lineLabel(l)
+    const each = t('bag.each', { price: price(lineTotal({ ...l, qty: 1 }, data.menu, data.offers, data.syrups)) })
+    return label ? `${label} · ${each}` : each
   }
 
   const rows = cart.lines.map((l, i) => {

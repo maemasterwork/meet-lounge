@@ -5,7 +5,7 @@ import { useUi } from '../store/ui'
 import { useCart } from '../store/cart'
 import { Frame, LoadState } from '../components/Frame'
 import { ItemArt } from '../art/ItemArt'
-import { unitPrice } from '../lib/pricing'
+import { sizeKeyOf, unitPrice } from '../lib/pricing'
 import { isAvailable, stockLeft } from '../lib/coins'
 
 export function ShopPage() {
@@ -26,9 +26,9 @@ export function ShopPage() {
                   <div className="im"><ItemArt item={g} uid={`s${g.id}`} /></div>
                   <b>{t(`item.${g.id}.name`)}</b>
                   <span className="muted sm">{t(`item.${g.id}.desc`)}</span>
-                  <span>{price(unitPrice(g, { size: g.sizes[0].key, milk: 0 }, data.offers))}</span>
+                  <span>{price(unitPrice(g, { size: sizeKeyOf(g), milk: 0 }, data.offers))}</span>
                   <button type="button" className="btn sm" disabled={!isAvailable(g) || stockLeft(g, lines) < 1} onClick={() => {
-                    add({ itemId: g.id, size: g.sizes[0].key, milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false })
+                    add({ itemId: g.id, size: sizeKeyOf(g), milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false })
                     toast(t('menu.addedToast', { name: t(`item.${g.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
                   }}>{t(!isAvailable(g) ? 'menu.soldOut' : stockLeft(g, lines) < 1 ? 'menu.maxInBag' : 'menu.add')}</button>
                 </div>

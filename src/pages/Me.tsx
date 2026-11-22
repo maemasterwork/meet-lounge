@@ -10,6 +10,7 @@ import { Frame, LoadState } from '../components/Frame'
 import { Icon } from '../components/icons'
 import { ItemArt } from '../art/ItemArt'
 import { canTakeReward, coinsToNext, isAvailable, nextRewardCost, rewardCostOf, stockLeft } from '../lib/coins'
+import { sizeKeyOf } from '../lib/pricing'
 import type { Order } from '../types'
 
 const STEPS: Record<Order['mode'], Order['status'][]> = {
@@ -98,7 +99,7 @@ export function MePage() {
                 <div className="im" style={{ height: 80 }}><ItemArt item={m} uid={`r${m.id}`} /></div>
                 <b style={{ fontSize: 14 }}>{t(`item.${m.id}.name`)}</b>
                 {canTakeReward(data.balance, m.rewardCost, committed) && isAvailable(m) && stockLeft(m, cart.lines) >= 1
-                  ? <button type="button" className="btn gold sm" onClick={() => { cart.addReward(m.id, m.sizes[0].key); toast(t('menu.freeAddedToast', { name: t(`item.${m.id}.name`) }), { gold: true, action: { label: t('menu.openBag'), run: () => go('bag') } }) }}>{t('coins.claim')}</button>
+                  ? <button type="button" className="btn gold sm" onClick={() => { cart.addReward(m.id, sizeKeyOf(m)); toast(t('menu.freeAddedToast', { name: t(`item.${m.id}.name`) }), { gold: true, action: { label: t('menu.openBag'), run: () => go('bag') } }) }}>{t('coins.claim')}</button>
                     : <span className="muted sm">{isAvailable(m) ? t('coins.needs', { n: n(m.rewardCost) }) : t('menu.soldOut')}</span>}
                 {canTakeReward(data.balance, m.rewardCost, committed) && isAvailable(m) && <small className="muted">{t('coins.costs', { n: n(m.rewardCost) })}</small>}
               </div>))}

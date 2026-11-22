@@ -8,7 +8,7 @@ import { Icon } from '../components/icons'
 import { Frame, LoadState } from '../components/Frame'
 import { ItemArt, ItemStage } from '../art/ItemArt'
 import { MAX_SYRUP_PUMPS, MILKS, REC, isDrink, timeKey } from '../data/catalog'
-import { basePrice, offerFor, syrupPrice, unitPrice } from '../lib/pricing'
+import { basePrice, offerFor, sizeKeyOf, syrupPrice, unitPrice } from '../lib/pricing'
 import { LOW_STOCK, canTakeReward, isAvailable, rewardCostOf, stockLeft } from '../lib/coins'
 import { clamp } from '../lib/format'
 import type { MenuItem } from '../types'
@@ -27,6 +27,7 @@ export function MenuPage() {
 
 type TFn = ReturnType<typeof useI18n>['t']
 type Fmt = { t: TFn; n: (v: number) => string; price: (v: number) => string }
+const customerSize = (item: MenuItem) => item.sizes.length === 0 ? '' : isDrink(item) ? 'medium' : sizeKeyOf(item)
 
 /** Grid first (as on the reference); tapping a card, or an offer/favorite elsewhere, opens that item's options. */
 function MenuSwitch({ items, ...f }: { items: MenuItem[] } & Fmt) {
@@ -53,7 +54,9 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const per = phone ? 6 : 8
   const tk = timeKey()
   const offers = data?.offers ?? []
-  const shown = filter === 'all' ? items : items.filter((m) => m.cat === filter)
+  const shown = (filter === 'all' ? items : items.filter((m) => m.cat === filter))
+    .slice()
+    .sort((a, b) => Number(isAvailable(b)) - Number(isAvailable(a)))
   const pages = Math.max(1, Math.ceil(shown.length / per))
   const cur = Math.min(page, pages - 1)
   const view = shown.slice(cur * per, cur * per + per)
@@ -61,7 +64,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const quick = (m: MenuItem) => {
     if (!isAvailable(m)) return
     if (stockLeft(m, cart.lines) < 1) { toast(t('menu.maxInBagToast', { name: t(`item.${m.id}.name`) })); return }
-    cart.add({ itemId: m.id, size: isDrink(m) ? 'medium' : m.sizes[0].key, milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false })
+    cart.add({ itemId: m.id, size: customerSize(m), milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false })
     toast(t('menu.addedToast', { name: t(`item.${m.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
   return (
@@ -90,7 +93,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
                 <span className="sb">{m.tags.slice(0, 2).map((k) => t(`tag.${k}`)).join(' · ')}</span>
               </button>
               <div className="pr2">
-                <span>{price(unitPrice(m, { size: isDrink(m) ? 'medium' : m.sizes[0].key, milk: 0 }, offers))}</span>
+                <span>{price(unitPrice(m, { size: customerSize(m), milk: 0 }, offers))}</span>
                 <button type="button" className="plus" disabled={!isAvailable(m)} aria-label={t(isAvailable(m) ? 'menu.quickAdd' : 'menu.soldOut', { name })} onClick={() => quick(m)}><Icon name="plus" size={16} /></button>
               </div>
             </div>)
@@ -115,7 +118,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const toast = useUi((s) => s.toast)
   const cart = useCart()
   const item = items.find((m) => m.id === selectedId) ?? items[0]
-  const [size, setSize] = useState(item.sizes[0].key)
+  const [size, setSize] = useState(customerSize(item))
   const [milk, setMilk] = useState(0)
   const [syrupId, setSyrupId] = useState('')
   const [syrupPumps, setSyrupPumps] = useState(0)
@@ -127,7 +130,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
 
   // Choosing another item resets its options (medium drinks, no syrup, quantity 1).
   useEffect(() => {
-    setSize(isDrink(item) ? 'medium' : item.sizes[0].key)
+    setSize(customerSize(item))
     setMilk(0); setSyrupId(syrups[0]?.id ?? ''); setSyrupPumps(0); setQty(1)
   }, [item.id, data?.syrups]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -135,7 +138,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
     if (s && el) s.scrollLeft = el.offsetLeft - (s.clientWidth - el.offsetWidth) / 2
   }, [item.id])
 
-  const sel = { size: item.sizes.some((z) => z.key === size) ? size : item.sizes[0].key, milk, syrupId: syrupPumps > 0 ? syrupId : null, syrupPumps }
+  const sel = { size: item.sizes.some((z) => z.key === size) ? size : sizeKeyOf(item), milk, syrupId: syrupPumps > 0 ? syrupId : null, syrupPumps }
   const artSel = item.syrupOptions ? sel : { ...sel, syrupId: null, syrupPumps: 0 }
   const offers = data?.offers ?? []
   const off = offerFor(item.id, offers)
@@ -150,7 +153,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
     toast(t('menu.addedToast', { name: t(`item.${item.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
   const takeFree = () => {
-    cart.addReward(item.id, item.sizes[0].key)
+    cart.addReward(item.id, sizeKeyOf(item))
     toast(t('menu.freeAddedToast', { name: t(`item.${item.id}.name`) }), { gold: true, action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
 
@@ -178,9 +181,9 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
           <div className="price">{price(p)}{off && <><s>{price(b)}</s><span className="off">{t('home.offerOff', { pct: n(off.pct) })}</span></>}</div>
           <p className="desc">{t(`item.${item.id}.desc`)}</p>
           <div className="tags">{item.tags.map((k) => <span key={k} className="tag">{t(`tag.${k}`)}</span>)}</div>
-          <div className="opt" role="group" aria-label={t('menu.optSize')}>
+          {item.sizes.length > 0 && <div className="opt" role="group" aria-label={t('menu.optSize')}>
             {item.sizes.map((z) => <button key={z.key} type="button" aria-pressed={sel.size === z.key} onClick={() => setSize(z.key)}>{t(`size.${z.key}`)}</button>)}
-          </div>
+          </div>}
           {item.milk && (
             <div className="opt" role="group" aria-label={t('menu.optMilk')}>
               {MILKS.map((m, i) => <button key={m.key} type="button" aria-pressed={milk === i} onClick={() => setMilk(i)}>{t(m.key)}{m.add ? ` (+${n(m.add / 1000)})` : ''}</button>)}

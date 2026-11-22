@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { CafeEvent, EventInput, LedgerEntry, MenuItem, Offer, Order, OrderMode, OrderStatus, PlaceOrderInput, Syrup } from '../types'
-import { isDrinkCategory } from '../data/catalog'
+import { isDrinkCategory, normalizeSizes } from '../data/catalog'
 import { OrderError, SCENE_EVENTS, SEASONS, type AdminItem, type Customer, type LedgerRow, type OrderErrorCode, type Repos, type Settings } from './types'
 
 const CODES: OrderErrorCode[] = [
@@ -32,7 +32,7 @@ const fromEvent = (e: EventInput) => ({
 })
 const toMenu = (r: any, pub: (path: string | null) => string | undefined): MenuItem => ({
   id: r.id, cat: r.category, price: r.base_price, art: r.art, milk: r.milk_options, syrupOptions: r.syrup_options, available: r.available,
-  rewardEligible: r.reward_eligible, coinsEarned: r.coins_earned ?? 1, rewardCost: r.reward_cost ?? 6, stock: r.stock ?? null, sizes: r.sizes, tags: r.tags ?? [],
+  rewardEligible: r.reward_eligible, coinsEarned: r.coins_earned ?? 1, rewardCost: r.reward_cost ?? 6, stock: r.stock ?? null, sizes: normalizeSizes(r.sizes), tags: r.tags ?? [],
   name: { fa: r.name_fa, en: r.name_en }, desc: { fa: r.description_fa, en: r.description_en },
   image: pub(r.image_path), archived: r.archived,
 })
