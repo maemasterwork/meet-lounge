@@ -295,7 +295,7 @@ export function MenuTab({ owner }: { owner: boolean }) {
         {!owner && <p className="muted sm" style={{ margin: 0 }}>{t('a2.ownerOnly')}</p>}
         <div className="tblw">
           <table>
-            <thead><tr><th>{t('a2.item')}</th><th>{t('a2.shapeArt')}</th><th>{t('admin.price')}</th><th>{t('admin.available')}</th><th>{t('a2.stock')}</th><th title={t('a2.coinsEarnedHelp')}>{t('a2.coinsEarned')}</th><th>{t('admin.rewardEligible')}</th><th title={t('a2.rewardCostHelp')}>{t('a2.rewardCost')}</th><th>{t('admin.image')}</th><th /></tr></thead>
+            <thead><tr><th>{t('a2.item')}</th><th>{t('a2.shapeArt')}</th><th>{t('admin.price')}</th><th>{t('admin.available')}</th><th>{t('a2.stock')}</th><th>{t('admin.image')}</th><th /></tr></thead>
             <tbody>
               {list.map((i, index) => (
                 <tr key={i.id} className={dragging === i.id ? 'item-dragging' : undefined} style={i.archived ? { opacity: 0.55 } : undefined} onDragOver={(e) => e.preventDefault()} onDrop={(e) => dropOn(e, i.id)}>
@@ -307,9 +307,6 @@ export function MenuTab({ owner }: { owner: boolean }) {
                     <NumInput value={i.stock} min={0} max={100000} nullable placeholder={t('a2.unlimited')} label={`${t('a2.stock')} — ${i.name[lang]}`} disabled={dis} onSave={(v) => stage(i.id, { stock: v })} />
                     {i.stock === 0 && <span className="pillst bad">{t('menu.soldOut')}</span>}
                   </td>
-                  <td><NumInput value={i.coinsEarned} min={0} max={50} label={`${t('a2.coinsEarned')} — ${i.name[lang]}`} disabled={dis} onSave={(v) => stage(i.id, { coinsEarned: v ?? 1 })} /></td>
-                  <td><Switch on={i.rewardEligible} label={t('admin.rewardEligible')} disabled={dis} onChange={(v) => stage(i.id, { rewardEligible: v })} /></td>
-                  <td><NumInput value={i.rewardCost} min={1} max={200} label={`${t('a2.rewardCost')} — ${i.name[lang]}`} disabled={dis || !i.rewardEligible} onSave={(v) => stage(i.id, { rewardCost: v ?? 6 })} /></td>
                   <td>
                     <input type="file" accept={IMAGE_ACCEPT} disabled={dis} aria-label={t('admin.image')} onChange={(e) => { const f = e.target.files?.[0]; if (f) setPendingImages((current) => ({ ...current, [i.id]: f })); e.target.value = '' }} />
                     {Object.hasOwn(pendingImages, i.id) && <span className="muted sm">{pendingImages[i.id]?.name ?? t('admin.removeImage')}</span>}
