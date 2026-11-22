@@ -200,39 +200,72 @@ function affogato(u) {
   )
 }
 
-// ── toast: a bread slice lying on the plate. Drawn flat, then squashed into perspective;
-//    non-scaling-stroke keeps outline widths equal to the other items. ──
-const VE = 'vector-effect="non-scaling-stroke"'
-const BREAD = 'M-58 70 V22 C-80 20 -84 -22 -70 -46 C-58 -68 -32 -66 -20 -68 H20 C32 -66 58 -68 70 -46 C84 -22 80 20 58 22 V70 Q58 76 52 76 H-52 Q-58 76 -58 70Z'
-const slicePath = (d, fill, stroke, w, extra = '') => `<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${w}" stroke-linejoin="round" ${VE} ${extra}/>`
-const bananaSlice = (cx, cy, r) =>
-  `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#F4D56E" stroke="${INK}" stroke-width="1.8" ${VE}/><circle cx="${cx}" cy="${cy}" r="${r - 3.4}" fill="#FBEBB0"/>` +
-  dots([[cx - 1.6, cy - 0.8], [cx + 1.8, cy + 0.6], [cx, cy + 2]], 1, '#7A5A2E')
-
+// ── toast sandwich: two toast slices (cut faces toward us) around peanut butter + banana, same plate/paper-wrap look as the other sandwiches ──
 function toast(f) {
-  const rows = [[-26, -36], [0, -36], [26, -36], [-39, -8], [-13, -8], [13, -8], [39, -8], [-26, 20], [0, 20], [26, 20]]
+  const topP = 'M50 124 V106 Q50 90 68 90 H192 Q210 90 210 106 V124Z'
+  const topIn = 'M56 124 V107 Q56 96 69 96 H191 Q204 96 204 107 V124Z'
+  const botP = 'M50 148 V164 Q50 176 64 176 H196 Q210 176 210 164 V148Z'
+  const botIn = 'M56 148 V163 Q56 170 66 170 H194 Q204 170 204 163 V148Z'
+  let zig = 'M108 156'
+  for (let i = 0; i < 13; i++) zig += ' l4 -5 l4 5'
+  const paper = `<path d="${zig} V182 Q212 186 196 186 H124 Q108 186 108 176Z" fill="var(--ml-cup)" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/><path d="M108 170 H212" stroke="var(--ml-accent)" stroke-width="4" opacity=".8"/><path d="M115 160 V178" stroke="#fff" stroke-opacity=".5" stroke-width="3.5" stroke-linecap="round"/><path d="M206 158 V182" stroke="#2A1608" stroke-opacity=".12" stroke-width="6" stroke-linecap="round"/>`
+  const bananas = [[64, 0], [86, 2], [108, -1], [130, 2], [152, -1], [174, 2], [196, 0]]
+    .map((p) => `<ellipse cx="${p[0]}" cy="${134 + p[1]}" rx="12.5" ry="11" fill="#F7DE80" stroke="${INK}" stroke-width="1.8"/><ellipse cx="${p[0]}" cy="${134 + p[1]}" rx="8.5" ry="6.5" fill="#FBEBB0"/>${dots([[p[0] - 2, 134 + p[1]], [p[0] + 2, 135 + p[1]]], 0.9, '#6B4A22')}`)
+    .join('')
+  const fallen = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="10" ry="5" fill="#EFC94C" stroke="${INK}" stroke-width="1.6"/><ellipse cx="${x}" cy="${y}" rx="6.4" ry="3" fill="#FBEBB0"/>`
+  const peanut = (x, y, r) => `<ellipse cx="${x}" cy="${y}" rx="6" ry="3.8" transform="rotate(${r} ${x} ${y})" fill="#D9A55E" stroke="${INK}" stroke-width="1.4"/>`
+  const top2 = f.spread2 || f.spread
+  // zigzag sauce over the filling + a drip at each side
+  const drizzle = (c) => {
+    let z = 'M58 130'
+    for (let i = 0; i < 9; i++) z += ' l8 9 l8 -9'
+    return `<path d="${z}" fill="none" stroke="${c}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M52 136 q-3 10 0 16" fill="none" stroke="${c}" stroke-width="3.4" stroke-linecap="round"/><path d="M208 136 q3 10 0 18" fill="none" stroke="${c}" stroke-width="3.4" stroke-linecap="round"/>`
+  }
   return (
     plate() +
-    `<ellipse cx="130" cy="190" rx="78" ry="8" fill="#2A1608" opacity=".15"/>` +
-    `<g transform="translate(130 160) scale(1 .5) rotate(-6)">` +
-    slicePath(BREAD, '#A8692A', INK, 2.5, 'transform="translate(0 16)"') +
-    slicePath(BREAD, '#B8742E', INK, 2.5) +
-    slicePath(BREAD, f.crumb, '#C98A3A', 3, 'transform="scale(.88)"') +
-    slicePath(BREAD, f.spread, f.spreadEdge, 1.6, 'transform="scale(.76)"') +
-    `<path d="M-40 -50 Q-20 -58 0 -56" fill="none" stroke="${f.spreadHi}" stroke-width="4" stroke-linecap="round" ${VE}/>` +
-    `<path d="M-30 38 q15 8 30 0 t30 0" fill="none" stroke="${f.spreadEdge}" stroke-width="2.4" stroke-linecap="round" opacity=".7" ${VE}/>` +
-    rows.map((p) => bananaSlice(p[0], p[1], 13)).join('') +
-    `<path d="M-46 -22 q10 -8 20 0 t20 0 t20 0 t20 0 t20 0" fill="none" stroke="${f.spreadEdge}" stroke-width="3" stroke-linecap="round" ${VE}/>` +
-    [[-50, -24, -20], [46, -30, 25], [-6, 12, 10], [52, 14, -15]]
-      .map((n) => `<ellipse cx="${n[0]}" cy="${n[1]}" rx="6" ry="4" transform="rotate(${n[2]} ${n[0]} ${n[1]})" fill="#D9A55E" stroke="${INK}" stroke-width="1.4" ${VE}/>`)
-      .join('') +
-    `<path d="M-66 -42 C-58 -60 -42 -64 -26 -64" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round" ${VE}/>` +
-    `</g>`
+    `<ellipse cx="130" cy="190" rx="88" ry="6" fill="#2A1608" opacity=".15"/>` +
+    `<g transform="translate(0 8)">` +
+    // bottom slice + its peanut butter layer
+    `<path d="${botP}" fill="#B8742E" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="${botIn}" fill="${f.crumb}"/><path d="M56 148 V163 Q56 170 66 170 H194 Q204 170 204 163 V148" fill="none" stroke="#D9A24F" stroke-width="5" opacity=".5"/>` +
+    dots([[72, 160], [110, 164], [150, 160], [186, 164], [130, 167], [92, 153]], 1.3, '#CE9A52', 0.7) +
+    (f.spread ? `<path d="M50 148 H210 V141 q-9 -8 -18 0 q-9 -7 -18 0 q-9 -8 -18 0 q-9 -7 -18 0 q-9 -8 -18 0 q-9 -7 -18 0 q-9 -8 -18 0 q-9 -7 -16 0 L50 141Z" fill="${f.spread}" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>` : '') +
+    (f.mid ? f.mid() : bananas) +
+    (f.drizzle ? drizzle(f.drizzle) : '') +
+    // peanut butter squeezed out of the sides
+    (f.spread ? `<ellipse cx="48" cy="135" rx="6" ry="10" fill="${f.spread}" stroke="${INK}" stroke-width="1.6"/><ellipse cx="212" cy="137" rx="6" ry="10" fill="${top2}" stroke="${INK}" stroke-width="1.6"/>` : '') +
+    // top peanut butter layer hanging from the top slice (the whole top half is lifted 8px like the other sandwiches)
+    `<g transform="translate(0 -8)">` +
+    (f.spread ? `<path d="M50 124 H210 V130 q-8 8 -16 0 q-8 10 -18 0 q-8 7 -16 0 q-8 9 -18 0 q-8 8 -18 0 q-8 10 -18 0 q-8 6 -18 0 q-8 9 -16 0 L50 130Z" fill="${top2}" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/><path d="M62 128 q10 -3 22 0 M120 127 q10 -3 20 0" fill="none" stroke="${f.spreadHi}" stroke-width="2.4" stroke-linecap="round"/>` : '') +
+    // top slice
+    `<path d="${topP}" fill="#B8742E" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="${topIn}" fill="${f.crumb}"/><path d="M56 124 V107 Q56 96 69 96 H191 Q204 96 204 107 V124" fill="none" stroke="#D9A24F" stroke-width="5" opacity=".5"/>` +
+    dots([[70, 102], [100, 106], [140, 102], [180, 108], [120, 112], [160, 114], [84, 116]], 1.3, '#CE9A52', 0.7) +
+    `<path d="M62 100 Q64 93 82 92" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/>` +
+    `</g>` +
+    paper +
+    `</g>` +
+    (f.fallen ? f.fallen() : fallen(54, 200) + fallen(74, 206) + peanut(94, 208, 20) + peanut(40, 194, -15))
   )
 }
 
 const TOASTS = {
-  pbbananatoast: { crumb: '#E8BF76', spread: '#B8793F', spreadEdge: '#8F5A2B', spreadHi: '#E0A767' },
+  pbbananatoast: { crumb: '#E8BF76', spread: '#B8793F', spreadHi: '#E0A767' },
+  pbchocbanana: { crumb: '#E8BF76', spread: '#B8793F', spreadHi: '#E0A767', drizzle: '#4A2C1D' },
+  pbcaramelbanana: { crumb: '#E8BF76', spread: '#B8793F', spreadHi: '#E0A767', drizzle: '#D98A2B' },
+  // peanut butter below, strawberry jam above (jam squeezes out on the right)
+  pbjamtoast: {
+    crumb: '#E8BF76', spread: '#B8793F', spread2: '#B3263A', spreadHi: '#E0A767',
+    mid: () => '',
+    fallen: () => `<circle cx="58" cy="202" r="7" fill="#B3263A" stroke="${INK}" stroke-width="1.6"/><circle cx="55" cy="199" r="2" fill="#fff" opacity=".5"/><ellipse cx="82" cy="208" rx="6" ry="3.8" transform="rotate(20 82 208)" fill="#D9A55E" stroke="${INK}" stroke-width="1.4"/><ellipse cx="42" cy="194" rx="6" ry="3.8" transform="rotate(-15 42 194)" fill="#D9A55E" stroke="${INK}" stroke-width="1.4"/>`,
+  },
+  // fried egg between two toast slices
+  eggtoast: {
+    crumb: '#E8BF76', spread: null, spreadHi: '#E0A767',
+    mid: () =>
+      `<path d="M52 140 Q50 128 66 127 Q80 120 100 127 Q120 121 140 127 Q166 120 182 128 Q208 126 208 140 Q210 148 196 148 H66 Q52 148 52 140Z" fill="#FFFDF4" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/><path d="M60 144 H196" stroke="#D9B15A" stroke-width="2" stroke-linecap="round" opacity=".6"/>` +
+      `<ellipse cx="130" cy="135" rx="22" ry="13" fill="#F2B52A" stroke="${INK}" stroke-width="1.8"/><ellipse cx="122" cy="130" rx="6" ry="3" fill="#fff" opacity=".6"/>` +
+      dots([[76, 138], [96, 142], [164, 140], [186, 137], [150, 144]], 1.1, '#3A3430'),
+    fallen: () => parsley(60, 204) + parsley(80, 208) + dots([[100, 207], [106, 203], [46, 196]], 1.4, '#3A3430'),
+  },
 }
 
 // ── sandwiches: split roll + filling + paper wrap on the right half ──
@@ -282,6 +315,20 @@ const SAND = {
       tomato(120, 145) + tomato(203, 140) +
       `<path d="M58 127 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#D9453A" stroke-width="3" stroke-linecap="round"/><path d="M70 131 q8 -5 16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="#FFF1C4" stroke-width="2.6" stroke-linecap="round"/>` +
       [[58, 148], [140, 151], [182, 149]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="6.5" fill="#9DB35A" stroke="${INK}" stroke-width="1.6"/><circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#C9D88A"/>`).join(''),
+  },
+  simitsandwich: {
+    bun: '#C77A2B',
+    // simit: dark golden ring bread crusted with sesame
+    deco:
+      `<path d="M60 112 Q62 96 92 92 M180 94 Q204 100 208 114" fill="none" stroke="#8F4F14" stroke-width="3" stroke-linecap="round" opacity=".45"/>` +
+      dots([[78, 104], [92, 98], [108, 94], [126, 92], [144, 93], [162, 96], [180, 100], [194, 108], [100, 106], [120, 102], [140, 104], [158, 106], [176, 110], [86, 112], [110, 114], [132, 112], [154, 114], [70, 114]], 2, '#FFF3D6') +
+      dots([[104, 100], [136, 98], [168, 104]], 1.4, '#E8C98B'),
+    fill:
+      `<path d="M46 134 Q70 128 100 133 T160 133 T214 133 V145 H46Z" fill="#FFF6E0" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>` +
+      dots([[70, 139], [118, 140], [170, 139]], 1.2, '#E8D9B0') +
+      [[104, 134], [142, 136]].map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="15" ry="9" fill="#8DBE63" stroke="${INK}" stroke-width="1.8"/><ellipse cx="${p[0]}" cy="${p[1]}" rx="10" ry="5.5" fill="#D8EAB0"/>${dots([[p[0] - 4, p[1]], [p[0], p[1] - 1], [p[0] + 4, p[1] + 1]], 1, '#8DBE63')}`).join('') +
+      tomato(66, 138) + tomato(186, 138) +
+      nut(38, 128, -10) + nut(84, 126, 8) + nut(168, 127, -6) + nut(208, 128, 14),
   },
   olivesandwich: {
     bun: '#E6B068',
@@ -568,7 +615,8 @@ export const ARTWORK_IDS = [
   'queenberry', 'appleparadise', 'vitaminc', 'pistachiolatte',
   'latte', 'cappuccino', 'mocha', 'icedlatte', 'iceamer', 'coldbrew', 'shake',
   'cheesecake', 'brownie', 'croissant', 'carrotcake', 'muffin', 'cookie',
-  'mug', 'tote', 'beans', 'syrupbottle', 'note',
+  'mug', 'tote', 'beans', 'syrupbottle', 'note', 'pbchocbanana',
+  'pbcaramelbanana', 'pbjamtoast', 'eggtoast', 'simitsandwich',
 ] as const
 
 export function art(it, o, u) {
@@ -589,6 +637,11 @@ export function art(it, o, u) {
     case 'mangochoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#4A2415', cream: true, creamFill: '#FFF0C9', topping: 'mango' }, 0); break
     case 'berrychoc': b = cup({ hw: 60, rimY: 108, h: 82, coffee: '#5A2A24', cream: true, creamFill: '#FFE3E8', topping: 'strawberry' }, 0); break
     case 'pbbananatoast': b = toast(TOASTS.pbbananatoast); break
+    case 'pbchocbanana': b = toast(TOASTS.pbchocbanana); break
+    case 'pbcaramelbanana': b = toast(TOASTS.pbcaramelbanana); break
+    case 'pbjamtoast': b = toast(TOASTS.pbjamtoast); break
+    case 'eggtoast': b = toast(TOASTS.eggtoast); break
+    case 'simitsandwich': b = sandwich(SAND.simitsandwich); break
     case 'affogato': b = affogato(u); break
     case 'olivesandwich': b = sandwich(SAND.olivesandwich); break
     case 'mealcutlet': b = kraftBowl(MEALS.mealcutlet); break
