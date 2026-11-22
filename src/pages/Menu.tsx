@@ -28,6 +28,7 @@ export function MenuPage() {
 type TFn = ReturnType<typeof useI18n>['t']
 type Fmt = { t: TFn; n: (v: number) => string; price: (v: number) => string }
 const customerSize = (item: MenuItem) => item.sizes.length === 0 ? '' : isDrink(item) ? 'medium' : sizeKeyOf(item)
+const isSyrupVariant = (item: Pick<MenuItem, 'art'>) => item.art === 'syruplatte' || item.art === 'syrupicedlatte'
 
 /** Grid first (as on the reference); tapping a card, or an offer/favorite elsewhere, opens that item's options. */
 function MenuSwitch({ items, ...f }: { items: MenuItem[] } & Fmt) {
@@ -54,6 +55,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const per = phone ? 6 : 8
   const tk = timeKey()
   const offers = data?.offers ?? []
+  const syrups = data?.syrups.filter((s) => s.active) ?? []
   const shown = (filter === 'all' ? items : items.filter((m) => m.cat === filter))
     .slice()
     .sort((a, b) => Number(isAvailable(b)) - Number(isAvailable(a)))
@@ -64,7 +66,9 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const quick = (m: MenuItem) => {
     if (!isAvailable(m)) return
     if (stockLeft(m, cart.lines) < 1) { toast(t('menu.maxInBagToast', { name: t(`item.${m.id}.name`) })); return }
-    cart.add({ itemId: m.id, size: customerSize(m), milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false })
+    const syrupVariant = isSyrupVariant(m)
+    if (syrupVariant && !syrups.some((s) => s.id === 'vanilla')) { select(m.id); return }
+    cart.add({ itemId: m.id, size: customerSize(m), milk: 0, syrupId: syrupVariant ? 'vanilla' : null, syrupPumps: syrupVariant ? 1 : 0, qty: 1, free: false })
     toast(t('menu.addedToast', { name: t(`item.${m.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
   return (
@@ -93,7 +97,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
                 <span className="sb">{m.tags.slice(0, 2).map((k) => t(`tag.${k}`)).join(' · ')}</span>
               </button>
               <div className="pr2">
-                <span>{price(unitPrice(m, { size: customerSize(m), milk: 0 }, offers))}</span>
+                <span>{price(unitPrice(m, { size: customerSize(m), milk: 0, syrupId: isSyrupVariant(m) ? 'vanilla' : null, syrupPumps: isSyrupVariant(m) ? 1 : 0 }, offers, syrups))}</span>
                 <button type="button" className="plus" disabled={!isAvailable(m)} aria-label={t(isAvailable(m) ? 'menu.quickAdd' : 'menu.soldOut', { name })} onClick={() => quick(m)}><Icon name="plus" size={16} /></button>
               </div>
             </div>)
@@ -118,36 +122,44 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const toast = useUi((s) => s.toast)
   const cart = useCart()
   const item = items.find((m) => m.id === selectedId) ?? items[0]
+  const syrupRequiredByRecipe = isSyrupVariant(item)
+  const hasSyrupOptions = item.syrupOptions || syrupRequiredByRecipe
   const [size, setSize] = useState(customerSize(item))
   const [milk, setMilk] = useState(0)
-  const [syrupId, setSyrupId] = useState('')
-  const [syrupPumps, setSyrupPumps] = useState(0)
+  const [syrupId, setSyrupId] = useState(syrupRequiredByRecipe ? 'vanilla' : '')
+  const [syrupPumps, setSyrupPumps] = useState(syrupRequiredByRecipe ? 1 : 0)
   const [qty, setQty] = useState(1)
   const strip = useRef<HTMLDivElement>(null)
   const tk = timeKey()
 
   const syrups = data?.syrups.filter((s) => s.active) ?? []
 
-  // Choosing another item resets its options (medium drinks, no syrup, quantity 1).
+  // Changing items resets options and applies any recipe syrup default.
   useEffect(() => {
     setSize(customerSize(item))
-    setMilk(0); setSyrupId(syrups[0]?.id ?? ''); setSyrupPumps(0); setQty(1)
-  }, [item.id, data?.syrups]) // eslint-disable-line react-hooks/exhaustive-deps
+    setMilk(0)
+    setSyrupId(syrupRequiredByRecipe ? 'vanilla' : '')
+    setSyrupPumps(syrupRequiredByRecipe ? 1 : 0)
+    setQty(1)
+  }, [item.id, syrupRequiredByRecipe, data?.syrups]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const s = strip.current, el = s?.querySelector<HTMLElement>('.th[aria-pressed="true"]')
     if (s && el) s.scrollLeft = el.offsetLeft - (s.clientWidth - el.offsetWidth) / 2
   }, [item.id])
 
-  const sel = { size: item.sizes.some((z) => z.key === size) ? size : sizeKeyOf(item), milk, syrupId: syrupPumps > 0 ? syrupId : null, syrupPumps }
-  const artSel = item.syrupOptions ? sel : { ...sel, syrupId: null, syrupPumps: 0 }
+  const selectedSyrup = syrups.find((s) => s.id === syrupId)
+  const needsSyrupSelection = hasSyrupOptions && syrupPumps > 0
+  const syrupSelectionComplete = !needsSyrupSelection || !!selectedSyrup
+  const sel = { size: item.sizes.some((z) => z.key === size) ? size : sizeKeyOf(item), milk, syrupId: syrupPumps > 0 && selectedSyrup ? syrupId : null, syrupPumps }
+  const artSel = hasSyrupOptions ? sel : { ...sel, syrupId: null, syrupPumps: 0 }
   const offers = data?.offers ?? []
   const off = offerFor(item.id, offers)
   const p = unitPrice(item, sel, offers, syrups), b = basePrice(item, sel) + syrupPrice(sel, syrups)
   const left = stockLeft(item, cart.lines), maxQty = Math.min(20, left), onSale = isAvailable(item)
-  const canFree = !!data && item.rewardEligible && onSale && left >= 1 && canTakeReward(data.balance, item.rewardCost, rewardCostOf(cart.lines, data.menu))
+  const canFree = !!data && item.rewardEligible && onSale && left >= 1 && syrupSelectionComplete && canTakeReward(data.balance, item.rewardCost, rewardCostOf(cart.lines, data.menu))
 
   const add = () => {
-    if (!onSale || left < 1) return
+    if (!onSale || left < 1 || !syrupSelectionComplete) return
     cart.add({ itemId: item.id, size: sel.size, milk: item.milk ? milk : 0, syrupId: sel.syrupId, syrupPumps: sel.syrupPumps ?? 0, qty: Math.min(qty, left), free: false })
     setQty(1)
     toast(t('menu.addedToast', { name: t(`item.${item.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
@@ -189,22 +201,26 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
               {MILKS.map((m, i) => <button key={m.key} type="button" aria-pressed={milk === i} onClick={() => setMilk(i)}>{t(m.key)}{m.add ? ` (+${n(m.add / 1000)})` : ''}</button>)}
             </div>
           )}
-          {item.syrupOptions && syrups.length > 0 && (
+          {hasSyrupOptions && syrups.length > 0 && (
             <div className="list syrup-options">
               <div className="opt" role="group" aria-label={t('menu.optSyrup')}>
                 {syrups.map((s) => <button key={s.id} type="button" disabled={syrupPumps === 0} aria-pressed={syrupPumps > 0 && syrupId === s.id} onClick={() => setSyrupId(s.id)}>{s.name[lang]}</button>)}
               </div>
               <div className="opt" role="group" aria-label={t('menu.optSyrupPumps')}>
-                {Array.from({ length: MAX_SYRUP_PUMPS + 1 }, (_, pumps) => (
-                  <button key={pumps} type="button" aria-pressed={syrupPumps === pumps} onClick={() => { setSyrupPumps(pumps); if (pumps === 0) setSyrupId('') }}>
-                    {pumps === 0 ? t('menu.noSyrup') : t('menu.syrupPumps', { n: n(pumps) })}
-                  </button>
-                ))}
+                {Array.from({ length: MAX_SYRUP_PUMPS + (syrupRequiredByRecipe ? 0 : 1) }, (_, index) => {
+                  const pumps = syrupRequiredByRecipe ? index + 1 : index
+                  return (
+                    <button key={pumps} type="button" aria-pressed={syrupPumps === pumps} onClick={() => { setSyrupPumps(pumps); if (pumps === 0) setSyrupId('') }}>
+                      {pumps === 0 ? t('menu.noSyrup') : t('menu.syrupPumps', { n: n(pumps) })}
+                    </button>
+                  )
+                })}
               </div>
               <span className="muted sm">
                 {price(syrups.find((s) => s.id === syrupId)?.pricePerPump ?? 0)} {t('menu.syrupEachPump')}
                 {syrupPumps > 0 && ` · ${price(syrupPrice(sel, syrups))}`}
               </span>
+              {needsSyrupSelection && !syrupSelectionComplete && <span className="muted sm" role="status">{t('menu.selectSyrup')}</span>}
             </div>
           )}
           {onSale && item.stock !== null && item.stock <= LOW_STOCK && <p className="lowline">{t('menu.onlyLeft', { n: n(item.stock) })}</p>}
@@ -214,7 +230,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
               <output aria-live="polite">{n(qty)}</output>
               <button type="button" onClick={() => setQty((q) => clamp(q + 1, 1, Math.max(1, maxQty)))} aria-label={t('menu.more')} disabled={qty >= maxQty}><Icon name="plus" size={16} /></button>
             </div>
-            <button type="button" className="btn" onClick={add} disabled={!onSale || left < 1}>{t(!onSale ? 'menu.soldOut' : left < 1 ? 'menu.maxInBag' : 'menu.add')}<Icon name="bag" size={18} /></button>
+            <button type="button" className="btn" onClick={add} disabled={!onSale || left < 1 || !syrupSelectionComplete}>{t(!onSale ? 'menu.soldOut' : left < 1 ? 'menu.maxInBag' : 'menu.add')}<Icon name="bag" size={18} /></button>
             {canFree && <button type="button" className="btn gold" onClick={takeFree}>{t('menu.freeWith', { n: n(item.rewardCost) })}</button>}
           </div>
         </div>

@@ -47,6 +47,7 @@
   "menu.optMilk": "Milk",
   "menu.optSyrup": "Syrup flavor",
   "menu.optSyrupPumps": "Syrup pumps",
+  "menu.selectSyrup": "Choose a syrup flavor to continue.",
   "menu.noSyrup": "No syrup",
   "menu.syrupPumps": "{n} pumps",
   "menu.syrupEachPump": "per pump",

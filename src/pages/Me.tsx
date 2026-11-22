@@ -11,6 +11,7 @@ import { Icon } from '../components/icons'
 import { ItemArt } from '../art/ItemArt'
 import { canTakeReward, coinsToNext, isAvailable, nextRewardCost, rewardCostOf, stockLeft } from '../lib/coins'
 import { sizeKeyOf } from '../lib/pricing'
+import { useAuth } from '../lib/auth'
 import type { Order } from '../types'
 
 const STEPS: Record<Order['mode'], Order['status'][]> = {
@@ -34,11 +35,20 @@ export function MePage() {
   const setTab = useUi((s) => s.setMeTab)
   const favs = useUi((s) => s.favorites)
   const select = useUi((s) => s.select)
+  const setAuthOpen = useUi((s) => s.setAuthOpen)
   const toast = useUi((s) => s.toast)
   const cart = useCart()
+  const auth = useAuth()
   const [confirmingDelivery, setConfirmingDelivery] = useState<number | null>(null)
   const frame = (c: React.ReactNode) => <Frame title={t('me.title')} caps={t('me.sub')}>{c}</Frame>
-  if (!data) return frame(<LoadState error={error} onRetry={reload} />)
+  const accountButton = auth.configured && (
+    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <button type="button" className="btn ghost sm" onClick={() => setAuthOpen(true)}>
+        <Icon name="user" size={16} />{t(auth.email ? 'auth.customerAccount' : 'auth.customerSignIn')}
+      </button>
+    </div>
+  )
+  if (!data) return frame(<div className="body">{accountButton}<LoadState error={error} onRetry={reload} /></div>)
 
   const tabs: [MeTab, string][] = [['orders', 'me.tabOrders'], ['coins', 'me.tabCoins'], ['favs', 'me.tabFavs']]
   let content: React.ReactNode
@@ -122,6 +132,7 @@ export function MePage() {
   }
   return frame(
     <div className="body">
+      {accountButton}
       <div className="tabsm" role="tablist">{tabs.map(([k, label]) => <button key={k} type="button" role="tab" className="pill" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => setTab(k)}>{t(label)}</button>)}</div>
       {content}
     </div>,

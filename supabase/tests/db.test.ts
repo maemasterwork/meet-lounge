@@ -77,6 +77,7 @@ describe('prices are computed in Postgres and match the app', () => {
     const baseLatte = await order(alice)
     const syrupLatte = await order(alice, line({ syrup_id: 'vanilla', syrup_pumps: 2 }))
     expect(syrupLatte.subtotal - baseLatte.subtotal).toBe(60000)
+    expect(syrupLatte.total - baseLatte.total).toBe(60000)
     await expect(order(alice, line({ item_id: 'no-syrup-test', syrup_id: 'vanilla', syrup_pumps: 1 }))).rejects.toThrow(/bad-option/)
     await expect(order(alice, line({ item_id: 'tea-test', size: 'piece1', syrup_id: 'vanilla', syrup_pumps: 3 }))).rejects.toThrow(/bad-option/)
     await expect(order(alice, line({ item_id: 'food-test', size: 'piece1', syrup_id: 'vanilla', syrup_pumps: 1 }))).rejects.toThrow(/bad-option/)

@@ -122,7 +122,6 @@ export function Toasts() {
 export function Popovers() {
   const { t, lang } = useI18n()
   const { data } = useShop()
-  const auth = useAuth()
   const pop = useUi((s) => s.pop)
   const setPop = useUi((s) => s.setPop)
   const s = useUi()
@@ -167,11 +166,6 @@ export function Popovers() {
               s.toast(t(r === 'ok' ? 'push.on' : r === 'denied' ? 'push.denied' : r === 'unavailable' ? 'push.unavailable' : 'push.error'))
             }} />
           </div>
-          {auth.configured && (
-            <button type="button" className="it" onClick={() => { setPop(null); s.setAuthOpen(true) }}>
-              <Icon name="user" /><span style={{ flex: 1 }}>{t(auth.email ? 'auth.customerAccount' : 'auth.customerSignIn')}</span>
-            </button>
-          )}
           <button type="button" className="it" onClick={async () => {
             const r = await sendTest(lang, t('notify.testTitle'), t('notify.testBody'), s.notifyOn)
             s.toast(t(r === 'sent' ? 'notify.sent' : r === 'denied' ? 'push.denied' : r === 'off' ? 'notify.off' : r === 'unavailable' ? 'push.unavailable' : 'push.error'))
