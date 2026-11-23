@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { useUi } from '../store/ui'
 import { go } from '../lib/route'
@@ -7,6 +7,7 @@ import { CancelOrder } from '../components/CancelOrder'
 import { earnOfOrder } from '../lib/coins'
 import { Icon } from '../components/icons'
 import { qrSvg } from '../admin/qr'
+import { repos } from '../repos'
 import type { Order } from '../types'
 import type { Settings } from '../repos/types'
 
@@ -27,6 +28,9 @@ export function Placed({ order, lines, settings, onDone, onBack }: { order: Orde
   const toast = useUi((s) => s.toast)
   const setMeTab = useUi((s) => s.setMeTab)
   const [copied, setCopied] = useState(false)
+  const [depositImage, setDepositImage] = useState<string>()
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [imageError, setImageError] = useState<string>()
   const card = settings.paymentCard
   const cardQr = useMemo(() => card && /^\d{16}$/.test(card) ? qrSvg(card) : null, [card])
   const needsDeposit = settings.requireDeposit && order.total > 0
@@ -34,6 +38,32 @@ export function Placed({ order, lines, settings, onDone, onBack }: { order: Orde
   const cancelled = order.status === 'cancelled'
   const when = new Date(order.at).toLocaleDateString(lang === 'fa' ? 'fa-IR' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   const copy = async (text: string, msg: string) => { if (await copyText(text)) { setCopied(true); toast(msg); setTimeout(() => setCopied(false), 2000) } }
+  useEffect(() => {
+    let active = true
+    setDepositImage(undefined)
+    setImageError(undefined)
+    if (needsDeposit && !paid && !cancelled) {
+      void repos.orders.getDepositImage(order.n).then((url) => {
+        if (active) setDepositImage(url)
+      }).catch(() => {
+        if (active) setImageError(t('err.generic'))
+      })
+    }
+    return () => { active = false }
+  }, [order.n, needsDeposit, paid, cancelled, t])
+  const uploadDepositImage = (file: File) => {
+    setUploadingImage(true)
+    setImageError(undefined)
+    void repos.orders.uploadDepositImage(order.n, file).then((url) => {
+      setDepositImage(url)
+      toast(t('dep.proofSaved'))
+    }).catch((error: unknown) => {
+      const message = error instanceof Error && error.message === 'image-type' ? t('a2.imageType')
+        : error instanceof Error && error.message === 'image-too-big' ? t('err.imageTooBig')
+        : t('err.generic')
+      setImageError(message)
+    }).finally(() => setUploadingImage(false))
+  }
   return (
     <article className="card bagc placed" aria-live="polite">
       <div className="bhead ltr"><span className="mt"><Icon name="bag" size={16} />{t('dep.kicker')}</span></div>
@@ -56,6 +86,14 @@ export function Placed({ order, lines, settings, onDone, onBack }: { order: Orde
             </>
           ) : <span className="muted sm">{t('dep.noCard')}</span>}
           <span className="sm note">{t('dep.writeOrder', { n: n(order.n) })}</span>
+          <div className="dep-proof">
+            <label htmlFor={`deposit-proof-${order.n}`}>{t('dep.proofOptional')}</label>
+            <input id={`deposit-proof-${order.n}`} type="file" accept="image/jpeg,image/png,image/webp,image/avif" disabled={uploadingImage}
+              onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadDepositImage(file); e.target.value = '' }} />
+            {uploadingImage && <span className="muted sm" role="status">{t('loading')}</span>}
+            {imageError && <span className="err sm" role="alert">{imageError}</span>}
+            {depositImage && <img className="dep-proof-image" src={depositImage} alt={t('dep.proofPreview')} />}
+          </div>
         </div>)}
       <div className="rcpt">
         <div className="rh ltr"><span>{t('dep.orderNo')} {n(order.n)}</span><span>{when}</span></div>

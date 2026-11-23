@@ -45,6 +45,7 @@ export function createMockRepos(): Repos {
     { n: 103, mode: 'delivery', address: 'Valiasr St.', items: [{ itemId: 'cappuccino', qty: 2, free: false }, { itemId: 'brownie', qty: 1, free: false }], subtotal: 370000, fee: DELIVERY_FEE, total: 400000, status: 'out', paid: true, mine: false, who: 'Ali', at: clock() },
     { n: 100, mode: 'pickup', items: [{ itemId: 'icedlatte', qty: 1, free: false }], subtotal: 145000, fee: 0, total: 145000, status: 'done', paid: true, mine: true, who: 'me', at: clock() },
   ]
+  const depositImages = new Map<number, string>()
   // Customer starts with 5 coins: three from a welcome gift and two from earlier orders.
   let ledger: LedgerEntry[] = [
     { id: 3, at: clock(), delta: 1, reason: 'earn', orderN: 99 },
@@ -96,6 +97,22 @@ export function createMockRepos(): Repos {
         orders = [order, ...orders]
         emit()
         return order
+      },
+      uploadDepositImage: async (n, file) => {
+        const o = get(n)
+        if (!o.mine) throw new OrderError('not-allowed')
+        if (o.status !== 'new' || o.paid) throw new OrderError('order-closed')
+        if (!['image/jpeg', 'image/png', 'image/webp', 'image/avif'].includes(file.type)) throw new Error('image-type')
+        if (file.size > 2.5 * 1024 * 1024) throw new Error('image-too-big')
+        const url = URL.createObjectURL(file)
+        depositImages.set(n, url)
+        replace({ ...o, hasDepositImage: true })
+        emit()
+        return url
+      },
+      getDepositImage: async (n) => {
+        get(n)
+        return depositImages.get(n)
       },
       advance: async (n) => {
         const o = get(n)

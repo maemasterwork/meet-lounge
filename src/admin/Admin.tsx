@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './admin.css'
 import { useI18n } from '../i18n'
 import { repos } from '../repos'
@@ -22,6 +22,26 @@ const TABS: [Tab, string][] = [['orders', 'admin.tabOrders'], ['menu', 'admin.ta
 const COLS: OrderStatus[] = ['new', 'prep', 'ready', 'out', 'done', 'cancelled']
 const NEXT: Record<string, string> = { new: 'admin.startPrep', prep: 'admin.markReady', ready: 'admin.markDone', out: 'admin.markDone' }
 const MILKS = ['milk.whole', 'milk.almond', 'milk.oat']
+
+function OrderDepositImage({ orderN }: { orderN: number }) {
+  const { t } = useI18n()
+  const [url, setUrl] = useState<string>()
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    void repos.orders.getDepositImage(orderN).then((image) => {
+      if (active) setUrl(image)
+    }).catch(() => {
+      if (active) setError(true)
+    })
+    return () => { active = false }
+  }, [orderN])
+
+  if (error) return <span className="muted sm" role="alert">{t('err.loadFailed')}</span>
+  if (!url) return <span className="muted sm" role="status">{t('loading')}</span>
+  return <img className="dep-proof-image" src={url} alt={t('dep.proofPreview')} />
+}
 
 /**
  * Management dashboard: live order board for staff, plus menu, coins, offers, stats and brand tabs.
@@ -126,6 +146,7 @@ export default function Admin() {
                     <div className="muted sm">{o.who} · {price(o.total)}</div>
                     <time className="muted sm" dateTime={o.at}>{new Date(o.at).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</time>
                     {o.address && <div className="muted sm">{o.address}</div>}
+                    {o.hasDepositImage && <OrderDepositImage orderN={o.n} />}
                     {c === 'new' && !o.paid && <span className="pillst await">{t('dep.awaiting')}</span>}
                     {c === 'new' && !o.paid && <button type="button" className="btn sm" disabled={busy} onClick={() => act(() => repos.orders.markPaid(o.n))}>{t('dep.received')}</button>}
                     {NEXT[c] && !(c === 'new' && !o.paid) && <button type="button" className="btn sm" disabled={busy} onClick={() => act(() => repos.orders.advance(o.n))}>{t(NEXT[c])}</button>}

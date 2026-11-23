@@ -34,6 +34,19 @@ describe('mock repos', () => {
     await r.orders.confirmDelivery(o.n)
     expect(await r.coins.balance()).toBe(6)
   })
+  it('lets a customer optionally upload and replace deposit proof on an unpaid order', async () => {
+    const r = createMockRepos()
+    const order = await r.orders.place({ lines: [latte], mode: 'pickup' })
+    expect(await r.orders.getDepositImage(order.n)).toBeUndefined()
+    const proof = new File(['proof'], 'deposit.png', { type: 'image/png' })
+    const first = await r.orders.uploadDepositImage(order.n, proof)
+    expect(await r.orders.getDepositImage(order.n)).toBe(first)
+    expect((await r.orders.listAll()).find((o) => o.n === order.n)?.hasDepositImage).toBe(true)
+    const replacement = await r.orders.uploadDepositImage(order.n, proof)
+    expect(await r.orders.getDepositImage(order.n)).toBe(replacement)
+    await r.orders.markPaid(order.n)
+    await expect(r.orders.uploadDepositImage(order.n, proof)).rejects.toMatchObject({ code: 'order-closed' })
+  })
   it('retains the selected milk and syrup in the order summary', async () => {
     const r = createMockRepos()
     const order = await r.orders.place({

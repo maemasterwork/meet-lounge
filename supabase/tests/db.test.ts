@@ -216,6 +216,21 @@ describe('row level security', () => {
     expect((await as(db, null, 'select status from public.orders where id=$1', [o.id]))[0].status).toBe('new')
     await expect(as(db, alice, 'update public.order_items set unit_price=0')).rejects.toThrow(/permission denied/)
   })
+  it('allows only the customer to attach a correctly scoped proof to their unpaid order', async () => {
+    await as(db, owner, 'update public.settings set require_deposit=true')
+    try {
+      const o = await order(alice)
+      const path = `${alice.id}/${o.id}/proof`
+      expect((await as(db, alice, 'update public.orders set deposit_image_path=$1 where id=$2 returning deposit_image_path', [path, o.id]))[0].deposit_image_path).toBe(path)
+      await expect(as(db, alice, "update public.orders set deposit_image_path='other/proof' where id=$1", [o.id])).rejects.toThrow(/row-level/)
+      await expect(as(db, alice, "update public.orders set deposit_image_path=null, total=0 where id=$1", [o.id])).rejects.toThrow(/permission denied/)
+      expect(await as(db, bob, 'update public.orders set deposit_image_path=$1 where id=$2 returning id', [`${bob.id}/${o.id}/proof`, o.id])).toEqual([])
+      await as(db, null, "update public.orders set paid_at=now() where id=$1", [o.id])
+      await expect(as(db, alice, 'update public.orders set deposit_image_path=null where id=$1', [o.id])).resolves.toEqual([])
+    } finally {
+      await as(db, owner, 'update public.settings set require_deposit=false')
+    }
+  })
   it('only staff can archive or restore orders', async () => {
     const o = await order(alice)
     expect(await as(db, alice, 'update public.orders set archived=true where id=$1 returning archived', [o.id])).toEqual([])

@@ -22,6 +22,7 @@ const readIds = (): number[] => { try { return JSON.parse(localStorage.getItem(R
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const BUCKET = 'menu-images'
+const DEPOSIT_BUCKET = 'deposit-images'
 const toEvent = (r: any): CafeEvent => ({
   id: r.id, icon: r.icon, title: { fa: r.title_fa, en: r.title_en }, desc: { fa: r.description_fa, en: r.description_en }, place: { fa: r.place_fa, en: r.place_en },
   day: r.day, time: String(r.start_time).slice(0, 5), hours: r.hours, capacity: r.capacity, held: r.held, booked: r.booked, published: r.published,
@@ -50,6 +51,7 @@ const toOrder = (r: any, uid: string | null): Order => ({
   n: r.number, mode: r.mode as OrderMode, table: r.table_no ?? undefined, address: r.address ?? undefined,
   items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, milk: i.milk, syrupId: i.syrup_id ?? undefined, syrupPumps: i.syrup_pumps ?? 0, mugQty: i.reusable_mug_qty ?? 0, coin: i.coin_each })),
   subtotal: r.subtotal, fee: r.delivery_fee, total: r.total, status: r.status as OrderStatus, paid: !!r.paid_at,
+  hasDepositImage: !!r.deposit_image_path,
   archived: !!r.archived, mine: r.customer_id === uid, who: r.profiles?.display_name || r.guest_phone || r.profiles?.phone || String(r.customer_id).slice(0, 6), at: r.created_at,
 })
 const ORDER_SELECT = '*, order_items(item_id, qty, is_reward, coin_each, milk, syrup_id, syrup_pumps, reusable_mug_qty), profiles(display_name, phone)'
@@ -159,6 +161,35 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         const full = ok(await sb.from('orders').select(ORDER_SELECT).eq('id', row.id).single())
         emit()
         return toOrder(full, getUserId())
+      },
+      async uploadDepositImage(n, file) {
+        const uid = getUserId()
+        if (!uid) throw new OrderError('not-authenticated')
+        if (!EXT[file.type]) throw new Error('image-type')
+        if (file.size > 2.5 * 1024 * 1024) throw new Error('image-too-big')
+        const id = await orderIdOf(n)
+        const path = `${uid}/${id}/proof`
+        const uploaded = await sb.storage.from(DEPOSIT_BUCKET).upload(path, file, {
+          contentType: file.type, cacheControl: '3600', upsert: true,
+        })
+        if (uploaded.error) mapError(uploaded.error)
+        const updated = await sb.from('orders').update({ deposit_image_path: path }).eq('id', id).select('id')
+        if (updated.error) mapError(updated.error)
+        if (!updated.data?.length) throw new OrderError('not-allowed')
+        const signed = await sb.storage.from(DEPOSIT_BUCKET).createSignedUrl(path, 3600)
+        if (signed.error) mapError(signed.error)
+        emit()
+        return signed.data.signedUrl
+      },
+      async getDepositImage(n) {
+        const result = await sb.from('orders').select('deposit_image_path').eq('number', n).maybeSingle()
+        if (result.error) mapError(result.error)
+        if (!result.data) throw new OrderError('not-found')
+        const path = result.data.deposit_image_path as string | null
+        if (!path) return undefined
+        const signed = await sb.storage.from(DEPOSIT_BUCKET).createSignedUrl(path, 3600)
+        if (signed.error) mapError(signed.error)
+        return signed.data.signedUrl
       },
       async advance(n) {
         const cur = allCache?.find((o) => o.n === n)

@@ -77,6 +77,8 @@ export interface Order {
   status: OrderStatus
   /** The cafe has confirmed the deposit (or there was nothing to pay). Preparation starts only after this. */
   paid: boolean
+  /** Whether a customer attached a deposit proof image. */
+  hasDepositImage?: boolean
   archived?: boolean
   mine: boolean
   who: string

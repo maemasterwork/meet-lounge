@@ -16,6 +16,10 @@ export interface OrderRepo extends Subscribable {
   listAll(): Promise<Order[]>
   /** Validates, prices on the "server" side and stores the order. Throws OrderError. */
   place(input: PlaceOrderInput): Promise<Order>
+  /** Customer: optionally attach or replace proof of deposit for an unpaid order. */
+  uploadDepositImage(n: number, file: File): Promise<string>
+  /** Customer: get a short-lived URL for their deposit proof, if one exists. */
+  getDepositImage(n: number): Promise<string | undefined>
   /** Moves an order to its next status; completing a customer's order awards the coin. */
   advance(n: number): Promise<Order>
   /** Staff: the deposit arrived. Preparation can start after this. */
