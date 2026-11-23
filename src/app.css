@@ -368,6 +368,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btot .tot{font-size:clamp(24px,4.4vh,40px);line-height:1.15;color:var(--ml-accent);font-style:italic}
 .checkout{flex:1;max-width:260px;padding:0 18px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
 .cash{margin:0;text-align:center;font-size:11px}
+.mug-dialog{width:min(520px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:22px;border:1px solid var(--ml-line);border-radius:22px;background:var(--ml-surface);color:var(--ml-ink);box-shadow:0 24px 70px rgba(32,24,18,.28)}
+.mug-dialog::backdrop{background:rgba(22,18,16,.58);backdrop-filter:blur(6px)}
+.mug-dialog h2{margin:0 0 8px;color:var(--ml-accent);font-size:30px}
+.mug-dialog>p{margin:0 0 14px;line-height:1.55}
+.mug-options{display:grid;gap:8px;max-height:min(42dvh,360px);overflow:auto}
+.mug-option{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--ml-line);border-radius:14px;background:var(--ml-surface-2)}
+.mug-option input{width:78px;min-height:40px;padding:6px;border:1px solid var(--ml-line);border-radius:10px;background:var(--ml-surface);color:var(--ml-ink);text-align:center}
+.mug-dialog .mug-savings{margin:12px 0 0;color:var(--ml-accent);font-weight:700}
+.mug-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 @media (max-width:860px){
   .isbag .hero-art,.isbag .hl{display:none}
   .isbag .hr{top:6px;bottom:4px}

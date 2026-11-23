@@ -10,7 +10,7 @@ import { qrSvg } from '../admin/qr'
 import type { Order } from '../types'
 import type { Settings } from '../repos/types'
 
-export interface ReceiptLine { name: string; size: string; qty: number; free: boolean; price: number }
+export interface ReceiptLine { name: string; size: string; qty: number; free: boolean; mugQty?: number; price: number }
 
 async function copyText(s: string): Promise<boolean> {
   try { await navigator.clipboard.writeText(s); return true } catch {
@@ -60,7 +60,7 @@ export function Placed({ order, lines, settings, onDone }: { order: Order; lines
       <div className="rcpt">
         <div className="rh ltr"><span>{t('dep.orderNo')} {n(order.n)}</span><span>{when}</span></div>
         {lines.map((l, i) => (
-          <div key={i} className="rl ltr"><span>{n(l.qty)} × {l.name}{l.size && <> <em>{l.size}</em></>}</span><span className={l.free ? 'fr' : ''}>{l.free ? t('bag.free2') : price(l.price)}</span></div>))}
+          <div key={i} className="rl ltr"><span>{n(l.qty)} × {l.name}{l.size && <> <em>{l.size}</em></>}{!!l.mugQty && <> <em>({t('bag.mugCount', { n: n(l.mugQty) })})</em></>}</span><span className={l.free ? 'fr' : ''}>{l.free ? t('bag.free2') : price(l.price)}</span></div>))}
         {order.fee > 0 && <div className="rl ltr"><span>{t('bag.fee')}</span><span>{price(order.fee)}</span></div>}
         <div className="rt ltr"><small>{t('bag.total')}</small><b className="script">{price(order.total)}</b>
           <span className={`stamp${cancelled ? ' x' : paid || !needsDeposit ? ' ok' : ''}`}>{cancelled ? t('status.cancelled') : paid || !needsDeposit ? t('dep.paid') : t('dep.awaiting')}</span></div>
