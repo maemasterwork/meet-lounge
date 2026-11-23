@@ -44,13 +44,20 @@ interface UiState {
 }
 
 let tid = 0
+export function migrateUi(persisted: unknown, version: number): Partial<UiState> {
+  const state = persisted as Partial<UiState>
+  if (version >= 2) return state
+  const favorites = (state.favorites ?? []).filter((id) => id !== 'latte' && id !== 'cheesecake')
+  return { ...state, favorites: [...new Set(favorites)] }
+}
+
 export const useUi = create<UiState>()(
   persist(
     (set, get) => ({
       lang: 'fa',
       theme: null,
       notifyOn: true,
-      favorites: ['latte', 'cheesecake'],
+      favorites: [],
       registered: [],
       setLang: (lang) => set({ lang }),
       setTheme: (theme) => set({ theme }),
@@ -83,7 +90,8 @@ export const useUi = create<UiState>()(
     }),
     {
       name: 'ml-ui',
-      version: 1,
+      version: 2,
+      migrate: migrateUi,
       partialize: (s) => ({ lang: s.lang, theme: s.theme, notifyOn: s.notifyOn, favorites: s.favorites, registered: s.registered }),
     },
   ),
