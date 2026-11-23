@@ -120,7 +120,9 @@ export default function Admin() {
                 {L.map((o) => (
                   <div key={o.n} className={`ocard${o.mine ? ' mine' : ''}`}>
                     <div className="h"><span>#{n(o.n)}</span><span className="pillst">{t(`bag.mode${o.mode[0].toUpperCase()}${o.mode.slice(1)}`)}{o.table ? ` ${n(+o.table)}` : ''}</span></div>
-                    <div className="sm">{o.items.map(itemLabel).join(', ')}</div>
+                    <div className="order-items sm">
+                      {o.items.map((item, index) => <div className="order-item" key={`${item.itemId}-${index}`}>{itemLabel(item)}</div>)}
+                    </div>
                     <div className="muted sm">{o.who} · {price(o.total)}</div>
                     <time className="muted sm" dateTime={o.at}>{new Date(o.at).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</time>
                     {o.address && <div className="muted sm">{o.address}</div>}

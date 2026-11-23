@@ -19,6 +19,8 @@
 .ocard{background:var(--ml-surface);border:1px solid var(--ml-line);border-radius:12px;padding:10px;display:grid;gap:4px}
 .ocard.mine{border-color:var(--ml-accent)}
 .ocard .h{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+.order-items{display:grid;gap:3px}
+.order-item{line-height:1.45}
 .panel{background:var(--ml-surface);border:1px solid var(--ml-line);border-radius:18px;padding:16px;display:grid;gap:12px;align-content:start;min-width:0}
 .panel h3{margin:0;font-size:15px}
 .admin-modal{width:min(860px,calc(100% - 32px));max-width:none;max-height:calc(100dvh - 32px);padding:0;border:0;background:transparent;color:var(--ml-ink);overflow:visible}
