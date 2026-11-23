@@ -73,9 +73,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const quick = (m: MenuItem) => {
     if (!isAvailable(m)) return
     if (stockLeft(m, cart.lines) < 1) { toast(t('menu.maxInBagToast', { name: t(`item.${m.id}.name`) })); return }
-    const syrupVariant = isSyrupVariant(m)
-    if (syrupVariant && !syrups.some((s) => s.id === 'vanilla')) { select(m.id); return }
-    cart.add({ itemId: m.id, size: customerSizeOf(m), milk: 0, syrupId: syrupVariant ? 'vanilla' : null, syrupPumps: syrupVariant ? 1 : 0, qty: 1, free: false })
+    cart.add({ itemId: m.id, size: customerSizeOf(m), milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false })
     toast(t('menu.addedToast', { name: t(`item.${m.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
   return (
@@ -107,7 +105,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
                 <span className="sb">{m.tags.slice(0, 2).map((k) => t(`tag.${k}`)).join(' · ')}</span>
               </button>
               <div className="pr2">
-                <span>{price(unitPrice(m, { size: customerSizeOf(m), milk: 0, syrupId: isSyrupVariant(m) ? 'vanilla' : null, syrupPumps: isSyrupVariant(m) ? 1 : 0 }, offers, syrups))}</span>
+                <span>{price(unitPrice(m, { size: customerSizeOf(m), milk: 0, syrupId: null, syrupPumps: 0 }, offers, syrups))}</span>
                 <button type="button" className="plus" disabled={!isAvailable(m)} aria-label={t(isAvailable(m) ? 'menu.quickAdd' : 'menu.soldOut', { name })} onClick={() => quick(m)}><Icon name="plus" size={16} /></button>
               </div>
             </div>)
@@ -136,20 +134,20 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const hasSyrupOptions = item.syrupOptions || syrupRequiredByRecipe
   const [size, setSize] = useState(customerSizeOf(item))
   const [milk, setMilk] = useState(0)
-  const [syrupId, setSyrupId] = useState(syrupRequiredByRecipe ? 'vanilla' : '')
-  const [syrupPumps, setSyrupPumps] = useState(syrupRequiredByRecipe ? 1 : 0)
+  const [syrupId, setSyrupId] = useState('')
+  const [syrupPumps, setSyrupPumps] = useState(0)
   const [qty, setQty] = useState(1)
   const strip = useRef<HTMLDivElement>(null)
   const tk = timeKey()
 
   const syrups = data?.syrups.filter((s) => s.active) ?? []
 
-  // Changing items resets options and applies any recipe syrup default.
+  // Changing items resets all options, including syrup pumps.
   useEffect(() => {
     setSize(customerSizeOf(item))
     setMilk(0)
-    setSyrupId(syrupRequiredByRecipe ? 'vanilla' : '')
-    setSyrupPumps(syrupRequiredByRecipe ? 1 : 0)
+    setSyrupId('')
+    setSyrupPumps(0)
     setQty(1)
   }, [item.id, syrupRequiredByRecipe, data?.syrups]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -217,8 +215,8 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
                 {syrups.map((s) => <button key={s.id} type="button" disabled={syrupPumps === 0} aria-pressed={syrupPumps > 0 && syrupId === s.id} onClick={() => setSyrupId(s.id)}>{s.name[lang]}</button>)}
               </div>
               <div className="opt" role="group" aria-label={t('menu.optSyrupPumps')}>
-                {Array.from({ length: MAX_SYRUP_PUMPS + (syrupRequiredByRecipe ? 0 : 1) }, (_, index) => {
-                  const pumps = syrupRequiredByRecipe ? index + 1 : index
+                {Array.from({ length: MAX_SYRUP_PUMPS + 1 }, (_, index) => {
+                  const pumps = index
                   return (
                     <button key={pumps} type="button" aria-pressed={syrupPumps === pumps} onClick={() => { setSyrupPumps(pumps); if (pumps === 0) setSyrupId('') }}>
                       {pumps === 0 ? t('menu.noSyrup') : t('menu.syrupPumps', { n: n(pumps) })}
