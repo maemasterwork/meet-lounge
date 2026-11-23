@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CancelOrder } from '../components/CancelOrder'
 import { useI18n } from '../i18n'
 import { useShop } from '../data/context'
@@ -12,6 +12,7 @@ import { ItemArt } from '../art/ItemArt'
 import { canTakeReward, coinsToNext, isAvailable, nextRewardCost, rewardCostOf, stockLeft } from '../lib/coins'
 import { sizeKeyOf } from '../lib/pricing'
 import { useAuth } from '../lib/auth'
+import { Placed } from './Placed'
 import type { Order } from '../types'
 
 const STEPS: Record<Order['mode'], Order['status'][]> = {
@@ -40,6 +41,21 @@ export function MePage() {
   const cart = useCart()
   const auth = useAuth()
   const [confirmingDelivery, setConfirmingDelivery] = useState<number | null>(null)
+  const [placedN, setPlacedN] = useState<number | null>(null)
+  const placedDialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    if (tab !== 'orders') setPlacedN(null)
+  }, [tab])
+  useEffect(() => {
+    if (placedN !== null && data && !data.mine.some((o) => o.n === placedN)) setPlacedN(null)
+  }, [data, placedN])
+  useEffect(() => {
+    const dialog = placedDialog.current
+    if (!dialog) return
+    if (placedN !== null && data?.mine.some((o) => o.n === placedN)) {
+      if (!dialog.open) dialog.showModal()
+    } else if (dialog.open) dialog.close()
+  }, [data, placedN])
   const frame = (c: React.ReactNode) => <Frame title={t('me.title')} caps={t('me.sub')}>{c}</Frame>
   const accountButton = auth.configured && (
     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -52,6 +68,17 @@ export function MePage() {
 
   const tabs: [MeTab, string][] = [['orders', 'me.tabOrders'], ['coins', 'me.tabCoins'], ['favs', 'me.tabFavs']]
   let content: React.ReactNode
+  const placed = placedN === null ? undefined : data.mine.find((o) => o.n === placedN)
+  const placedLines = placed?.items.map((i) => {
+    const syrup = i.syrupId ? data.syrups.find((s) => s.id === i.syrupId) : undefined
+    return {
+      name: t(`item.${i.itemId}.name`),
+      size: syrup && i.syrupPumps ? t('menu.syrupSummary', { name: syrup.name[lang], n: n(i.syrupPumps) }) : '',
+      qty: i.qty,
+      free: i.free,
+      mugQty: i.mugQty,
+    }
+  }) ?? []
   if (tab === 'orders') {
     content = (
       <div className="list">
@@ -76,6 +103,11 @@ export function MePage() {
                 )
               })}</div>
               <CancelOrder order={o} />
+              {data.settings.requireDeposit && o.total > 0 && !o.paid && o.status !== 'cancelled' && (
+                <button type="button" className="btn ghost sm" style={{ marginTop: 8 }} onClick={() => setPlacedN(o.n)}>
+                  {t('dep.track')}
+                </button>
+              )}
               {o.status !== 'cancelled' && <div className="stepper">{st.map((s, i) => <div key={s} className={`s${i < ci ? ' on' : ''}${i === ci ? ' cur' : ''}`}>{t(`status.${s}`)}</div>)}</div>}
               {o.mine && o.mode === 'delivery' && o.status === 'out' && <button type="button" className="btn sm" disabled={confirmingDelivery !== null}
                 onClick={() => {
@@ -127,7 +159,7 @@ export function MePage() {
             </div>))}
         </div>
       </div>)
-  } else {
+  } else if (tab === 'favs') {
     const f = data.menu.filter((m) => favs.includes(m.id))
     content = f.length === 0 ? <p className="muted">{t('me.favsEmpty')}</p> : (
       <div className="grid">{f.map((m) => (
@@ -139,6 +171,11 @@ export function MePage() {
       {accountButton}
       <div className="tabsm" role="tablist">{tabs.map(([k, label]) => <button key={k} type="button" role="tab" className="pill" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => setTab(k)}>{t(label)}</button>)}</div>
       {content}
+      {placed && <dialog ref={placedDialog} className="placed-modal" aria-label={t('dep.thanks')}
+        onCancel={(e) => { e.preventDefault(); setPlacedN(null) }}
+        onClick={(e) => { if (e.target === e.currentTarget) setPlacedN(null) }}>
+        <Placed order={placed} lines={placedLines} settings={data.settings} onDone={() => setPlacedN(null)} onBack={() => setPlacedN(null)} />
+      </dialog>}
     </div>,
   )
 }
