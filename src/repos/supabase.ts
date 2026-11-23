@@ -37,7 +37,7 @@ const toMenu = (r: any, pub: (path: string | null) => string | undefined): MenuI
   image: pub(r.image_path), archived: r.archived,
 })
 const toSettings = (r: any, pub: (path: string | null) => string | undefined): Settings => ({
-  rewardEvery: r.reward_every, deliveryFee: r.delivery_fee, shopOpen: r.shop_open, tableCount: r.table_count,
+  rewardEvery: r.reward_every, deliveryFee: r.delivery_fee, reusableMugDiscount: r.reusable_mug_discount ?? 10000, shopOpen: r.shop_open, tableCount: r.table_count,
   paymentCard: r.payment_card ?? undefined, paymentHolder: r.payment_holder ?? undefined, requireDeposit: r.require_deposit ?? true, season: (SEASONS as string[]).includes(r.season) ? r.season : 'fall', sceneEvent: (SCENE_EVENTS as string[]).includes(r.scene_event) ? r.scene_event : 'none',
   brand: { fa: r.brand_name_fa, en: r.brand_name_en }, accent: r.theme?.accent, gold: r.theme?.gold, heroUrl: pub(r.hero_image_path),
 })
@@ -48,11 +48,11 @@ const toOffer = (r: any, read: number[]): Offer => ({
 const toSyrup = (r: any): Syrup => ({ id: r.id, name: { fa: r.name_fa, en: r.name_en }, pricePerPump: r.price_per_pump, active: r.active })
 const toOrder = (r: any, uid: string | null): Order => ({
   n: r.number, mode: r.mode as OrderMode, table: r.table_no ?? undefined, address: r.address ?? undefined,
-  items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, milk: i.milk, syrupId: i.syrup_id ?? undefined, syrupPumps: i.syrup_pumps ?? 0, coin: i.coin_each })),
+  items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, milk: i.milk, syrupId: i.syrup_id ?? undefined, syrupPumps: i.syrup_pumps ?? 0, mugQty: i.reusable_mug_qty ?? 0, coin: i.coin_each })),
   subtotal: r.subtotal, fee: r.delivery_fee, total: r.total, status: r.status as OrderStatus, paid: !!r.paid_at,
   archived: !!r.archived, mine: r.customer_id === uid, who: r.profiles?.display_name || r.guest_phone || r.profiles?.phone || String(r.customer_id).slice(0, 6), at: r.created_at,
 })
-const ORDER_SELECT = '*, order_items(item_id, qty, is_reward, coin_each, milk, syrup_id, syrup_pumps), profiles(display_name, phone)'
+const ORDER_SELECT = '*, order_items(item_id, qty, is_reward, coin_each, milk, syrup_id, syrup_pumps, reusable_mug_qty), profiles(display_name, phone)'
 
 export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string | null): Repos {
   const listeners = new Set<() => void>()
@@ -153,7 +153,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         return allCache
       },
       async place(input: PlaceOrderInput) {
-        const items = input.lines.map((l) => ({ item_id: l.itemId, size: l.size, milk: l.milk, syrup_id: l.syrupId, syrup_pumps: l.syrupPumps, qty: l.free ? 1 : l.qty, reward: l.free }))
+        const items = input.lines.map((l) => ({ item_id: l.itemId, size: l.size, milk: l.milk, syrup_id: l.syrupId, syrup_pumps: l.syrupPumps, mug_qty: l.mugQty ?? 0, qty: l.free ? 1 : l.qty, reward: l.free }))
         const r = await sb.rpc('create_order', { p_items: items, p_mode: input.mode, p_table: input.mode === 'table' ? input.table ?? null : null, p_address: input.mode === 'delivery' ? input.address ?? null : null, p_phone: input.phone ?? null })
         const row: any = ok(r)
         const full = ok(await sb.from('orders').select(ORDER_SELECT).eq('id', row.id).single())
@@ -327,6 +327,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
         const u: Record<string, unknown> = {}
         if (p.rewardEvery !== undefined) u.reward_every = p.rewardEvery
         if (p.deliveryFee !== undefined) u.delivery_fee = p.deliveryFee
+        if (p.reusableMugDiscount !== undefined) u.reusable_mug_discount = p.reusableMugDiscount
         if (p.shopOpen !== undefined) u.shop_open = p.shopOpen
         if (p.tableCount !== undefined) u.table_count = p.tableCount
         if ('paymentCard' in p) u.payment_card = p.paymentCard || null

@@ -7,8 +7,8 @@ import { useCart } from '../store/cart'
 import { Icon } from '../components/icons'
 import { Frame, LoadState } from '../components/Frame'
 import { ItemArt, ItemStage } from '../art/ItemArt'
-import { MAX_SYRUP_PUMPS, MILKS, REC, isDrink, timeKey } from '../data/catalog'
-import { basePrice, offerFor, sizeKeyOf, syrupPrice, unitPrice } from '../lib/pricing'
+import { MAX_SYRUP_PUMPS, MILKS, REC, timeKey } from '../data/catalog'
+import { basePrice, customerSizeOf, offerFor, sizeKeyOf, syrupPrice, unitPrice } from '../lib/pricing'
 import { LOW_STOCK, canTakeReward, isAvailable, rewardCostOf, stockLeft } from '../lib/coins'
 import { clamp } from '../lib/format'
 import type { MenuItem } from '../types'
@@ -27,7 +27,6 @@ export function MenuPage() {
 
 type TFn = ReturnType<typeof useI18n>['t']
 type Fmt = { t: TFn; n: (v: number) => string; price: (v: number) => string }
-const customerSize = (item: MenuItem) => item.sizes.length === 0 ? '' : isDrink(item) ? 'medium' : sizeKeyOf(item)
 const isSyrupVariant = (item: Pick<MenuItem, 'art'>) => item.art === 'syruplatte' || item.art === 'syrupicedlatte'
 
 /** Grid first (as on the reference); tapping a card, or an offer/favorite elsewhere, opens that item's options. */
@@ -68,7 +67,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
     if (stockLeft(m, cart.lines) < 1) { toast(t('menu.maxInBagToast', { name: t(`item.${m.id}.name`) })); return }
     const syrupVariant = isSyrupVariant(m)
     if (syrupVariant && !syrups.some((s) => s.id === 'vanilla')) { select(m.id); return }
-    cart.add({ itemId: m.id, size: customerSize(m), milk: 0, syrupId: syrupVariant ? 'vanilla' : null, syrupPumps: syrupVariant ? 1 : 0, qty: 1, free: false })
+    cart.add({ itemId: m.id, size: customerSizeOf(m), milk: 0, syrupId: syrupVariant ? 'vanilla' : null, syrupPumps: syrupVariant ? 1 : 0, qty: 1, free: false })
     toast(t('menu.addedToast', { name: t(`item.${m.id}.name`) }), { action: { label: t('menu.openBag'), run: () => go('bag') } })
   }
   return (
@@ -97,7 +96,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
                 <span className="sb">{m.tags.slice(0, 2).map((k) => t(`tag.${k}`)).join(' · ')}</span>
               </button>
               <div className="pr2">
-                <span>{price(unitPrice(m, { size: customerSize(m), milk: 0, syrupId: isSyrupVariant(m) ? 'vanilla' : null, syrupPumps: isSyrupVariant(m) ? 1 : 0 }, offers, syrups))}</span>
+                <span>{price(unitPrice(m, { size: customerSizeOf(m), milk: 0, syrupId: isSyrupVariant(m) ? 'vanilla' : null, syrupPumps: isSyrupVariant(m) ? 1 : 0 }, offers, syrups))}</span>
                 <button type="button" className="plus" disabled={!isAvailable(m)} aria-label={t(isAvailable(m) ? 'menu.quickAdd' : 'menu.soldOut', { name })} onClick={() => quick(m)}><Icon name="plus" size={16} /></button>
               </div>
             </div>)
@@ -124,7 +123,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const item = items.find((m) => m.id === selectedId) ?? items[0]
   const syrupRequiredByRecipe = isSyrupVariant(item)
   const hasSyrupOptions = item.syrupOptions || syrupRequiredByRecipe
-  const [size, setSize] = useState(customerSize(item))
+  const [size, setSize] = useState(customerSizeOf(item))
   const [milk, setMilk] = useState(0)
   const [syrupId, setSyrupId] = useState(syrupRequiredByRecipe ? 'vanilla' : '')
   const [syrupPumps, setSyrupPumps] = useState(syrupRequiredByRecipe ? 1 : 0)
@@ -136,7 +135,7 @@ function MenuBody({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
 
   // Changing items resets options and applies any recipe syrup default.
   useEffect(() => {
-    setSize(customerSize(item))
+    setSize(customerSizeOf(item))
     setMilk(0)
     setSyrupId(syrupRequiredByRecipe ? 'vanilla' : '')
     setSyrupPumps(syrupRequiredByRecipe ? 1 : 0)

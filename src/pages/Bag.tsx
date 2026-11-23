@@ -16,7 +16,7 @@ import { useAuth } from '../lib/auth'
 import { Placed, type ReceiptLine } from './Placed'
 import type { CartLine, Order, OrderMode } from '../types'
 
-const MODES: OrderMode[] = ['pickup', 'delivery']
+const MODES: OrderMode[] = ['pickup', 'table', 'delivery']
 const ERR: Record<string, string> = {
   'address-required': 'err.addressRequired', 'shop-closed': 'err.shopClosed', 'item-unavailable': 'err.itemUnavailable', 'out-of-stock': 'err.outOfStock', 'not-enough-coins': 'err.notEnoughCoins',
   'table-required': 'err.generic', 'phone-required': 'err.phoneRequired', 'bad-option': 'err.generic', 'reward-not-allowed': 'err.generic',
@@ -35,9 +35,18 @@ export function BagPage() {
   const requestAuth = useUi((s) => s.requestAuth)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [mugDialogOpen, setMugDialogOpen] = useState(false)
+  const [mugCounts, setMugCounts] = useState<Record<number, number>>({})
   const [placed, setPlaced] = useState<{ order: Order; lines: ReceiptLine[] } | null>(null)
   const importedAddressFor = useRef<string | null>(null)
+  const mugDialog = useRef<HTMLDialogElement>(null)
   const scene = (c: React.ReactNode) => <HomeScene active="bag" className="isbag">{c}</HomeScene>
+  useEffect(() => {
+    const dialog = mugDialog.current
+    if (!dialog) return
+    if (mugDialogOpen && !dialog.open) dialog.showModal()
+    if (!mugDialogOpen && dialog.open) dialog.close()
+  }, [mugDialogOpen])
   useEffect(() => {
     if (!auth.userId || guest) { importedAddressFor.current = null; return }
     if (cart.mode === 'delivery' && auth.profile?.seat.trim() && importedAddressFor.current !== auth.userId) {
@@ -59,11 +68,20 @@ export function BagPage() {
     return parts.join(lang === 'fa' ? '، ' : ', ')
   }
   const totals = orderTotals(cart.lines, data.menu, data.offers, cart.mode, data.settings.deliveryFee, data.syrups)
+  const mugEligibleLines = ['pickup', 'table'].includes(cart.mode)
+    ? cart.lines.flatMap((line, index) => {
+      const item = data.byId(line.itemId)
+      return item && !line.free && ['hot', 'cold', 'tea'].includes(item.cat) ? [{ line, index, item }] : []
+    })
+    : []
+  const modalLines = cart.lines.map((line, index) => ({ ...line, mugQty: mugCounts[index] ?? 0 }))
+  const modalTotals = orderTotals(modalLines, data.menu, data.offers, cart.mode, data.settings.deliveryFee, data.syrups, data.settings.reusableMugDiscount)
+  const mugSavings = Math.max(0, totals.subtotal - modalTotals.subtotal)
   const overRewards = rewardCostOf(cart.lines, data.menu) > data.balance
   const unavailable = cart.lines.some((l) => { const m = data.byId(l.itemId); return !m || !isAvailable(m) || stockLeft(m, cart.lines) === 0 && m.stock !== null && cart.lines.filter((x) => x.itemId === m.id).reduce((a, x) => a + x.qty, 0) > m.stock })
   const earn = earnFor(cart.lines, data.menu)
 
-  const place = async () => {
+  const place = async (selectedMugs: Record<number, number> = {}) => {
     if (needsAccount) {
       requestAuth({
         phone: auth.profile?.phone ?? '',
@@ -75,12 +93,26 @@ export function BagPage() {
     }
     setBusy(true); setErr('')
     try {
-      const snap: ReceiptLine[] = cart.lines.map((l) => ({ name: t(`item.${l.itemId}.name`), size: lineLabel(l), qty: l.qty, free: l.free, price: lineTotal(l, data.menu, data.offers, data.syrups) }))
-      const o = await repos.orders.place({ lines: cart.lines, mode: cart.mode, table: cart.table, address: cart.address })
-      cart.clear(); setPlaced({ order: o, lines: snap }); toast(t('bag.orderPlaced', { n: n(o.n) }))
+      const eligibleIndexes = new Set(mugEligibleLines.map(({ index }) => index))
+      const lines = cart.lines.map((line, index) => ({
+        ...line,
+        mugQty: eligibleIndexes.has(index) ? Math.max(0, Math.min(line.qty, Math.trunc(selectedMugs[index] ?? 0))) : 0,
+      }))
+      const snap: ReceiptLine[] = lines.map((l) => ({ name: t(`item.${l.itemId}.name`), size: lineLabel(l), qty: l.qty, free: l.free, mugQty: l.mugQty ?? 0, price: lineTotal(l, data.menu, data.offers, data.syrups, data.settings.reusableMugDiscount) }))
+      const o = await repos.orders.place({ lines, mode: cart.mode, table: cart.table, address: cart.address })
+      cart.clear(); setMugDialogOpen(false); setPlaced({ order: o, lines: snap }); toast(t('bag.orderPlaced', { n: n(o.n) }))
     } catch (e) {
       setErr(t(e instanceof OrderError ? ERR[e.code] ?? 'err.generic' : 'err.network'))
     } finally { setBusy(false) }
+  }
+  const startCheckout = () => {
+    setErr('')
+    if (mugEligibleLines.length) {
+      setMugCounts(Object.fromEntries(mugEligibleLines.map(({ index }) => [index, 0])))
+      setMugDialogOpen(true)
+    } else {
+      void place()
+    }
   }
   const treats = cart.lines.reduce((a, l) => a + l.qty, 0)
   const rewardLines = cart.lines.filter((l) => l.free)
@@ -126,6 +158,29 @@ export function BagPage() {
         <span className="mt"><Icon name="bag" size={16} />{t('nav.bag')}</span>
         {treats > 0 && <span className="treats">{t(treats === 1 ? 'bag.treat1' : 'bag.treats', { n: n(treats) })}</span>}
       </div>
+      <dialog ref={mugDialog} className="mug-dialog" aria-labelledby="mug-dialog-title"
+        onCancel={(e) => { e.preventDefault(); setMugDialogOpen(false) }}
+        onClick={(e) => { if (e.target === e.currentTarget) setMugDialogOpen(false) }}>
+        <h2 id="mug-dialog-title" className="script">{t('bag.mugTitle')}</h2>
+        <p>{t('bag.mugPrompt', { price: price(data.settings.reusableMugDiscount) })}</p>
+        <div className="mug-options">
+          {mugEligibleLines.map(({ line, index }) => {
+            const name = t(`item.${line.itemId}.name`)
+            return <label className="mug-option" key={index}>
+              <span>{n(line.qty)} × {name}</span>
+              <input type="number" dir="ltr" min={0} max={line.qty} step={1} value={mugCounts[index] ?? 0}
+                aria-label={t('bag.mugCountLabel', { name })}
+                onChange={(e) => setMugCounts((current) => ({ ...current, [index]: Math.trunc(Math.max(0, Math.min(line.qty, Number(e.target.value) || 0))) }))} />
+            </label>
+          })}
+        </div>
+        {mugSavings > 0 && <p className="mug-savings">{t('bag.mugSaving', { price: price(mugSavings) })}</p>}
+        {err && <p className="err" role="alert">{err}</p>}
+        <div className="mug-actions">
+          <button type="button" className="btn ghost" onClick={() => setMugDialogOpen(false)} disabled={busy}>{t('common.close')}</button>
+          <button type="button" className="btn" onClick={() => void place(mugCounts)} disabled={busy}>{t('bag.checkout')}</button>
+        </div>
+      </dialog>
       <div className="bh ltr">
         <h2 className="script">{t('bag.basketTitle')}</h2>
         <button type="button" className="addmore" onClick={() => go('menu')}>{t('bag.addMore')} <Icon name="arrowL" size={14} /></button>
@@ -162,7 +217,7 @@ export function BagPage() {
         </div>
         <div className="btot ltr">
           <div className="tt"><small>{t('bag.total')}</small><b className="script tot">{price(totals.total)}</b></div>
-          <button type="button" className="btn checkout" onClick={place} disabled={!cart.lines.length || busy || unavailable || overRewards}>{t('bag.checkout')} <Icon name="arrowL" size={16} /></button>
+          <button type="button" className="btn checkout" onClick={startCheckout} disabled={!cart.lines.length || busy || unavailable || overRewards}>{t('bag.checkout')} <Icon name="arrowL" size={16} /></button>
         </div>
         {earn > 0 && <p className="earn sm"><Icon name="heart" size={12} />{t('bag.willEarn', { n: n(earn) })}</p>}
         <p className="muted sm cash">{data.settings.requireDeposit ? t('dep.bagNote') : t('bag.cashNote')}</p>

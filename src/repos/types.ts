@@ -49,7 +49,7 @@ export const SCENE_EVENTS: SceneEvent[] = ['none', 'yalda', 'xmas', 'nowruz', 'a
 /** Picking a special event also sets the matching season (Nowruz and Oil Day = spring, Yalda and Christmas = winter). */
 export const EVENT_SEASON: Partial<Record<SceneEvent, Season>> = { nowruz: 'spring', oil: 'spring', yalda: 'winter', xmas: 'winter' }
 export interface Settings {
-  rewardEvery: number; deliveryFee: number; shopOpen: boolean; tableCount: number
+  rewardEvery: number; deliveryFee: number; reusableMugDiscount: number; shopOpen: boolean; tableCount: number
   brand: Record<Lang, string>; accent?: string; gold?: string; heroUrl?: string
   /** Card-to-card deposit: 16 digits, shown to the customer after checkout. */
   paymentCard?: string; paymentHolder?: string; requireDeposit: boolean

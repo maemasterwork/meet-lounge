@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { initialMenu } from '../data/catalog'
 import type { CartLine, Offer } from '../types'
-import { basePrice, lineTotal, orderTotals, unitPrice } from './pricing'
+import { basePrice, customerSizeOf, lineTotal, orderTotals, unitPrice } from './pricing'
 
 const items = initialMenu()
 const by = (id: string) => items.find((i) => i.id === id)!
@@ -9,6 +9,11 @@ const offer = (itemId: string, pct: number, active = true): Offer => ({ id: 1, t
 const line = (o: Partial<CartLine>): CartLine => ({ itemId: 'latte', size: 'medium', milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false, ...o })
 
 describe('basePrice', () => {
+  it('chooses a valid default size key for quick-add orders', () => {
+    expect(customerSizeOf(by('latte'))).toBe('medium')
+    expect(customerSizeOf({ ...by('latte'), sizes: [{ key: 'short', mult: 1, scale: 1 }] })).toBe('short')
+    expect(customerSizeOf({ ...by('latte'), sizes: [] })).toBe('')
+  })
   it('uses the size multiplier and rounds to 1,000', () => {
     expect(basePrice(by('latte'), { size: 'small', milk: 0 })).toBe(135000)
     expect(basePrice(by('latte'), { size: 'medium', milk: 0 })).toBe(155000) // 135,000 x 1.15 = 155,250
@@ -67,5 +72,10 @@ describe('totals', () => {
   })
   it('applies offers inside totals', () => {
     expect(orderTotals([line({ size: 'small', qty: 2 })], items, [offer('latte', 15)], 'pickup', 0).subtotal).toBe(230000)
+  })
+  it('applies the reusable-mug discount only to selected units and never below zero', () => {
+    expect(lineTotal(line({ size: 'small', qty: 3, mugQty: 2 }), items, [], [], 10000)).toBe(385000)
+    expect(lineTotal(line({ size: 'small', qty: 2, mugQty: 2 }), items, [], [], 200000)).toBe(0)
+    expect(lineTotal(line({ free: true, mugQty: 1 }), items, [], [], 10000)).toBe(0)
   })
 })

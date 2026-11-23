@@ -1,11 +1,13 @@
 import type { CartLine, MenuItem, Offer, OrderMode, SizeOption, Syrup } from '../types'
-import { MILKS } from '../data/catalog'
+import { isDrinkCategory, MILKS } from '../data/catalog'
 
 const roundK = (n: number) => Math.round(n / 1000) * 1000
 const DEFAULT_SIZE: SizeOption = { key: '', mult: 1, scale: 1 }
 
 export const sizeKeyOf = (item: MenuItem) => item.sizes[0]?.key ?? ''
 export const sizeOf = (item: MenuItem, key: string): SizeOption => item.sizes.find((s) => s.key === key) ?? item.sizes[0] ?? DEFAULT_SIZE
+export const customerSizeOf = (item: MenuItem) =>
+  item.sizes.length === 0 ? '' : isDrinkCategory(item.cat) && item.sizes.some((size) => size.key === 'medium') ? 'medium' : sizeKeyOf(item)
 
 export interface Selection { size: string; milk: number; syrupId?: string | null; syrupPumps?: number }
 
@@ -28,15 +30,18 @@ export function unitPrice(item: MenuItem, sel: Selection, offers: Offer[], syrup
   return (o ? roundK(b * (1 - o.pct / 100)) : b) + syrupPrice(sel, syrups)
 }
 
-export function lineTotal(line: CartLine, items: MenuItem[], offers: Offer[], syrups: Syrup[] = []): number {
+export function lineTotal(line: CartLine, items: MenuItem[], offers: Offer[], syrups: Syrup[] = [], mugDiscount = 0): number {
   if (line.free) return 0
   const item = items.find((i) => i.id === line.itemId)
-  return item ? unitPrice(item, line, offers, syrups) * line.qty : 0
+  if (!item) return 0
+  const unit = unitPrice(item, line, offers, syrups)
+  const mugQty = Math.min(line.qty, Math.max(0, Math.trunc(line.mugQty ?? 0)))
+  return unit * (line.qty - mugQty) + Math.max(0, unit - mugDiscount) * mugQty
 }
 
 export interface Totals { subtotal: number; fee: number; total: number }
-export function orderTotals(lines: CartLine[], items: MenuItem[], offers: Offer[], mode: OrderMode, deliveryFee: number, syrups: Syrup[] = []): Totals {
-  const subtotal = lines.reduce((a, l) => a + lineTotal(l, items, offers, syrups), 0)
+export function orderTotals(lines: CartLine[], items: MenuItem[], offers: Offer[], mode: OrderMode, deliveryFee: number, syrups: Syrup[] = [], mugDiscount = 0): Totals {
+  const subtotal = lines.reduce((a, l) => a + lineTotal(l, items, offers, syrups, mugDiscount), 0)
   const fee = mode === 'delivery' && lines.length ? deliveryFee : 0
   return { subtotal, fee, total: subtotal + fee }
 }

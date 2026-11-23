@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeAll, describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import type { PGlite } from '@electric-sql/pglite'
 import { addUser, as, freshDb } from './harness'
 import { initialMenu } from '../../src/data/catalog'
@@ -24,6 +25,12 @@ beforeAll(async () => {
 }, 60_000)
 
 describe('schema and seed', () => {
+  it('can safely rerun the reusable mug migration', async () => {
+    const migration = readFileSync(new URL('../migrations/20261123000200_reusable_mug_discount.sql', import.meta.url), 'utf8')
+    await db.exec(migration)
+    const sizeMigration = readFileSync(new URL('../migrations/20261123000300_size_less_order_items.sql', import.meta.url), 'utf8')
+    await db.exec(sizeMigration)
+  })
   it('every public table has row level security on', async () => {
     const r = await as(db, null, "select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and not c.relrowsecurity")
     expect(r).toEqual([])
@@ -60,6 +67,22 @@ describe('schema and seed', () => {
 })
 
 describe('prices are computed in Postgres and match the app', () => {
+  it('creates size-less hot drinks with the base price and reusable-mug discount', async () => {
+    await as(db, owner, `
+      insert into public.menu_items (id, category, name_fa, name_en, base_price, sizes)
+      values
+        ('size-less-test', 'hot', 'بدون اندازه', 'No sizes', 100000, '[]'::jsonb),
+        ('empty-size-test', 'hot', 'اندازه خالی', 'Empty size', 100000, '[{}]'::jsonb)
+    `)
+    const noSizes = await order(alice, line({ item_id: 'size-less-test', size: '', mug_qty: 1 }))
+    expect(noSizes.subtotal).toBe(90000)
+    const [savedNoSize] = await as<{ size: string }>(db, alice,
+      'select size from public.order_items where order_id=$1', [noSizes.id])
+    expect(savedNoSize.size).toBe('')
+
+    const emptyObjectSize = await order(alice, line({ item_id: 'empty-size-test', size: '' }))
+    expect(emptyObjectSize.subtotal).toBe(100000)
+  })
   it('prices syrups per pump and restricts them to drinks', async () => {
     await as(db, owner, `
       insert into public.menu_items (id, category, name_fa, name_en, base_price, milk_options, syrup_options)
@@ -109,6 +132,44 @@ describe('prices are computed in Postgres and match the app', () => {
     const o = await order(alice, line({ item_id: 'espresso' }), 'delivery', null, 'Valiasr St 1')
     expect(o.delivery_fee).toBe(30000)
     expect(o.total).toBe(125000)
+  })
+  it('applies and stores reusable mug selections on eligible pickup and table orders', async () => {
+    const regular = await order(alice, line({ item_id: 'latte', qty: 2 }))
+    const withMug = await order(alice, line({ item_id: 'latte', qty: 2, mug_qty: 1 }))
+    expect(regular.subtotal - withMug.subtotal).toBe(10000)
+    const [savedLine] = await as<{ reusable_mug_qty: number }>(db, alice,
+      'select reusable_mug_qty from public.order_items where order_id=$1', [withMug.id])
+    expect(savedLine.reusable_mug_qty).toBe(1)
+
+    const tableOrder = await order(alice, line({ item_id: 'latte', mug_qty: 1 }), 'table', '1')
+    expect(tableOrder.subtotal).toBeLessThan(regular.subtotal)
+  })
+  it('discounts and stores multiple mug selections across several eligible items', async () => {
+    const items = JSON.stringify([
+      { item_id: 'espresso', size: 'small', qty: 1, mug_qty: 1 },
+      { item_id: 'cappuccino', size: 'small', qty: 1, mug_qty: 1 },
+      { item_id: 'latte', size: 'small', qty: 1, mug_qty: 1 },
+    ])
+    const regular = await order(alice, JSON.stringify([
+      { item_id: 'espresso', size: 'small', qty: 1 },
+      { item_id: 'cappuccino', size: 'small', qty: 1 },
+      { item_id: 'latte', size: 'small', qty: 1 },
+    ]))
+    const discounted = await order(alice, items)
+    expect(regular.subtotal - discounted.subtotal).toBe(30000)
+    const savedLines = await as<{ item_id: string; reusable_mug_qty: number }>(db, alice,
+      'select item_id, reusable_mug_qty from public.order_items where order_id=$1 order by item_id', [discounted.id])
+    expect(savedLines).toEqual([
+      { item_id: 'cappuccino', reusable_mug_qty: 1 },
+      { item_id: 'espresso', reusable_mug_qty: 1 },
+      { item_id: 'latte', reusable_mug_qty: 1 },
+    ])
+  })
+  it('rejects reusable mug discounts for delivery, ineligible items, and invalid counts', async () => {
+    await expect(order(alice, line({ mug_qty: 1 }), 'delivery', null, 'Valiasr St 1')).rejects.toThrow(/bad-option/)
+    await expect(order(alice, line({ item_id: 'cookie', mug_qty: 1 }))).rejects.toThrow(/bad-option/)
+    await expect(order(alice, line({ qty: 1, mug_qty: 2 }))).rejects.toThrow(/bad-option/)
+    await expect(order(alice, line({ mug_qty: -1 }))).rejects.toThrow(/bad-option/)
   })
   it('rejects unknown sizes, bad quantity, unavailable items', async () => {
     await expect(order(alice, line({ size: 'huge' }))).rejects.toThrow(/bad-option/)

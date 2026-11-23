@@ -66,6 +66,7 @@ export default function Admin() {
     const milkIndex = item.milk ?? (menuItem?.milk ? 0 : undefined)
     const milk = milkIndex !== undefined && (milkIndex > 0 || menuItem?.milk) ? MILKS[milkIndex] : undefined
     if (milk) details.push(t(milk))
+    if (item.mugQty) details.push(t('bag.mugCount', { n: n(item.mugQty) }))
     return `${n(item.qty)}× ${t(`item.${item.itemId}.name`)}${details.length ? ` (${details.join(' · ')})` : ''}`
   }
   return (

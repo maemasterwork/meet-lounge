@@ -30,6 +30,11 @@ export function CoinsTab({ owner }: { owner: boolean }) {
   const shown = every ?? String(dflt)
   const ev = Math.round(Number(shown))
   const valid = Number.isFinite(ev) && ev >= 2 && ev <= 50
+  const mugDflt = settings.data?.reusableMugDiscount ?? 10000
+  const [mugDiscount, setMugDiscount] = useState<string | null>(null)
+  const mugShown = mugDiscount ?? String(mugDflt)
+  const mugValue = Math.trunc(Number(mugShown))
+  const mugValid = Number.isFinite(mugValue) && mugValue >= 0 && mugValue <= 2147483647
   const list = (items.data ?? []).filter((i) => !i.archived)
   const rewards = list.filter((i) => i.rewardEligible)
   const cheapest = rewards.length ? Math.min(...rewards.map((i) => i.rewardCost)) : dflt
@@ -92,6 +97,17 @@ export function CoinsTab({ owner }: { owner: boolean }) {
           </ul>
         </div>
       </div>
+
+      {owner && (
+        <div className="panel">
+          <h3>{t('a2.cn.mugTitle')}</h3>
+          <p className="muted sm" style={{ margin: 0 }}>{t('a2.cn.mugHelp')}</p>
+          <label className="field">{t('a2.cn.mugLabel')}
+            <input type="number" dir="ltr" min={0} max={2147483647} step={1000} value={mugShown} disabled={act.busy} onChange={(e) => setMugDiscount(e.target.value)} aria-invalid={!mugValid} />
+          </label>
+          <button type="button" className="btn sm" disabled={act.busy || !mugValid || mugValue === mugDflt}
+            onClick={async () => { if (await act.run(async () => { await repos.admin.saveSettings({ reusableMugDiscount: mugValue }); return true })) setMugDiscount(null) }}>{t('common.save')}</button>
+        </div>)}
 
       {owner && (
         <div className="panel">

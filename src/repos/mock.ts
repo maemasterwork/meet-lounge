@@ -34,7 +34,7 @@ export function createMockRepos(): Repos {
   ]
   const mySeats = new Set<string>()
   const stockTaken = new Map<number, Record<string, number>>()
-  let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانژ', en: 'Meet Lounge' }, paymentCard: '6037991234567890', paymentHolder: 'Meet Lounge', requireDeposit: true, season: 'fall', sceneEvent: 'none' }
+  let settings: Settings = { rewardEvery: DEFAULT_REWARD_EVERY, deliveryFee: DELIVERY_FEE, reusableMugDiscount: 10000, shopOpen: true, tableCount: 12, brand: { fa: 'میت لانژ', en: 'Meet Lounge' }, paymentCard: '6037991234567890', paymentHolder: 'Meet Lounge', requireDeposit: true, season: 'fall', sceneEvent: 'none' }
   let offers: Offer[] = [
     { id: 1, title: { fa: 'لاته صبحگاهی', en: 'Morning latte' }, body: { fa: 'یک لاته با ۱۵٪ تخفیف، همین حالا.', en: 'A latte at 15% off, right now.' }, itemId: 'latte', pct: 15, audience: 'all', active: true, read: false },
   ]
@@ -74,6 +74,9 @@ export function createMockRepos(): Repos {
         for (const l of input.lines) {
           const m = menu.find((x) => x.id === l.itemId)
           if (!m || !m.available) throw new OrderError('item-unavailable')
+          const mugQty = l.mugQty ?? 0
+          if (!Number.isInteger(mugQty) || mugQty < 0 || mugQty > l.qty ||
+            (mugQty > 0 && (input.mode === 'delivery' || !['hot', 'cold', 'tea'].includes(m.cat) || l.free))) throw new OrderError('bad-option')
           if (l.syrupPumps < 0 || l.syrupPumps > 2 || (l.syrupPumps === 0 && l.syrupId !== null) ||
             (l.syrupPumps > 0 && (!isDrink(m) || !syrups.some((s) => s.id === l.syrupId && s.active))) ||
             (l.free && l.syrupPumps > 0)) throw new OrderError('bad-option')
@@ -85,10 +88,10 @@ export function createMockRepos(): Repos {
         const taken: Record<string, number> = {}
         menu = menu.map((m) => { const q = want.get(m.id); if (q && m.stock !== null) { taken[m.id] = q; return { ...m, stock: m.stock - q } } return m })
         stockTaken.set(n, taken)
-        const totals = orderTotals(input.lines, menu, offers, input.mode, settings.deliveryFee, syrups)
+        const totals = orderTotals(input.lines, menu, offers, input.mode, settings.deliveryFee, syrups, settings.reusableMugDiscount)
         const order: Order = {
           n, mode: input.mode, table: input.mode === 'table' ? input.table : undefined, address: input.mode === 'delivery' ? input.address?.trim() : undefined,
-          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free, milk: l.milk, syrupId: l.syrupId ?? undefined, syrupPumps: l.syrupPumps, coin: l.free ? 0 : menu.find((m) => m.id === l.itemId)?.coinsEarned ?? 0 })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
+          items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free, milk: l.milk, syrupId: l.syrupId ?? undefined, syrupPumps: l.syrupPumps, mugQty: l.mugQty ?? 0, coin: l.free ? 0 : menu.find((m) => m.id === l.itemId)?.coinsEarned ?? 0 })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
         }
         orders = [order, ...orders]
         emit()

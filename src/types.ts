@@ -58,11 +58,12 @@ export interface CartLine {
   syrupId: string | null
   syrupPumps: number
   qty: number
+  mugQty?: number
   /** A reward line costs N coins at checkout and is free. */
   free: boolean
 }
 
-export interface OrderItemSummary { itemId: string; qty: number; free: boolean; milk?: number; syrupId?: string; syrupPumps?: number; /** coins earned per unit, fixed when the order was placed */ coin?: number }
+export interface OrderItemSummary { itemId: string; qty: number; free: boolean; milk?: number; syrupId?: string; syrupPumps?: number; mugQty?: number; /** coins earned per unit, fixed when the order was placed */ coin?: number }
 
 export interface Order {
   n: number
