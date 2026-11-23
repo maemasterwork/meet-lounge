@@ -16,7 +16,7 @@ import { useAuth } from '../lib/auth'
 import { Placed, type ReceiptLine } from './Placed'
 import type { CartLine, Order, OrderMode } from '../types'
 
-const MODES: OrderMode[] = ['pickup', 'table', 'delivery']
+const MODES: OrderMode[] = ['pickup', 'delivery']
 const ERR: Record<string, string> = {
   'address-required': 'err.addressRequired', 'shop-closed': 'err.shopClosed', 'item-unavailable': 'err.itemUnavailable', 'out-of-stock': 'err.outOfStock', 'not-enough-coins': 'err.notEnoughCoins',
   'table-required': 'err.generic', 'phone-required': 'err.phoneRequired', 'bad-option': 'err.generic', 'reward-not-allowed': 'err.generic',

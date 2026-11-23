@@ -50,6 +50,7 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const cart = useCart()
   const [filter, setFilter] = useState<Filter>('all')
   const [page, setPage] = useState(0)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
   const phone = useMedia('(max-width: 820px)')
   const per = phone ? 6 : 8
   const tk = timeKey()
@@ -61,6 +62,13 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
   const pages = Math.max(1, Math.ceil(shown.length / per))
   const cur = Math.min(page, pages - 1)
   const view = shown.slice(cur * per, cur * per + per)
+  const finishSwipe = (x: number, y: number) => {
+    const start = touchStart.current
+    touchStart.current = null
+    if (pages < 2 || !start || Math.abs(x - start.x) < 48 || Math.abs(x - start.x) < Math.abs(y - start.y)) return false
+    setPage((current) => Math.max(0, Math.min(pages - 1, current + (x < start.x ? 1 : -1))))
+    return true
+  }
   const count = (f: Filter) => (f === 'all' ? items.length : items.filter((m) => m.cat === f).length)
   const quick = (m: MenuItem) => {
     if (!isAvailable(m)) return
@@ -79,7 +87,10 @@ function MenuGrid({ items, t, n, price }: { items: MenuItem[] } & Fmt) {
             <button key={f} type="button" aria-pressed={filter === f} onClick={() => { setFilter(f); setPage(0) }}>{t(`menu.chip.${f}`)}<sup>{n(count(f))}</sup></button>))}
         </div>
       </div>
-      <div className="mgrid ltr" style={{ gridTemplateRows: `repeat(${phone ? 3 : 2},minmax(0,1fr))` }}>
+      <div className="mgrid ltr" style={{ gridTemplateRows: `repeat(${phone ? 3 : 2},minmax(0,1fr))` }}
+        onTouchStart={(e) => { const touch = e.touches[0]; touchStart.current = { x: touch.clientX, y: touch.clientY } }}
+        onTouchEnd={(e) => { const touch = e.changedTouches[0]; if (finishSwipe(touch.clientX, touch.clientY)) e.preventDefault() }}
+        onTouchCancel={() => { touchStart.current = null }}>
         {view.map((m) => {
           const o = offerFor(m.id, offers)
           const name = t(`item.${m.id}.name`)
