@@ -30,6 +30,26 @@ describe('supabase repos', () => {
     const payload = JSON.stringify(rpc.mock.calls[0])
     expect(payload).not.toMatch(/price|total|subtotal/i)
   })
+  it('stores deposit proof in the private bucket under the customer and order', async () => {
+    const sb = fake({
+      'select:orders': (s: any) => s.maybeSingle
+        ? { data: { id: 'order-uuid' }, error: null }
+        : { data: [{ id: 'order-uuid' }], error: null },
+    })
+    const upload = vi.fn(async (_path: string, _file: File, _options: Record<string, unknown>) => ({ data: { path: '' }, error: null }))
+    const createSignedUrl = vi.fn(async (_path: string, _expires: number) => ({ data: { signedUrl: 'signed-proof-url' }, error: null }))
+    sb.storage = { from: vi.fn((bucket: string) => {
+      expect(bucket).toBe('deposit-images')
+      return { upload, createSignedUrl }
+    }) }
+    const url = await createSupabaseRepos(sb, () => 'customer-uuid').orders.uploadDepositImage(
+      200, new File(['proof'], 'deposit.png', { type: 'image/png' }),
+    )
+    expect(upload.mock.calls[0][0]).toBe('customer-uuid/order-uuid/proof')
+    expect(upload.mock.calls[0][2]).toMatchObject({ contentType: 'image/png', upsert: true })
+    expect(createSignedUrl).toHaveBeenCalledWith('customer-uuid/order-uuid/proof', 3600)
+    expect(url).toBe('signed-proof-url')
+  })
   it('rolls the optimistic status back when the server refuses', async () => {
     const sb = fake({
       'select:orders': (s: any) => (s.single || s.maybeSingle ? { data: { id: 'u1' }, error: null } : { data: [row()], error: null }),
@@ -81,6 +101,13 @@ describe('supabase repos', () => {
     const [order] = await createSupabaseRepos(sb, () => 'me').orders.listAll()
     expect(order.items[0]).toMatchObject({ milk: 2, syrupId: 'vanilla', syrupPumps: 1 })
     expect(projection).toContain('milk')
+  })
+  it('marks orders with a deposit proof for the staff order cards', async () => {
+    const sb = fake({
+      'select:orders': () => ({ data: [row({ deposit_image_path: 'customer/order/proof' })], error: null }),
+    })
+    const [order] = await createSupabaseRepos(sb, () => 'staff').orders.listAll()
+    expect(order.hasDepositImage).toBe(true)
   })
   it('archives all orders through the staff-only RPC and updates its cache', async () => {
     let archived = false
