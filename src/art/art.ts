@@ -559,6 +559,53 @@ function glass(g, u, tint) {
   return `<ellipse cx="130" cy="194" rx="56" ry="8" fill="var(--ml-plate-2)"/>` + s
 }
 
+// ── canned soda: generic can + PET bottle pair (own colour code, no brand marks) ──
+// SODA entries call helpers (slice, halfSlice) at load, so keep this block below them.
+const SODA = {
+  cola: {
+    can: '#6B2D1E', band: '#F4E3C4', liquid: '#3A1A10', top: '#7A4A32',
+    mark: `<circle cx="80" cy="147" r="6" fill="none" stroke="#6B2D1E" stroke-width="2.6"/><circle cx="92" cy="138" r="4" fill="none" stroke="#6B2D1E" stroke-width="2.4"/><circle cx="84" cy="128" r="2.6" fill="none" stroke="#6B2D1E" stroke-width="2.2"/>`,
+  },
+  colazero: {
+    can: '#2E2A2B', band: '#E9E4D6', liquid: '#2A140C', top: '#6A4030',
+    mark: `<ellipse cx="86" cy="139" rx="8" ry="13" fill="none" stroke="#2E2A2B" stroke-width="4.5"/><path d="M99 124 l2 4 l4 2 l-4 2 l-2 4 l-2 -4 l-4 -2 l4 -2Z" fill="#2E2A2B"/>`,
+  },
+  lemondelster: {
+    can: '#C4D43A', band: '#FFF6D6', liquid: '#F1E27A', top: '#FAF0A8',
+    mark: slice(86, 139, 14, '#F7D64B', '#FFF3B0', '#FBE67A'),
+  },
+  tropicaldelster: {
+    can: '#E9731F', band: '#FFF0C9', liquid: '#F6B73C', top: '#FFD27A',
+    mark: `<path d="M86 131 q-5 -9 -10 -8 q4 6 7 9 q-6 -5 -10 -2 q6 3 11 4 M86 131 q5 -9 10 -8 q-4 6 -7 9 q6 -5 10 -2 q-6 3 -11 4" fill="#6F9A5E" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><ellipse cx="86" cy="148" rx="9" ry="12" fill="#F2B84B" stroke="${INK}" stroke-width="1.8"/><path d="M80 141 l12 14 M92 141 l-12 14 M78 149 h16" stroke="#C9822B" stroke-width="1.3" stroke-linecap="round"/>`,
+  },
+}
+
+function sodaCan(f, cid) {
+  const bp = 'M64 92 Q64 84 72 82 H100 Q108 84 108 92 V188 Q108 195 100 195 H72 Q64 195 64 188 Z'
+  let s = ''
+  s += `<path d="${bp}" fill="${f.can}"/><clipPath id="${cid}"><path d="${bp}"/></clipPath><g clip-path="url(#${cid})"><rect x="60" y="114" width="52" height="50" fill="${f.band}"/><path d="M60 114H112M60 164H112" stroke="${INK}" stroke-width="2"/>${f.mark}<path d="M102 88 V192" stroke="#2A1608" stroke-opacity=".13" stroke-width="7"/></g>`
+  s += `<path d="M72 98 V108 M72 170 V186" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round" fill="none"/><path d="${bp}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`
+  s += `<ellipse cx="86" cy="83" rx="19" ry="4.5" fill="#D8D4CC" stroke="${INK}" stroke-width="2"/><ellipse cx="89" cy="83" rx="7" ry="2.2" fill="none" stroke="${INK}" stroke-width="1.6"/><path d="M74 82 q6 -2 12 -2" stroke="#fff" stroke-opacity=".7" stroke-width="2" stroke-linecap="round" fill="none"/>`
+  return s
+}
+
+// soda set: can + PET bottle side by side (original shapes and colours, no brand marks)
+function sodaPair(f, u) {
+  const cid = 'sc' + u, bid = 'sb' + u
+  const bp = 'M148 66 H168 V76 C168 88 188 94 188 112 V184 Q188 194 178 194 H138 Q128 194 128 184 V112 C128 94 148 88 148 76 Z'
+  let s = `<ellipse cx="86" cy="197" rx="30" ry="5" fill="var(--ml-plate-2)"/><ellipse cx="158" cy="197" rx="36" ry="6" fill="var(--ml-plate-2)"/>`
+  s += sodaCan(f, cid)
+  s += `<path d="${bp}" fill="var(--ml-glass)"/><clipPath id="${bid}"><path d="${bp}"/></clipPath><g clip-path="url(#${bid})"><rect x="120" y="82" width="76" height="118" fill="${f.liquid}"/><rect x="120" y="82" width="76" height="5" fill="${f.top}"/>`
+  s += `<rect x="120" y="110" width="76" height="46" fill="${f.band}"/><g transform="translate(72 -7)">${f.mark}</g><path d="M120 110H196M120 156H196" stroke="${INK}" stroke-width="2"/>`
+  s += `<path d="M181 90 V190" stroke="#2A1608" stroke-opacity=".16" stroke-width="8"/>`
+  s += [[142, 168, 3], [162, 176, 2.2], [150, 100, 2], [172, 164, 1.8]].map((p) => `<circle cx="${p[0]}" cy="${p[1]}" r="${p[2]}" fill="#fff" opacity=".35"/>`).join('')
+  s += `</g><path d="M136 118 V102 M136 162 V184" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="round" fill="none"/>`
+  s += `<path d="M137 190 q4 6 10 0 M149 192 q4 5 9 0 M160 192 q4 5 9 0 M171 190 q4 5 10 0" fill="none" stroke="${INK}" stroke-opacity=".5" stroke-width="1.6" stroke-linecap="round"/>`
+  s += `<path d="${bp}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><rect x="144" y="70" width="28" height="4" rx="2" fill="var(--ml-cup)" stroke="${INK}" stroke-width="1.8"/>`
+  s += `<rect x="146" y="52" width="24" height="15" rx="3.5" fill="${f.can}" stroke="${INK}" stroke-width="2.2"/><path d="M152 55 V64 M158 55 V64 M164 55 V64" stroke="#fff" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>`
+  return s
+}
+
 function blockArt(f) {
   return (
     plate() +
@@ -573,12 +620,30 @@ function blockArt(f) {
 const RINGS = (x, y, r, w) =>
   `<circle cx="${x - r * 0.55}" cy="${y}" r="${r}" fill="none" stroke="#E3A72F" stroke-width="${w}"/><circle cx="${x + r * 0.55}" cy="${y}" r="${r}" fill="none" stroke="#8FA68A" stroke-width="${w}"/>`
 
+const SACHET = {
+  mango: { body: '#F3DFB8', blob: '#E8CFA2', fruit: `<path d="M134 122 q4 -14 20 -14 q-2 14 -20 14Z" fill="#6F9A5E" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/><path d="M130 124 C152 120 160 148 150 164 C142 178 118 178 111 160 C103 142 110 126 130 124Z" fill="#F6A81C" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M118 136 q-3 9 0 18" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>` },
+  strawberry: {
+    body: '#F8E0D6', blob: '#EDC4BC',
+    fruit: `<path d="M130 122 C142 122 154 124 154 136 C154 150 140 176 130 178 C120 176 106 150 106 136 C106 124 118 122 130 122Z" fill="#E0414B" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M116 134 q-2 8 1 16" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>${[[122, 136], [136, 134], [129, 144], [118, 146], [141, 146]].map((p) => `<ellipse cx="${p[0]}" cy="${p[1]}" rx="1.3" ry="2" fill="#FFE7A8"/>`).join('')}<path d="M130 126 q-10 -9 -17 -2 q8 7 17 2 q10 5 17 -2 q-7 -7 -17 2Z" fill="#6F9A5E" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/><path d="M130 124 v-6" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>`,
+  },
+}
+
+// flat powder sachet: crimped top/bottom, Meet Lounge rings, fruit with a chocolate drip (original design)
+function sachet(f, u) {
+  const zig = (y0, x0, n, st, dir) => Array.from({ length: n + 1 }, (_, i) => `L${x0 + i * st * dir} ${y0 + (i % 2 ? 0 : 6)}`).join(' ')
+  const bp = `M84 52 ${zig(52, 84, 23, 4, 1)} V192 ${zig(192, 176, 23, 4, -1)} Z`
+  const id = 'sa' + u
+  return `<ellipse cx="130" cy="205" rx="62" ry="7" fill="var(--ml-plate-2)"/><g transform="rotate(-4 130 130)"><path d="${bp}" fill="${f.body}"/><clipPath id="${id}"><path d="${bp}"/></clipPath><g clip-path="url(#${id})"><rect x="80" y="44" width="100" height="18" fill="#2A1608" opacity=".12"/><rect x="80" y="184" width="100" height="18" fill="#2A1608" opacity=".12"/><ellipse cx="94" cy="118" rx="14" ry="9" fill="${f.blob}" opacity=".7"/><ellipse cx="170" cy="168" rx="12" ry="8" fill="${f.blob}" opacity=".7"/>${RINGS(130, 82, 10, 2.8)}<path d="M112 100 h36" stroke="${INK}" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/><path d="M118 107 h24" stroke="${INK}" stroke-opacity=".3" stroke-width="1.6" stroke-linecap="round"/>${f.fruit}<path d="M104 152 Q114 146 128 152 T154 152 V162 Q154 170 149 170 Q144 170 144 162 Q144 158 140 158 Q136 158 136 166 Q136 176 130 176 Q124 176 124 166 Q124 160 120 160 Q116 160 116 166 Q116 172 110 172 Q104 172 104 164 Z" fill="#4A2C1D" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/><path d="M110 156 q8 -3 16 0" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/><path d="M170 60 V186" stroke="#2A1608" stroke-opacity=".13" stroke-width="7" stroke-linecap="round"/><path d="M92 68 V110" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round"/></g><path d="${bp}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/></g>`
+}
+
 function goodsBody(k, u) {
   switch (k) {
     case 'mug': {
       const hd = 'M176 112 C214 108 214 168 172 164'
       return `<ellipse cx="130" cy="200" rx="66" ry="8" fill="var(--ml-plate-2)"/><path d="${hd}" fill="none" stroke="${INK}" stroke-width="13" stroke-linecap="round"/><path d="${hd}" fill="none" stroke="var(--ml-cup)" stroke-width="7" stroke-linecap="round"/><path d="M80 96 H180 V160 Q180 196 146 196 H114 Q80 196 80 160 Z" fill="var(--ml-cup)" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M170 104 V160 Q170 186 146 188" fill="none" stroke="#2A1608" stroke-opacity=".13" stroke-width="7" stroke-linecap="round"/><path d="M89 108 V158" stroke="#fff" stroke-opacity=".55" stroke-width="5" stroke-linecap="round"/><ellipse cx="130" cy="96" rx="50" ry="9" fill="#5A3524" stroke="${INK}" stroke-width="2.2"/>${RINGS(130, 146, 14, 3.4)}<g fill="var(--ml-accent)" opacity=".7"><circle cx="102" cy="120" r="2.6"/><circle cx="158" cy="120" r="2.6"/><circle cx="96" cy="172" r="2.6"/><circle cx="164" cy="172" r="2.6"/></g>`
     }
+    case 'mangochocsachet': return sachet(SACHET.mango, u)
+    case 'strawberrychocsachet': return sachet(SACHET.strawberry, u)
     case 'tote':
       return `<ellipse cx="130" cy="206" rx="76" ry="8" fill="var(--ml-plate-2)"/><path d="M96 104 C96 50 164 50 164 104" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><path d="M70 100 H190 L198 204 H62 Z" fill="#EAD7B7" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><path d="M70 100 H190 L192 118 H68 Z" fill="#2A1608" opacity=".08"/><path d="M80 120 L74 196" stroke="#fff" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/>${RINGS(130, 138, 17, 4)}<path d="M104 162 h52 v8 a22 22 0 0 1 -22 22 h-8 a22 22 0 0 1 -22 -22z" fill="var(--ml-accent)" stroke="${INK}" stroke-width="2"/>`
     case 'beans':
@@ -616,7 +681,8 @@ export const ARTWORK_IDS = [
   'latte', 'cappuccino', 'mocha', 'icedlatte', 'iceamer', 'coldbrew', 'shake',
   'cheesecake', 'brownie', 'croissant', 'carrotcake', 'muffin', 'cookie',
   'mug', 'tote', 'beans', 'syrupbottle', 'note', 'pbchocbanana',
-  'pbcaramelbanana', 'pbjamtoast', 'eggtoast', 'simitsandwich',
+  'pbcaramelbanana', 'pbjamtoast', 'eggtoast', 'simitsandwich', 
+  'mangochocsachet', 'strawberrychocsachet', 'cola', 'colazero', 'lemondelster', 'tropicaldelster',
 ] as const
 
 export function art(it, o, u) {
@@ -664,6 +730,10 @@ export function art(it, o, u) {
     case 'icedlatte': b = glass({ layers: [['#E8D2B2', 80, true], ['#5A3524', 132]] }, u, tint); break
     case 'iceamer': b = glass({ layers: [['#4B2A1B', 74]] }, u, 0); break
     case 'coldbrew': b = glass({ layers: [['#2E190F', 70]], citrus: true }, u, 0); break
+    case 'cola': b = sodaPair(SODA.cola, u); break
+    case 'colazero': b = sodaPair(SODA.colazero, u); break
+    case 'lemondelster': b = sodaPair(SODA.lemondelster, u); break
+    case 'tropicaldelster': b = sodaPair(SODA.tropicaldelster, u); break
     case 'shake': b = glass({ layers: [['#7A4630', 92], ['#946049', 150]], cream: true }, u, 0); break
     case 'cheesecake':
       b = blockArt({
