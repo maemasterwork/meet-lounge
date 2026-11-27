@@ -30,8 +30,8 @@ function parseSizes(text: string): SizeOption[] | null {
 function ArtworkPicker({ value, cat, onChange }: { value: string; cat: Category; onChange: (artId: string) => void }) {
   const { t } = useI18n()
   const isGoods = cat === 'goods'
-  const ids = isGoods ? ARTWORK_IDS.filter((id) => ['mug', 'tote', 'beans', 'syrupbottle', 'note'].includes(id))
-    : ARTWORK_IDS.filter((id) => !['mug', 'tote', 'beans', 'syrupbottle', 'note'].includes(id))
+  const ids = isGoods ? ARTWORK_IDS.filter((id) => ['mug', 'tote', 'beans', 'syrupbottle', 'note', 'mangochocsachet', 'strawberrychocsachet', 'cola', 'colazero', 'lemondelster', 'tropicaldelster'].includes(id))
+    : ARTWORK_IDS.filter((id) => !['mug', 'tote', 'beans', 'syrupbottle', 'note', 'mangochocsachet', 'strawberrychocsachet', 'cola', 'colazero', 'lemondelster', 'tropicaldelster'].includes(id))
   return (
     <div className="field artwork-field">
       <span>{t('a2.shapeArt')}</span>
