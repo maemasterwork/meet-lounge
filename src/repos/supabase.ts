@@ -48,7 +48,7 @@ const toOffer = (r: any, read: number[]): Offer => ({
 })
 const toSyrup = (r: any): Syrup => ({ id: r.id, name: { fa: r.name_fa, en: r.name_en }, pricePerPump: r.price_per_pump, active: r.active })
 const toOrder = (r: any, uid: string | null): Order => ({
-  n: r.number, mode: r.mode as OrderMode, table: r.table_no ?? undefined, address: r.address ?? undefined,
+  n: r.number, mode: r.mode as OrderMode, table: r.table_no ?? undefined, address: r.address ?? undefined, comment: r.customer_comment ?? undefined,
   items: (r.order_items ?? []).map((i: any) => ({ itemId: i.item_id, qty: i.qty, free: i.is_reward, milk: i.milk, syrupId: i.syrup_id ?? undefined, syrupPumps: i.syrup_pumps ?? 0, mugQty: i.reusable_mug_qty ?? 0, coin: i.coin_each })),
   subtotal: r.subtotal, fee: r.delivery_fee, total: r.total, status: r.status as OrderStatus, paid: !!r.paid_at,
   hasDepositImage: !!r.deposit_image_path,
@@ -156,7 +156,7 @@ export function createSupabaseRepos(sb: SupabaseClient, getUserId: () => string 
       },
       async place(input: PlaceOrderInput) {
         const items = input.lines.map((l) => ({ item_id: l.itemId, size: l.size, milk: l.milk, syrup_id: l.syrupId, syrup_pumps: l.syrupPumps, mug_qty: l.mugQty ?? 0, qty: l.free ? 1 : l.qty, reward: l.free }))
-        const r = await sb.rpc('create_order', { p_items: items, p_mode: input.mode, p_table: input.mode === 'table' ? input.table ?? null : null, p_address: input.mode === 'delivery' ? input.address ?? null : null, p_phone: input.phone ?? null })
+        const r = await sb.rpc('create_order', { p_items: items, p_mode: input.mode, p_table: input.mode === 'table' ? input.table ?? null : null, p_address: input.mode === 'delivery' ? input.address ?? null : null, p_phone: input.phone ?? null, p_comment: input.comment?.trim() || null })
         const row: any = ok(r)
         const full = ok(await sb.from('orders').select(ORDER_SELECT).eq('id', row.id).single())
         emit()

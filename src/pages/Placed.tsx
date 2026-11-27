@@ -97,6 +97,7 @@ export function Placed({ order, lines, settings, onDone, onBack }: { order: Orde
         </div>)}
       <div className="rcpt">
         <div className="rh ltr"><span>{t('dep.orderNo')} {n(order.n)}</span><span>{when}</span></div>
+        {order.comment && <div className="rl ltr"><span><b>{t('bag.staffComment')}:</b> {order.comment}</span></div>}
         {lines.map((l, i) => (
           <div key={i} className="rl ltr"><span>{n(l.qty)} × {l.name}{l.size && <> <em>{l.size}</em></>}{!!l.mugQty && <> <em>({t('bag.mugCount', { n: n(l.mugQty) })})</em></>}</span>{l.price !== undefined && <span className={l.free ? 'fr' : ''}>{l.free ? t('bag.free2') : price(l.price)}</span>}</div>))}
         {order.fee > 0 && <div className="rl ltr"><span>{t('bag.fee')}</span><span>{price(order.fee)}</span></div>}

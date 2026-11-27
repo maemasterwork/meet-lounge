@@ -5,6 +5,12 @@ import { OrderError } from './types'
 const latte = { itemId: 'latte', size: 'small', milk: 0, syrupId: null, syrupPumps: 0, qty: 1, free: false }
 
 describe('mock repos', () => {
+  it('stores a customer comment with the placed order', async () => {
+    const r = createMockRepos()
+    const order = await r.orders.place({ lines: [latte], mode: 'pickup', comment: '  Please make it extra hot  ' })
+    expect(order.comment).toBe('Please make it extra hot')
+    expect((await r.orders.listAll()).find((o) => o.n === order.n)?.comment).toBe('Please make it extra hot')
+  })
   it('places an order, advances it, and awards one coin on done', async () => {
     const r = createMockRepos()
     expect(await r.coins.balance()).toBe(5)

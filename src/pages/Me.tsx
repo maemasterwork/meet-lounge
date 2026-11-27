@@ -94,6 +94,7 @@ export function MePage() {
             <div className="row" style={{ display: 'block' }} key={o.n}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><b>{t('me.orderN', { n: n(o.n) })}</b><span className={`pillst${o.status === 'done' ? ' good' : ''}`}>{o.status === 'new' && !o.paid ? t('dep.awaiting') : t(`status.${o.status}`)}</span></div>
               <div className="muted sm">{t(`bag.mode${o.mode[0].toUpperCase()}${o.mode.slice(1)}`)}{o.table ? ` ${n(+o.table)}` : ''}{o.address ? ` · ${o.address}` : ''} · {price(o.total)}</div>
+              {o.comment && <div className="muted sm"><b>{t('bag.staffComment')}:</b> {o.comment}</div>}
               <div className="order-items sm">{o.items.map((i, index) => {
                 const syrup = i.syrupId ? data.syrups.find((s) => s.id === i.syrupId) : undefined
                 return (

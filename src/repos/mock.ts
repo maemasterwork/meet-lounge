@@ -92,6 +92,7 @@ export function createMockRepos(): Repos {
         const totals = orderTotals(input.lines, menu, offers, input.mode, settings.deliveryFee, syrups, settings.reusableMugDiscount)
         const order: Order = {
           n, mode: input.mode, table: input.mode === 'table' ? input.table : undefined, address: input.mode === 'delivery' ? input.address?.trim() : undefined,
+          comment: input.comment?.trim() || undefined,
           items: input.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, free: l.free, milk: l.milk, syrupId: l.syrupId ?? undefined, syrupPumps: l.syrupPumps, mugQty: l.mugQty ?? 0, coin: l.free ? 0 : menu.find((m) => m.id === l.itemId)?.coinsEarned ?? 0 })), ...totals, status: 'new', paid: totals.total === 0 || !settings.requireDeposit, mine: true, who: 'me', at: clock(),
         }
         orders = [order, ...orders]

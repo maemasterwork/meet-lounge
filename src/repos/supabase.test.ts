@@ -23,12 +23,13 @@ describe('supabase repos', () => {
     await expect(r.orders.place({ lines: [], mode: 'pickup' })).rejects.toBeInstanceOf(OrderError)
   })
   it('never sends a price to the server', async () => {
-    const rpc = vi.fn(async () => ({ data: row(), error: null }))
+    const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({ data: row(), error: null }))
     const sb = fake({}); sb.rpc = rpc
     const r = createSupabaseRepos(sb, () => 'me')
-    await r.orders.place({ lines: [{ itemId: 'latte', size: 'small', milk: 0, syrupId: null, syrupPumps: 0, qty: 2, free: false }], mode: 'pickup' }).catch(() => {})
+    await r.orders.place({ lines: [{ itemId: 'latte', size: 'small', milk: 0, syrupId: null, syrupPumps: 0, qty: 2, free: false }], mode: 'pickup', comment: 'Extra hot' }).catch(() => {})
     const payload = JSON.stringify(rpc.mock.calls[0])
     expect(payload).not.toMatch(/price|total|subtotal/i)
+    expect(rpc.mock.calls[0][1]).toMatchObject({ p_comment: 'Extra hot' })
   })
   it('stores deposit proof in the private bucket under the customer and order', async () => {
     const sb = fake({

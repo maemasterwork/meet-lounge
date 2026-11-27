@@ -9,7 +9,7 @@ const isDrink = (it) => it.cat === 'hot' || it.cat === 'cold' || it.cat === 'tea
 const INK = 'var(--ml-draw)'
 const TEAL = 'var(--ml-teal)'
 const TINT = [null, '#D8BC93', '#D0B087']
-const SYRUP_COLORS = { vanilla: '#E6BD63', caramel: '#C9772B', hazelnut: '#79523D' }
+const SYRUP_COLORS = { vanilla: '#E6BD63', caramel: '#C9772B', hazelnut: '#79523D', chocolate: '#5B3322', strawberry: '#E0414B', mango: '#F6A81C', pistachio: '#8DB255' }
 const SYRUP_Y = {
   espresso: 132, americano: 112, cortado: 122, syruplatte: 104, syrupicedlatte: 84,
   hotchoc: 108, mangochoc: 108, berrychoc: 108, latte: 104, cappuccino: 108, mocha: 106,
