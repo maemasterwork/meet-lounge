@@ -146,6 +146,7 @@ export default function Admin() {
                     <div className="muted sm">{o.who} · {price(o.total)}</div>
                     <time className="muted sm" dateTime={o.at}>{new Date(o.at).toLocaleString(lang === 'fa' ? 'fa-IR' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</time>
                     {o.address && <div className="muted sm">{o.address}</div>}
+                    {o.comment && <div className="order-comment"><b className="sm">{t('admin.staffComment')}</b><div className="sm">{o.comment}</div></div>}
                     {o.hasDepositImage && <OrderDepositImage orderN={o.n} />}
                     {c === 'new' && !o.paid && <span className="pillst await">{t('dep.awaiting')}</span>}
                     {c === 'new' && !o.paid && <button type="button" className="btn sm" disabled={busy} onClick={() => act(() => repos.orders.markPaid(o.n))}>{t('dep.received')}</button>}

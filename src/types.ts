@@ -70,6 +70,8 @@ export interface Order {
   mode: OrderMode
   table?: string
   address?: string
+  /** Optional text the customer left for the cafe staff. */
+  comment?: string
   items: OrderItemSummary[]
   subtotal: number
   fee: number
@@ -87,7 +89,7 @@ export interface Order {
 
 export interface LedgerEntry { id: number; at: string; delta: number; reason: string; orderN?: number }
 
-export interface PlaceOrderInput { lines: CartLine[]; mode: OrderMode; table?: string; address?: string; /** Required for guests (no account); the cafe calls it if something is wrong. */ phone?: string }
+export interface PlaceOrderInput { lines: CartLine[]; mode: OrderMode; table?: string; address?: string; comment?: string; /** Required for guests (no account); the cafe calls it if something is wrong. */ phone?: string }
 
 export type EventIcon = 'music' | 'book' | 'cake' | 'bean' | 'cup' | 'lantern' | 'brush' | 'jar' | 'heart'
 export const EVENT_ICONS: EventIcon[] = ['music', 'book', 'cake', 'bean', 'cup', 'lantern', 'brush', 'jar', 'heart']

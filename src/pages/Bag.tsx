@@ -35,6 +35,7 @@ export function BagPage() {
   const requestAuth = useUi((s) => s.requestAuth)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [comment, setComment] = useState('')
   const [mugDialogOpen, setMugDialogOpen] = useState(false)
   const [mugCounts, setMugCounts] = useState<Record<number, number>>({})
   const [placed, setPlaced] = useState<{ order: Order; lines: ReceiptLine[] } | null>(null)
@@ -99,7 +100,7 @@ export function BagPage() {
         mugQty: eligibleIndexes.has(index) ? Math.max(0, Math.min(line.qty, Math.trunc(selectedMugs[index] ?? 0))) : 0,
       }))
       const snap: ReceiptLine[] = lines.map((l) => ({ name: t(`item.${l.itemId}.name`), size: lineLabel(l), qty: l.qty, free: l.free, mugQty: l.mugQty ?? 0, price: lineTotal(l, data.menu, data.offers, data.syrups, data.settings.reusableMugDiscount) }))
-      const o = await repos.orders.place({ lines, mode: cart.mode, table: cart.table, address: cart.address })
+      const o = await repos.orders.place({ lines, mode: cart.mode, table: cart.table, address: cart.address, comment })
       cart.clear(); setMugDialogOpen(false); setPlaced({ order: o, lines: snap }); toast(t('bag.orderPlaced', { n: n(o.n) }))
     } catch (e) {
       setErr(t(e instanceof OrderError ? ERR[e.code] ?? 'err.generic' : 'err.network'))
@@ -209,6 +210,9 @@ export function BagPage() {
           <label className="field">{t('bag.addressLabel')}
             <textarea rows={2} value={cart.address} placeholder={t('bag.addressHint')} onChange={(e) => cart.setAddress(e.target.value)} maxLength={300} />
           </label>)}
+        <label className="field">{t('bag.staffComment')}
+          <textarea rows={2} value={comment} placeholder={t('bag.staffCommentHint')} onChange={(e) => setComment(e.target.value)} maxLength={500} />
+        </label>
         {err && <p className="err" role="alert">{err}</p>}
         <div className="sum">
           <div><span>{t('bag.subtotal')}</span><span>{price(totals.subtotal)}</span></div>
